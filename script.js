@@ -164,7 +164,7 @@ const tags = [{
 
     }
 ]
-const codeforces = "http://codeforces.com/api/"
+const codeforces = "https://codeforces.com/api/"
 const func_with_tags = (arg) => `<option value="${arg.value}" title="${arg.title}">${arg.name} | ${arg.value}</option>`
 let html = tags.map(qwe => func_with_tags(qwe)).join('')
 document.getElementById('choose').innerHTML += html
