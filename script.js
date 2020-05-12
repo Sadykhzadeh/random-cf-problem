@@ -169,13 +169,6 @@ const func_with_tags = (arg) => `<option value="${arg.value}" title="${arg.title
 let html = tags.map(qwe => func_with_tags(qwe)).join('')
 document.getElementById('choose').innerHTML += html
 
-/*
-function randomInteger(min, max) {
-    let rand = min + Math.random() * (max + 1 - min);
-    return Math.floor(rand);
-}
-*/
-
 function putToCache(elem, cache) {
     if (cache.indexOf(elem) != -1) {
         return;
