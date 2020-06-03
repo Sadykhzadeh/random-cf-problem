@@ -1,8 +1,11 @@
-<!DOCTYPE html>
-<html>
+<!DOCTYPE HTML>
+<html lang="ru">
 
 <head>
     <title>Random Problem Codeforces</title>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
     <style>
         body {
@@ -11,16 +14,18 @@
         
         #link,
         #rating,
-        #points{
+        #points {
             width: 50%;
             border: 1px solid black;
             border-radius: 40px;
         }
+        
         #tags {
             width: 100%;
             border: 1px solid black;
             border-radius: 40px;
         }
+        
         #user-res {
             width: 60%;
         }
@@ -29,40 +34,33 @@
 
 <body>
     <center>
-        <div style = "padding-bottom: 20px;" id="name">Выберите сложность задачи, её тему. Юзернейм позволит узнать, решали ли Вы эту задачу.</div>
+        <div style="padding-bottom: 20px;" id="name">Выберите сложность задачи, её тему. Или просто нажмите "Сгенерировать!"</div>
         <div class="input-group-prepend">
             <div id="rating">Рейтинг задачи: </div>
             <div id="points">Очки: </div>
         </div>
         <div class="input-group-prepend">
-            
+
             <div id="tags">Темы: </div>
         </div>
-        <div style="width: 70%" class="input-group mb-3">
+        <div style="width: 40%;" class="input-group input-group-sm mb-3">
             <div class="input-group-prepend">
-                <span class="input-group-text" id="basic-addon1">@</span>
-            </div>
-            <input type="text" class="form-control" id="user" placeholder="Username in Codeforces">
-            <div id="user-res">Здесь будет написано, решили ли Вы задачу</div>
-        </div>
-        <div style="width: 50%;" class="input-group input-group-sm mb-3">
-            <div class="input-group-prepend">
-                <span class="input-group-text" id="inputGroup-sizing-sm">Min. complexity</span>
+                <span class="input-group-text" id="inputGroup-sizing-sm">Мин.сложность</span>
             </div>
             <input type="number" id="min_num" class="form-control" placeholder="0" aria-label="Small" aria-describedby="inputGroup-sizing-sm">
             <div class="input-group-prepend">
-                <span class="input-group-text" id="inputGroup-sizing-sm">Max. complexity</span>
+                <span class="input-group-text" id="inputGroup-sizing-sm">Макс.сложность</span>
             </div>
             <input type="number" id="max_num" class="form-control" placeholder="3800" aria-label="Small" aria-describedby="inputGroup-sizing-sm">
         </div>
 
-        <select style="width: 50%;" id="choose" class="form-control">
+        <select style="width: 40%;" id="choose" class="form-control">
                     <option>Choose tag</option>
                 </select>
-        <button style="width: 20%;" type="button" id="start" class="btn btn-outline-success">Generate!</button>
+        <button style="width: 20%;" type="button" id="start" class="btn btn-outline-success">Сгенерировать!</button>
 
+        <script src="script.js"></script>
     </center>
-    <script src="script.js"></script>
 </body>
 
 </html>
