@@ -170,14 +170,12 @@ let html = tags.map(qwe => func_with_tags(qwe)).join('')
 document.getElementById('choose').innerHTML += html
 
 function putToCache(elem, cache) {
-    if (cache.indexOf(elem) != -1) {
-        return
-    }
+    if (cache.indexOf(elem) != -1) return;
     cache.splice(Math.floor(Math.random() * (cache.length + 1)), 0, elem)
 }
 
 function bezumiye() {
-    var cache = [];
+    let cache = [];
     return function(a, b) {
         putToCache(a, cache)
         putToCache(b, cache)
@@ -231,14 +229,13 @@ start.onclick = async function() {
         }
         problems = shuffle(problems)
         if (!problems.length) {
-            document.getElementById("user-res").innerHTML = ":("
             document.getElementById("name").innerHTML = "Нет задачи по Вашим параметрам."
             document.getElementById("rating").innerHTML = "Рейтинг задачи: :("
             document.getElementById("points").innerHTML = "Очки: Неизвестно"
             document.getElementById("tags").innerHTML = "Темы: :("
         } else {
-            let res = problems[0];
-            console.log(res);
+            let res = problems[0]
+            console.log(res)
             link = "https://codeforces.com/problemset/problem/" + res.contestId + "/" + res.index
             document.getElementById("name").innerHTML = `<a href="${link}"target="_blank">${res.name}</a>`
             document.getElementById("rating").innerHTML = "Рейтинг задачи: " + res.rating
