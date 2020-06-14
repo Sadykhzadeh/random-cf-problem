@@ -1,6 +1,5 @@
 import {
-    tags,
-    codeforces
+    tags
 } from "./tags.js"
 
 const func_with_tags = (arg) => `<option value="${arg.value}" title="${arg.title}">${arg.name} | ${arg.value}</option>`
@@ -31,9 +30,24 @@ function localize_tags(arg) {
     }
 }
 
-start.onclick = async function() {
-    document.querySelector('#doNotShowTags').disabled = true
+const disableAll = () => {
+    document.getElementById('doNotShowTags').disabled = true
     document.getElementById("start").disabled = true
+    document.getElementById("choose").disabled = true
+    document.getElementById("min_num").disabled = true
+    document.getElementById("max_num").disabled = true
+}
+
+const enableAll = () => {
+    document.getElementById('doNotShowTags').disabled = false
+    document.getElementById("start").disabled = false
+    document.getElementById("choose").disabled = false
+    document.getElementById("min_num").disabled = false
+    document.getElementById("max_num").disabled = false
+}
+
+start.onclick = async function() {
+    disableAll()
     document.getElementById("name").innerHTML = "Идёт поиск задач..."
     document.getElementById("rating").innerHTML = "Рейтинг задачи: [загрузка]"
     document.getElementById("points").innerHTML = "Очки: [загрузка]"
@@ -52,11 +66,10 @@ start.onclick = async function() {
         document.getElementById("rating").innerHTML = "-____-"
         document.getElementById("points").innerHTML = "-____-"
         document.getElementById("tags").innerHTML = "-____-"
-        document.getElementById("start").disabled = false
-        document.querySelector('#doNotShowTags').disabled = false
+        enableAll()
         return ""
     }
-    let json, link = codeforces + "problemset.problems?tags="
+    let json, link = "https://codeforces.com/problemset.problems?tags="
     if (tag_value != "Choose tag") {
         link += tag_value
     }
@@ -93,6 +106,5 @@ start.onclick = async function() {
     } else {
         document.getElementById("name").innerHTML = "Ошибка HTTP: " + response.status
     }
-    document.getElementById("start").disabled = false
-    document.querySelector('#doNotShowTags').disabled = false
+    enableAll()
 }
