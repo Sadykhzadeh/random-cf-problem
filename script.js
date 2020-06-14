@@ -52,6 +52,7 @@ start.onclick = async function() {
     document.getElementById("rating").innerHTML = "Рейтинг задачи: [загрузка]"
     document.getElementById("points").innerHTML = "Очки: [загрузка]"
     document.getElementById("tags").innerHTML = "Темы: [загрузка]"
+    console.log("Check inputs...")
     let min_value = document.getElementById('min_num').value,
         max_value = document.getElementById('max_num').value,
         tag_value = document.getElementById('choose').value
@@ -66,6 +67,7 @@ start.onclick = async function() {
         document.getElementById("rating").innerHTML = "-____-"
         document.getElementById("points").innerHTML = "-____-"
         document.getElementById("tags").innerHTML = "-____-"
+        console.log("Min > Max? :hmm:")
         enableAll()
         return -1
     }
@@ -75,12 +77,12 @@ start.onclick = async function() {
     }
     let response = await fetch(link)
     if (response.ok) {
+        console.log("Yeah, Codeforces is working...")
         document.getElementById("name").innerHTML = "Осталось совсем немного..."
         json = await response.json()
         let problems = []
         for (let i = json.result.problems.length - 1; i >= 0; i--) {
-            let qwe = json.result.problems[i].rating
-            if (qwe >= min_value && max_value >= qwe) {
+            if (min_value <= json.result.problems[i].rating && json.result.problems[i].rating <= max_value) {
                 problems.push(json.result.problems[i])
             }
         }
@@ -88,25 +90,27 @@ start.onclick = async function() {
         if (!problems.length) {
             document.getElementById("name").innerHTML = "Нет задачи по Вашим параметрам."
             document.getElementById("rating").innerHTML = "Рейтинг задачи: :("
-            document.getElementById("points").innerHTML = "Очки: Неизвестно"
+            document.getElementById("points").innerHTML = "Очки: :("
             document.getElementById("tags").innerHTML = "Темы: :("
+            console.log("Nothing... :sob:")
         } else {
             let res = problems[0]
             console.log(res)
-            link = "https://codeforces.com/problemset/problem/" + res.contestId + "/" + res.index
-            document.getElementById("name").innerHTML = `<a href="${link}"target="_blank">${res.name}</a>`
-            document.getElementById("rating").innerHTML = "Рейтинг задачи: " + ((res.rating != undefined) ? res.points : "Неизвестно")
+            document.getElementById("name").innerHTML = `<a href="${"https://codeforces.com/problemset/problem/" + res.contestId + "/" + res.index}"target="_blank">${res.name}</a>`
+            document.getElementById("rating").innerHTML = "Рейтинг задачи: " + ((res.rating != undefined) ? res.rating : "Неизвестно")
             document.getElementById("points").innerHTML = "Очки: " + ((res.points != undefined) ? res.points : "Неизвестно")
-            if (!document.querySelector('#doNotShowTags').checked && res.tags.length) {
+            if (!document.getElementById('doNotShowTags').disabled && res.tags.length) {
                 document.getElementById("tags").innerHTML = "Темы: " + res.tags.map((arg) => localize_tags(arg)).join(", ")
             } else if (!res.tags.length) {
                 document.getElementById("tags").innerHTML = "Не найдено тем этой задачи"
             } else {
                 document.getElementById("tags").innerHTML = "Темы мы не показываем :D"
             }
+            console.log("We did it!!!")
         }
     } else {
         document.getElementById("name").innerHTML = "Ошибка HTTP: " + response.status
+        console.log("Codeforces is down... F")
     }
     enableAll()
 }
