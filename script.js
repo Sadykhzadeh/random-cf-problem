@@ -67,7 +67,7 @@ start.onclick = async function() {
         document.getElementById("points").innerHTML = "-____-"
         document.getElementById("tags").innerHTML = "-____-"
         enableAll()
-        return ""
+        return -1
     }
     let json, link = "https://codeforces.com/api/problemset.problems?tags="
     if (tag_value != "Choose tag") {
@@ -99,7 +99,7 @@ start.onclick = async function() {
             document.getElementById("points").innerHTML = "Очки: " + ((res.points != undefined) ? res.points : "Неизвестно")
             if (!document.querySelector('#doNotShowTags').checked && res.tags.length) {
                 document.getElementById("tags").innerHTML = "Темы: " + res.tags.map((arg) => localize_tags(arg)).join(", ")
-            } else if (!res.tag.length) {
+            } else if (!res.tags.length) {
                 document.getElementById("tags").innerHTML = "Не найдено тем этой задачи"
             } else {
                 document.getElementById("tags").innerHTML = "Темы мы не показываем :D"
