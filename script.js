@@ -69,7 +69,7 @@ start.onclick = async function() {
         enableAll()
         return ""
     }
-    let json, link = "https://codeforces.com/problemset.problems?tags="
+    let json, link = "https://codeforces.com/api/problemset.problems?tags="
     if (tag_value != "Choose tag") {
         link += tag_value
     }
