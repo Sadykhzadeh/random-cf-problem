@@ -164,6 +164,5 @@ const tags = [{
 
     }
 ]
-const codeforces = "https://codeforces.com/api/"
 
-export {tags, codeforces}
+export {tags}
