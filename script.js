@@ -95,10 +95,12 @@ start.onclick = async function() {
             console.log(res)
             link = "https://codeforces.com/problemset/problem/" + res.contestId + "/" + res.index
             document.getElementById("name").innerHTML = `<a href="${link}"target="_blank">${res.name}</a>`
-            document.getElementById("rating").innerHTML = "Рейтинг задачи: " + res.rating
+            document.getElementById("rating").innerHTML = "Рейтинг задачи: " + ((res.rating != undefined) ? res.points : "Неизвестно")
             document.getElementById("points").innerHTML = "Очки: " + ((res.points != undefined) ? res.points : "Неизвестно")
-            if (!document.querySelector('#doNotShowTags').checked) {
+            if (!document.querySelector('#doNotShowTags').checked && res.tags.length) {
                 document.getElementById("tags").innerHTML = "Темы: " + res.tags.map((arg) => localize_tags(arg)).join(", ")
+            } else if (!res.tag.length) {
+                document.getElementById("tags").innerHTML = "Не найдено тем этой задачи"
             } else {
                 document.getElementById("tags").innerHTML = "Темы мы не показываем :D"
             }
