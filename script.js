@@ -32,7 +32,8 @@ function localize_tags(arg) {
 }
 
 start.onclick = async function() {
-    document.getElementById("start").disabled = true;
+    document.querySelector('#doNotShowTags').disabled = true
+    document.getElementById("start").disabled = true
     document.getElementById("name").innerHTML = "Идёт поиск задач..."
     document.getElementById("rating").innerHTML = "Рейтинг задачи: [загрузка]"
     document.getElementById("points").innerHTML = "Очки: [загрузка]"
@@ -51,7 +52,8 @@ start.onclick = async function() {
         document.getElementById("rating").innerHTML = "-____-"
         document.getElementById("points").innerHTML = "-____-"
         document.getElementById("tags").innerHTML = "-____-"
-        document.getElementById("start").disabled = false;
+        document.getElementById("start").disabled = false
+        document.querySelector('#doNotShowTags').disabled = false
         return ""
     }
     let json, link = codeforces + "problemset.problems?tags="
@@ -85,12 +87,12 @@ start.onclick = async function() {
             if (!document.querySelector('#doNotShowTags').checked) {
                 document.getElementById("tags").innerHTML = "Темы: " + res.tags.map((arg) => localize_tags(arg)).join(", ")
             } else {
-                document.getElementById("tags").innerHTML = "Темы мы не показываем :D";
+                document.getElementById("tags").innerHTML = "Темы мы не показываем :D"
             }
         }
     } else {
         document.getElementById("name").innerHTML = "Ошибка HTTP: " + response.status
     }
-
-    document.getElementById("start").disabled = false;
+    document.getElementById("start").disabled = false
+    document.querySelector('#doNotShowTags').disabled = false
 }
