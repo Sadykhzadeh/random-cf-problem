@@ -1,10 +1,14 @@
-import {tags, codeforces} from "./tags.js"
+import {
+    tags,
+    codeforces
+} from "./tags.js"
 
 const func_with_tags = (arg) => `<option value="${arg.value}" title="${arg.title}">${arg.name} | ${arg.value}</option>`
 document.getElementById('choose').innerHTML += tags.map(qwe => func_with_tags(qwe)).join('')
 
 function putToCache(elem, cache) {
-    if (cache.indexOf(elem) != -1) return;
+    if (cache.indexOf(elem) != -1)
+        return;
     cache.splice(Math.floor(Math.random() * (cache.length + 1)), 0, elem)
 }
 
@@ -28,6 +32,7 @@ function localize_tags(arg) {
 }
 
 start.onclick = async function() {
+    document.getElementById("start").disabled = true;
     document.getElementById("name").innerHTML = "Идёт поиск задач..."
     document.getElementById("rating").innerHTML = "Рейтинг задачи: [загрузка]"
     document.getElementById("points").innerHTML = "Очки: [загрузка]"
@@ -43,10 +48,13 @@ start.onclick = async function() {
     }
     if (+min_value > +max_value) {
         document.getElementById("name").innerHTML = ("Минимум не может быть больше максимума.")
+        document.getElementById("rating").innerHTML = "-____-"
+        document.getElementById("points").innerHTML = "-____-"
+        document.getElementById("tags").innerHTML = "-____-"
+        document.getElementById("start").disabled = false;
         return ""
     }
-    let json,
-        link = codeforces + "problemset.problems?tags="
+    let json, link = codeforces + "problemset.problems?tags="
     if (tag_value != "Choose tag") {
         link += tag_value
     }
@@ -74,13 +82,15 @@ start.onclick = async function() {
             document.getElementById("name").innerHTML = `<a href="${link}"target="_blank">${res.name}</a>`
             document.getElementById("rating").innerHTML = "Рейтинг задачи: " + res.rating
             document.getElementById("points").innerHTML = "Очки: " + ((res.points != undefined) ? res.points : "Неизвестно")
-            if(!document.querySelector('#doNotShowTags').checked){
-            	document.getElementById("tags").innerHTML = "Темы: " + res.tags.map((arg) => localize_tags(arg)).join(", ")
+            if (!document.querySelector('#doNotShowTags').checked) {
+                document.getElementById("tags").innerHTML = "Темы: " + res.tags.map((arg) => localize_tags(arg)).join(", ")
             } else {
-            	document.getElementById("tags").innerHTML = "Темы мы не показываем :D";
+                document.getElementById("tags").innerHTML = "Темы мы не показываем :D";
             }
         }
     } else {
         document.getElementById("name").innerHTML = "Ошибка HTTP: " + response.status
     }
+
+    document.getElementById("start").disabled = false;
 }
