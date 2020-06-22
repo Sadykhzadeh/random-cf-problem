@@ -165,4 +165,4 @@ const tags = [{
     }
 ]
 
-export {tags}
+export { tags }

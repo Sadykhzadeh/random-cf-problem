@@ -1,26 +1,12 @@
 import {
     tags
-} from "./tags.js"
+} from "./modules/tags.js"
+import {
+    shuffle
+} from "./modules/shuffle.js"
 
 const func_with_tags = (arg) => `<option value="${arg.value}" title="${arg.title}">${arg.name} | ${arg.value}</option>`
 document.getElementById('choose').innerHTML += tags.map(qwe => func_with_tags(qwe)).join('')
-
-function putToCache(elem, cache) {
-    if (cache.indexOf(elem) != -1)
-        return;
-    cache.splice(Math.floor(Math.random() * (cache.length + 1)), 0, elem)
-}
-
-function bezumiye() {
-    let cache = [];
-    return function(a, b) {
-        putToCache(a, cache)
-        putToCache(b, cache)
-        return cache.indexOf(b) - cache.indexOf(a)
-    }
-}
-
-const shuffle = (arr) => arr.sort(bezumiye())
 
 function localize_tags(arg) {
     for (let i = 0; i < tags.length - 1; i++) {
@@ -99,7 +85,7 @@ start.onclick = async function() {
             document.getElementById("name").innerHTML = `<a href="${"https://codeforces.com/problemset/problem/" + res.contestId + "/" + res.index}"target="_blank">${res.name}</a>`
             document.getElementById("rating").innerHTML = "Рейтинг задачи: " + ((res.rating != undefined) ? res.rating : "Неизвестно")
             document.getElementById("points").innerHTML = "Очки: " + ((res.points != undefined) ? res.points : "Неизвестно")
-            if (!document.getElementById('doNotShowTags').disabled && res.tags.length) {
+            if (!document.getElementById('doNotShowTags').checked && res.tags.length) {
                 document.getElementById("tags").innerHTML = "Темы: " + res.tags.map((arg) => localize_tags(arg)).join(", ")
             } else if (!res.tags.length) {
                 document.getElementById("tags").innerHTML = "Не найдено тем этой задачи"
