@@ -165,4 +165,12 @@ const tags = [{
     }
 ]
 
-export { tags }
+let localize_tags = (arg) => {
+    for (let i = 0; i < tags.length - 1; i++) {
+        if (tags[i].value == arg) {
+            return tags[i].name
+        }
+    }
+}
+
+export { tags, localize_tags }

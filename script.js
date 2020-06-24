@@ -1,36 +1,17 @@
 import {
-    tags
+    tags,
+    localize_tags
 } from "./modules/tags.js"
 import {
     shuffle
 } from "./modules/shuffle.js"
+import {
+    disableAll,
+    enableAll
+} from "./modules/ui.js"
 
-const func_with_tags = (arg) => `<option value="${arg.value}" title="${arg.title}">${arg.name} | ${arg.value}</option>`
-document.getElementById('choose').innerHTML += tags.map(qwe => func_with_tags(qwe)).join('')
-
-function localize_tags(arg) {
-    for (let i = 0; i < tags.length - 1; i++) {
-        if (tags[i].value == arg) {
-            return tags[i].name
-        }
-    }
-}
-
-const disableAll = () => {
-    document.getElementById('doNotShowTags').disabled = true
-    document.getElementById("start").disabled = true
-    document.getElementById("choose").disabled = true
-    document.getElementById("min_num").disabled = true
-    document.getElementById("max_num").disabled = true
-}
-
-const enableAll = () => {
-    document.getElementById('doNotShowTags').disabled = false
-    document.getElementById("start").disabled = false
-    document.getElementById("choose").disabled = false
-    document.getElementById("min_num").disabled = false
-    document.getElementById("max_num").disabled = false
-}
+document.getElementById('choose').innerHTML += tags.map(arg =>
+    `<option value="${arg.value}" title="${arg.title}">${arg.name} | ${arg.value}</option>`).join('')
 
 start.onclick = async function() {
     disableAll()
