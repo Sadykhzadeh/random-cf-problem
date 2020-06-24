@@ -1,0 +1,33 @@
+body {
+    font-size: 23px;
+}
+
+#link,
+#rating,
+#points {
+    width: 50%;
+    border: 1px solid black;
+    border-radius: 40px;
+}
+
+#tags {
+    width: 100%;
+    border: 1px solid black;
+    border-radius: 40px;
+}
+
+#user-res {
+    width: 60%;
+}
+
+#choose {
+    width: 40%;
+}
+
+#start {
+    width: 20%;
+}
+
+#name {
+    padding-bottom: 20px;
+}
