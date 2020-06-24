@@ -17,7 +17,6 @@ start.onclick = async function() {
     disableAll()
     document.getElementById("name").innerHTML = "Идёт поиск задач..."
     document.getElementById("rating").innerHTML = "Рейтинг задачи: [загрузка]"
-    document.getElementById("points").innerHTML = "Очки: [загрузка]"
     document.getElementById("tags").innerHTML = "Темы: [загрузка]"
     console.log("Check inputs...")
     let min_value = document.getElementById('min_num').value,
@@ -32,7 +31,6 @@ start.onclick = async function() {
     if (+min_value > +max_value) {
         document.getElementById("name").innerHTML = ("Минимум не может быть больше максимума.")
         document.getElementById("rating").innerHTML = "-____-"
-        document.getElementById("points").innerHTML = "-____-"
         document.getElementById("tags").innerHTML = "-____-"
         console.log("Min > Max? :hmm:")
         enableAll()
@@ -57,7 +55,6 @@ start.onclick = async function() {
         if (!problems.length) {
             document.getElementById("name").innerHTML = "Нет задачи по Вашим параметрам."
             document.getElementById("rating").innerHTML = "Рейтинг задачи: :("
-            document.getElementById("points").innerHTML = "Очки: :("
             document.getElementById("tags").innerHTML = "Темы: :("
             console.log("Nothing... :sob:")
         } else {
@@ -65,7 +62,6 @@ start.onclick = async function() {
             console.log(res)
             document.getElementById("name").innerHTML = `<a href="${"https://codeforces.com/problemset/problem/" + res.contestId + "/" + res.index}"target="_blank">${res.name}</a>`
             document.getElementById("rating").innerHTML = "Рейтинг задачи: " + ((res.rating != undefined) ? res.rating : "Неизвестно")
-            document.getElementById("points").innerHTML = "Очки: " + ((res.points != undefined) ? res.points : "Неизвестно")
             if (!document.getElementById('doNotShowTags').checked && res.tags.length) {
                 document.getElementById("tags").innerHTML = "Темы: " + res.tags.map((arg) => localize_tags(arg)).join(", ")
             } else if (!res.tags.length) {

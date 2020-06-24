@@ -1,19 +1,41 @@
+html,
 body {
-    font-size: 23px;
+    font-size: 25px;
+    height: 10em;
+    margin: 0;
+    position: relative;
+    top: 50%;
+    text-align: center;
 }
 
-#link,
+.oneLine {
+    display: flex;
+    max-width: 100%;
+    height: auto;
+}
+
 #rating,
-#points {
+#points,
+#tags {
+    display: inline-block;
     width: 50%;
-    border: 1px solid black;
-    border-radius: 40px;
 }
 
-#tags {
-    width: 100%;
-    border: 1px solid black;
-    border-radius: 40px;
+#doNotShowTags-label,
+#doNotShowTags,
+#start {
+    display: inline-block;
+    width: 25%;
+}
+
+#min_num,
+#max_num {
+    width: 25%;
+}
+
+#tags,
+#points {
+    float: left;
 }
 
 #user-res {
