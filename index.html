@@ -6,40 +6,30 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
     <link rel="stylesheet" href="styles/styles.css">
 </head>
 
 <body>
-    <center>
-        <div id="name">Выберите сложность задачи, её тему. Или просто нажмите "Сгенерировать!"</div>
-        <div class="input-group-prepend">
-            <div id="rating">Рейтинг задачи: </div>
-            <div id="points">Очки: </div>
+    <div id="name">Выберите сложность задачи, её тему. Или просто нажмите "Сгенерировать!"</div>
+    <div class="oneLine">
+        <div id="rating">Рейтинг задачи: </div>
+        <div class="oneLine">
+            <input type="number" id="min_num" placeholder="0">
+            <input type="number" id="max_num" placeholder="3800">
         </div>
-        <div class="input-group-prepend">
-            <div id="tags">Темы: </div>
-        </div>
-        <div class="input-group input-group-sm mb-3">
-            <div class="input-group-prepend">
-                <span class="input-group-text" id="inputGroup-sizing-sm">Мин.сложность</span>
-            </div>
-            <input type="number" id="min_num" class="form-control" placeholder="0" aria-label="Small" aria-describedby="inputGroup-sizing-sm">
-            <div class="input-group-prepend">
-                <span class="input-group-text" id="inputGroup-sizing-sm">Макс.сложность</span>
-            </div>
-            <input type="number" id="max_num" class="form-control" placeholder="3800" aria-label="Small" aria-describedby="inputGroup-sizing-sm">
-        </div>
-        <select id="choose" class="form-control">
-                    <option>Choose tag</option>
+    </div>
+    <div class="oneLine">
+        <div id="tags">Темы: </div>
+        <select id="choose">
+            <option>Choose tag</option>
         </select>
-        <div class="custom-control custom-checkbox">
-            <input type="checkbox" class="custom-control-input" id="doNotShowTags">
-            <label class="custom-control-label" for="doNotShowTags">Не показывать темы задач</label>
-        </div>
-        <button type="button" id="start" class="btn btn-outline-success">Сгенерировать!</button>
-        <script type="module" src="script.js"></script>
-    </center>
+    </div>
+    <div class="oneLine">
+        <input type="checkbox" id="doNotShowTags">
+        <label id="doNotShowTags-label" for="doNotShowTags">Не показывать темы задач</label>
+        <button type="button" id="start">Сгенерировать!</button>
+    </div>
+    <script type="module" src="script.js"></script>
 </body>
 
 </html>
