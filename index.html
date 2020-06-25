@@ -12,6 +12,10 @@
 <body>
     <div id="name">Выберите сложность задачи, её тему. Или просто нажмите "Сгенерировать!"</div>
     <div class="oneLine">
+        <p id="min_num_text">Минимальный рейтинг</p>
+        <p id="max_num_text">Максимальный рейтинг</p>
+    </div>
+    <div class="oneLine up">
         <div id="rating">Рейтинг задачи: </div>
         <div class="oneLine">
             <input type="number" id="min_num" placeholder="0">
@@ -24,7 +28,7 @@
             <option id="choose-child">Choose tag</option>
         </select>
     </div>
-    <div class="oneLine">
+    <div class="oneLine down">
         <input type="checkbox" id="doNotShowTags">
         <label id="doNotShowTags-label" for="doNotShowTags">Не показывать темы задач</label>
         <button type="button" id="start">Сгенерировать!</button>
