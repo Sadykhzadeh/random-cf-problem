@@ -95,7 +95,7 @@ const tags = [{
 
     }, {
         name: "поиск в глубину и подобное",
-        value: "dfs and similar ",
+        value: "dfs and similar",
         title: "Поиск в глубину и подобные алгоритмы"
     }, {
         name: "потоки",
@@ -166,7 +166,7 @@ const tags = [{
 ]
 
 let localize_tags = (arg) => {
-    for (let i = 0; i < tags.length - 1; i++) {
+    for (let i in tags) {
         if (tags[i].value == arg) {
             return tags[i].name
         }
