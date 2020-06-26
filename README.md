@@ -1,5 +1,5 @@
 # Random Codeforces problem Generator
-[Site link is here](https://sadykhzadeh.github.io/random-codeforces-problem/)
+[Site link is here](https://sadykhzadeh.github.io/random-cf-problem/)
 
 
 ## Important point
