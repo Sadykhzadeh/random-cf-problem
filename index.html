@@ -6,6 +6,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Случайная задача с Codeforces по выбранному рейтингу и теме.">
     <link rel="apple-touch-icon" sizes="57x57" href="https://sta.codeforces.com/s/11868/apple-icon-57x57.png">
     <link rel="apple-touch-icon" sizes="72x72" href="https://sta.codeforces.com/s/11868/apple-icon-72x72.png">
     <link rel="apple-touch-icon" sizes="76x76" href="https://sta.codeforces.com/s/11868/apple-icon-76x76.png">
@@ -24,19 +25,19 @@
 <body>
     <div id="name">Выберите сложность задачи, её тему. Или просто нажмите "Сгенерировать!"</div>
     <div class="oneLine">
-        <p id="min_num_text">Минимальный рейтинг</p>
-        <p id="max_num_text">Максимальный рейтинг</p>
+        <label id="min_num_text" for="min_num">Минимальный рейтинг</label>
+        <label id="max_num_text" for="max_num">Максимальный рейтинг</label>
     </div>
     <div class="oneLine up">
         <div id="rating">Рейтинг задачи: </div>
         <div class="oneLine">
-            <input type="number" id="min_num" placeholder="0">
-            <input type="number" id="max_num" placeholder="3800">
+            <input type="number" id="min_num" placeholder="0" min="0" max="3800" step="100">
+            <input type="number" id="max_num" placeholder="3800" min="0" max="3800" step="100">
         </div>
     </div>
     <div class="oneLine">
         <div id="tags">Темы: </div>
-        <select id="choose">
+        <select id="choose" aria-labelledby="tags">
             <option id="choose-child">Choose tag</option>
         </select>
     </div>

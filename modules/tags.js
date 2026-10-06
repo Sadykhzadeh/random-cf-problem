@@ -165,12 +165,11 @@ const tags = [{
     }
 ]
 
-let localize_tags = (arg) => {
-    for (let i in tags) {
-        if (tags[i].value == arg) {
-            return tags[i].name
-        }
-    }
-}
+const tagNames = new Map(tags.map((tag) => [tag.value, tag.name]))
+
+// A value that is not in the list used to fall out of the loop and return
+// undefined, which the page then rendered as "Темы: undefined". Codeforces
+// adds tags over time, so that is reachable without touching this file.
+const localize_tags = (arg) => tagNames.get(arg) || arg
 
 export { tags, localize_tags }
