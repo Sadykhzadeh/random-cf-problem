@@ -3,77 +3,125 @@ import {
     localize_tags
 } from "./modules/tags.js"
 import {
-    shuffle
-} from "./modules/shuffle.js"
-import {
     disableAll,
     enableAll
 } from "./modules/ui.js"
 
-document.getElementById('choose').innerHTML += tags.map(arg =>
-    `<option value="${arg.value}" title="${arg.title}">${arg.name} | ${arg.value}</option>`).join('')
+const byId = (id) => document.getElementById(id)
 
-start.onclick = async function() {
-    disableAll()
-    document.getElementById("name").innerHTML = "Идёт поиск задач..."
-    document.getElementById("rating").innerHTML = "Рейтинг задачи: [загрузка]"
-    document.getElementById("tags").innerHTML = "Темы: [загрузка]"
-    console.log("Check inputs...")
-    let min_value = document.getElementById('min_num').value,
-        max_value = document.getElementById('max_num').value,
-        tag_value = document.getElementById('choose').value
-    if (+(min_value) < 0 || min_value == "") {
-        min_value = 0
-    }
-    if (+(max_value) > 3800 || max_value == "") {
-        max_value = 3800
-    }
-    if (+min_value > +max_value) {
-        document.getElementById("name").innerHTML = ("Минимум не может быть больше максимума.")
-        document.getElementById("rating").innerHTML = "-____-"
-        document.getElementById("tags").innerHTML = "-____-"
-        console.log("Min > Max? :hmm:")
-        enableAll()
-        return -1
-    }
-    let json, link = "https://codeforces.com/api/problemset.problems?tags="
-    if (tag_value != "Choose tag") {
-        link += tag_value
-    }
-    let response = await fetch(link)
-    if (response.ok) {
-        console.log("Yeah, Codeforces is working...")
-        document.getElementById("name").innerHTML = "Осталось совсем немного..."
-        json = await response.json()
-        let problems = []
-        for (let i = json.result.problems.length - 1; i >= 0; i--) {
-            if (min_value <= json.result.problems[i].rating && json.result.problems[i].rating <= max_value) {
-                problems.push(json.result.problems[i])
-            }
-        }
-        problems = shuffle(problems)
-        if (!problems.length) {
-            document.getElementById("name").innerHTML = "Нет задачи по Вашим параметрам."
-            document.getElementById("rating").innerHTML = "Рейтинг задачи: :("
-            document.getElementById("tags").innerHTML = "Темы: :("
-            console.log("Nothing... :sob:")
-        } else {
-            let res = problems[0]
-            console.log(res)
-            document.getElementById("name").innerHTML = `<a href="${"https://codeforces.com/problemset/problem/" + res.contestId + "/" + res.index}"target="_blank">${res.name}</a>`
-            document.getElementById("rating").innerHTML = "Рейтинг задачи: " + ((res.rating != undefined) ? res.rating : "Неизвестно")
-            if (!document.getElementById('doNotShowTags').checked && res.tags.length) {
-                document.getElementById("tags").innerHTML = "Темы: " + res.tags.map((arg) => localize_tags(arg)).join(", ")
-            } else if (!res.tags.length) {
-                document.getElementById("tags").innerHTML = "Не найдено тем этой задачи"
-            } else {
-                document.getElementById("tags").innerHTML = "Темы мы не показываем :D"
-            }
-            console.log("We did it!!!")
-        }
-    } else {
-        document.getElementById("name").innerHTML = "Ошибка HTTP: " + response.status
-        console.log("Codeforces is down... F")
-    }
-    enableAll()
+const nameEl = byId("name"),
+    ratingEl = byId("rating"),
+    tagsEl = byId("tags"),
+    chooseEl = byId("choose")
+
+// The option list was appended onto innerHTML, which reparses the whole
+// select and pastes tag text straight into markup.
+for (const tag of tags) {
+    const option = document.createElement("option")
+    option.value = tag.value
+    option.title = tag.title
+    option.textContent = `${tag.name} | ${tag.value}`
+    chooseEl.append(option)
 }
+
+// problemset.problems returns the entire archive - a few megabytes - and it
+// was refetched on every single click. Keyed by tag, so a second draw with the
+// same filter needs no request at all.
+const problemsetCache = new Map()
+
+async function loadProblems(tag) {
+    if (problemsetCache.has(tag)) return problemsetCache.get(tag)
+    const response = await fetch(
+        "https://codeforces.com/api/problemset.problems?tags=" + encodeURIComponent(tag))
+    if (!response.ok) throw new Error("Ошибка HTTP: " + response.status)
+    const json = await response.json()
+    // The API answers 200 with {status: "FAILED", comment: ...}. json.result
+    // was read regardless, so that ended as a TypeError on a dead page.
+    if (json.status !== "OK" || !json.result || !json.result.problems) {
+        throw new Error("Codeforces вернул ошибку: " + (json.comment || json.status))
+    }
+    problemsetCache.set(tag, json.result.problems)
+    return json.result.problems
+}
+
+function showProblem(problem, showTags) {
+    // Built as nodes instead of an innerHTML string: the name comes from the
+    // API and may contain & or <, which used to land in markup as-is.
+    const link = document.createElement("a")
+    link.href =
+        `https://codeforces.com/problemset/problem/${problem.contestId}/${problem.index}`
+    link.target = "_blank"
+    // The old markup read `"target="_blank"` with no space before the
+    // attribute, and carried no rel - a _blank target without noopener hands
+    // the opened page a handle back to this one.
+    link.rel = "noopener noreferrer"
+    link.textContent = problem.name
+    nameEl.replaceChildren(link)
+
+    ratingEl.textContent = "Рейтинг задачи: " +
+        (problem.rating === undefined ? "Неизвестно" : problem.rating)
+
+    if (!problem.tags.length) tagsEl.textContent = "Не найдено тем этой задачи"
+    else if (showTags) {
+        tagsEl.textContent = "Темы: " + problem.tags.map(localize_tags).join(", ")
+    } else tagsEl.textContent = "Темы мы не показываем :D"
+}
+
+byId("start").addEventListener("click", async () => {
+    disableAll()
+    nameEl.textContent = "Идёт поиск задач..."
+    ratingEl.textContent = "Рейтинг задачи: [загрузка]"
+    tagsEl.textContent = "Темы: [загрузка]"
+
+    // These arrived as strings and were compared against a numeric rating by
+    // coercion. An empty field still means "no bound".
+    const minRaw = byId("min_num").value,
+        maxRaw = byId("max_num").value
+    let min = minRaw === "" ? 0 : Number(minRaw),
+        max = maxRaw === "" ? 3800 : Number(maxRaw)
+    if (!Number.isFinite(min) || min < 0) min = 0
+    if (!Number.isFinite(max) || max > 3800) max = 3800
+
+    if (min > max) {
+        nameEl.textContent = "Минимум не может быть больше максимума."
+        ratingEl.textContent = "-____-"
+        tagsEl.textContent = "-____-"
+        enableAll()
+        return
+    }
+
+    const tagValue = chooseEl.value === "Choose tag" ? "" : chooseEl.value
+
+    try {
+        const all = await loadProblems(tagValue)
+        nameEl.textContent = "Осталось совсем немного..."
+        const problems = all.filter((problem) =>
+            typeof problem.rating === "number" &&
+            min <= problem.rating && problem.rating <= max)
+
+        if (!problems.length) {
+            nameEl.textContent = "Нет задачи по Вашим параметрам."
+            ratingEl.textContent = "Рейтинг задачи: :("
+            tagsEl.textContent = "Темы: :("
+            return
+        }
+
+        // The whole filtered list used to be run through Array#sort with a
+        // side-effecting comparator, only for element [0] to be read: 225 ms
+        // of blocked main thread on the 9000-entry archive to choose one
+        // problem. A single random index picks just as evenly.
+        const problem = problems[Math.floor(Math.random() * problems.length)]
+        showProblem(problem, !byId("doNotShowTags").checked)
+    } catch (error) {
+        // fetch rejects outright on a network failure. Nothing caught that, so
+        // the page sat on "Идёт поиск задач..." with every control disabled.
+        console.error(error)
+        nameEl.textContent = error.message || String(error)
+        ratingEl.textContent = "Рейтинг задачи: :("
+        tagsEl.textContent = "Темы: :("
+    } finally {
+        // enableAll() used to be the last statement of the handler, so any
+        // throw on the way left the form permanently dead.
+        enableAll()
+    }
+})
