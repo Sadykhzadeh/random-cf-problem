@@ -21,6 +21,11 @@ import {
     pickLanguage,
     strings
 } from "./modules/i18n.js"
+import {
+    DEFAULTS,
+    readParams,
+    writeParams
+} from "./modules/params.js"
 
 const byId = (id) => document.getElementById(id)
 
@@ -110,6 +115,7 @@ byId("clearTopics").addEventListener("click", () => {
     for (const box of chooseEl.querySelectorAll("input:checked")) box.checked = false
     showTopicsSummary()
     showMatching()
+    saveSettings()
 })
 
 // The whole archive is fetched once, without a tag, and filtered here: every
@@ -246,7 +252,6 @@ loadProblemset().catch((error) => console.error(error))
 // summary is kept, in the Cache API next to the problemset, for ten
 // minutes; an older one is used at once and refreshed behind it.
 const SOLVED_FRESH_FOR = 10 * 60 * 1000
-const HANDLES_KEY = "random-cf-problem:handles"
 const solvedInMemory = new Map()
 
 class HandleError extends Error {}
@@ -311,11 +316,6 @@ const handlesKey = (handles) => handles.map((h) => h.toLowerCase()).join(",")
 function loadSkips() {
     const { handles, dropped } = parseHandles(byId("handles").value)
     const key = handlesKey(handles)
-    try {
-        localStorage.setItem(HANDLES_KEY, byId("handles").value.trim())
-    } catch {
-        // See LANG_KEY.
-    }
     const status = byId("handlesStatus")
     if (handles.length) status.textContent = fill(text.loadingHandles, { handles: handles.join(", ") })
     const loadingNow = (async () => {
@@ -374,12 +374,6 @@ byId("skipTried").addEventListener("change", () => {
     showSkipStatus()
 })
 
-try {
-    byId("handles").value = localStorage.getItem(HANDLES_KEY) ?? ""
-} catch {
-    // See LANG_KEY.
-}
-if (byId("handles").value.trim()) loadSkips()
 
 function showProblem(problem, showTags) {
     // Built as nodes instead of an innerHTML string: the name comes from the
@@ -445,7 +439,79 @@ function showMatching() {
 byId("form").addEventListener("input", () => {
     showTopicsSummary()
     showMatching()
+    saveSettings()
 })
+byId("form").addEventListener("change", () => saveSettings())
+
+// The settings live in the address, so a link reproduces them, and in
+// localStorage, so the next visit starts where this one stopped. A link's
+// settings win over the remembered ones.
+const SETTINGS_KEY = "random-cf-problem:settings"
+
+function currentSettings() {
+    return {
+        min: byId("min_num").value,
+        max: byId("max_num").value,
+        tags: chosenTags(),
+        mode: tagMode(),
+        handles: byId("handles").value,
+        tried: byId("skipTried").checked,
+        hide: byId("doNotShowTags").checked,
+    }
+}
+
+function applySettings(settings) {
+    byId("min_num").value = settings.min
+    byId("max_num").value = settings.max
+    for (const box of chooseEl.querySelectorAll("input")) box.checked = settings.tags.includes(box.value)
+    byId("form").elements.mode.value = settings.mode
+    byId("handles").value = settings.handles
+    byId("skipTried").checked = settings.tried
+    byId("doNotShowTags").checked = settings.hide
+}
+
+function storedSettings() {
+    try {
+        const stored = JSON.parse(localStorage.getItem(SETTINGS_KEY))
+        if (!stored || typeof stored !== "object") return null
+        // Anything missing or of the wrong type falls back to its default.
+        const settings = { ...DEFAULTS }
+        for (const [name, fallback] of Object.entries(DEFAULTS)) {
+            const value = stored[name]
+            if (Array.isArray(fallback) ? Array.isArray(value) : typeof value === typeof fallback) {
+                settings[name] = value
+            }
+        }
+        return settings
+    } catch {
+        return null
+    }
+}
+
+// Rewriting history on every keystroke gets a page throttled by the
+// browser, so this waits for a pause.
+let saveTimer = 0
+function saveSettings() {
+    clearTimeout(saveTimer)
+    saveTimer = setTimeout(() => {
+        const settings = currentSettings()
+        try {
+            localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings))
+        } catch {
+            // See LANG_KEY.
+        }
+        const search = writeParams(settings)
+        history.replaceState(history.state, "", `${window.location.pathname}${search ? `?${search}` : ""}`)
+        for (const link of document.querySelectorAll("#langs a[data-lang]")) {
+            link.href = `?${writeParams(settings, link.dataset.lang)}`
+        }
+    }, 250)
+}
+
+applySettings(readParams(window.location.search) ?? storedSettings() ?? DEFAULTS)
+showTopicsSummary()
+saveSettings()
+if (byId("handles").value.trim()) loadSkips()
 
 // A real form, so Enter in any field draws too.
 byId("form").addEventListener("submit", async (event) => {
