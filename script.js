@@ -54,7 +54,10 @@ for (const [id, key] of [
     ["min_num_text", "minRating"],
     ["max_num_text", "maxRating"],
     ["choose_label", "topic"],
-    ["choose-child", "anyTopic"],
+    ["topicsSummary", "anyTopic"],
+    ["modeAll", "modeAll"],
+    ["modeAny", "modeAny"],
+    ["clearTopics", "clearTopics"],
     ["doNotShowTags-label", "hideTopics"],
     ["start", "generate"],
     ["refreshData", "refresh"],
@@ -67,15 +70,41 @@ for (const link of document.querySelectorAll("#langs a[data-lang]")) {
     if (link.dataset.lang === lang) link.setAttribute("aria-current", "true")
 }
 
-// The option list was appended onto innerHTML, which reparses the whole
-// select and pastes tag text straight into markup.
-for (const tag of tags) {
-    const option = document.createElement("option")
-    option.value = tag.value
-    option.title = lang === "ru" ? tag.title : tag.titleEn
-    option.textContent = lang === "ru" ? `${tag.name} | ${tag.value}` : tag.value
-    chooseEl.append(option)
+// One checkbox per topic, so several can be combined - a single <select>
+// allowed one. (Its options used to be appended onto innerHTML, which
+// reparses the whole list and pastes tag text straight into markup.)
+// The list is in Russian alphabetical order; English gets its own.
+const topicOrder = lang === "ru" ? tags : [...tags].sort((a, b) => a.value.localeCompare(b.value))
+for (const tag of topicOrder) {
+    const box = document.createElement("input")
+    box.type = "checkbox"
+    box.value = tag.value
+    const label = document.createElement("label")
+    label.className = "topic"
+    label.title = lang === "ru" ? tag.title : tag.titleEn
+    label.append(box, " ", lang === "ru" ? tag.name : tag.value)
+    chooseEl.append(label)
 }
+
+const chosenTags = () =>
+    [...chooseEl.querySelectorAll("input:checked")].map((box) => box.value)
+const tagMode = () => byId("form").elements.mode.value
+
+// The summary line names the chosen topics, joined by "and" or "or" as
+// the mode says.
+function showTopicsSummary() {
+    const chosen = chosenTags().map((tag) => localize_tags(tag, lang))
+    const type = tagMode() === "any" ? "disjunction" : "conjunction"
+    byId("topicsSummary").textContent = chosen.length
+        ? new Intl.ListFormat(lang, { type }).format(chosen)
+        : text.anyTopic
+}
+
+byId("clearTopics").addEventListener("click", () => {
+    for (const box of chooseEl.querySelectorAll("input:checked")) box.checked = false
+    showTopicsSummary()
+    showMatching()
+})
 
 // The whole archive is fetched once, without a tag, and filtered here: every
 // new tag used to cost another request and every visit started from nothing.
@@ -135,6 +164,7 @@ async function fetchProblemset() {
 function useProblemset(loaded) {
     problemset = loaded
     showDataStatus()
+    showMatching()
     return loaded
 }
 
@@ -227,12 +257,7 @@ function showMessage(message) {
     tagsEl.textContent = ""
 }
 
-// A real form, so Enter in any field draws too.
-byId("form").addEventListener("submit", async (event) => {
-    event.preventDefault()
-    disableAll()
-    showMessage(text.searching)
-
+function readFilter() {
     // These arrived as strings and were compared against a numeric rating by
     // coercion. An empty field still means "no bound".
     const minRaw = byId("min_num").value,
@@ -241,19 +266,44 @@ byId("form").addEventListener("submit", async (event) => {
         max = maxRaw === "" ? 3800 : Number(maxRaw)
     if (!Number.isFinite(min) || min < 0) min = 0
     if (!Number.isFinite(max) || max > 3800) max = 3800
+    return { min, max, tags: chosenTags(), mode: tagMode() }
+}
 
-    if (min > max) {
+// How many problems the current settings leave, kept up to date as they
+// change, so an empty combination shows before anything is drawn.
+function showMatching() {
+    const filter = readFilter()
+    const matching = byId("matching")
+    if (!problemset) matching.textContent = ""
+    else if (filter.min > filter.max) matching.textContent = text.minAboveMax
+    else {
+        const count = matchingProblems(problemset.problems, filter).length
+        matching.textContent = count ? fill(text.matching, { count: countFormat.format(count) }) : text.noMatch
+    }
+}
+
+byId("form").addEventListener("input", () => {
+    showTopicsSummary()
+    showMatching()
+})
+
+// A real form, so Enter in any field draws too.
+byId("form").addEventListener("submit", async (event) => {
+    event.preventDefault()
+    disableAll()
+    showMessage(text.searching)
+
+    const filter = readFilter()
+    if (filter.min > filter.max) {
         showMessage(text.minAboveMax)
         enableAll()
         return
     }
 
-    const tagValue = chooseEl.value
-
     try {
         if (!problemset) showMessage(text.loadingList)
         const { problems: all } = problemset ?? await loadProblemset()
-        const problems = matchingProblems(all, { min, max, tag: tagValue })
+        const problems = matchingProblems(all, filter)
 
         if (!problems.length) {
             showMessage(text.noMatch)

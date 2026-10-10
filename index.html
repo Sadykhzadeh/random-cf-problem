@@ -50,12 +50,19 @@
                     <input type="number" id="max_num" placeholder="3500" min="0" max="3800" step="100" inputmode="numeric">
                 </span>
             </div>
-            <div class="field">
-                <label class="label" id="choose_label" for="choose">Topic</label>
-                <select id="choose">
-                    <option id="choose-child" value="">Any topic</option>
-                </select>
+            <div class="field top">
+                <span class="label" id="choose_label">Topics</span>
+                <details id="topics">
+                    <summary id="topicsSummary">Any topic</summary>
+                    <div id="topicMode">
+                        <label><input type="radio" name="mode" value="all" checked> <span id="modeAll">all of them</span></label>
+                        <label><input type="radio" name="mode" value="any"> <span id="modeAny">any of them</span></label>
+                        <button type="button" id="clearTopics">Clear</button>
+                    </div>
+                    <fieldset id="choose" aria-labelledby="choose_label"></fieldset>
+                </details>
             </div>
+            <p id="matching" aria-live="polite"></p>
             <div class="field check">
                 <input type="checkbox" id="doNotShowTags">
                 <label id="doNotShowTags-label" for="doNotShowTags">Hide the problem's topics</label>

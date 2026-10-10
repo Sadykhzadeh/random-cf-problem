@@ -186,6 +186,75 @@ select {
     min-width: 0
 }
 
+.field.top {
+    align-items: flex-start
+}
+
+.field.top .label {
+    padding-top: 6px
+}
+
+#topics {
+    flex: 1;
+    min-width: 0
+}
+
+#topics summary {
+    cursor: pointer;
+    padding: 6px 8px;
+    border: 1px solid var(--edge);
+    border-radius: 6px;
+    background-color: var(--field);
+    font-size: 0.9em
+}
+
+#topicMode {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 16px;
+    margin: 10px 0 8px;
+    font-size: 0.85em
+}
+
+#clearTopics {
+    margin-left: auto;
+    background: none;
+    border: 0;
+    padding: 0;
+    font: inherit;
+    color: inherit;
+    text-decoration: underline;
+    cursor: pointer
+}
+
+/* Thirty-seven topics: a scrolling grid rather than a page-long list. */
+#choose {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(10.5em, 1fr));
+    gap: 4px 12px;
+    max-height: 15em;
+    overflow-y: auto;
+    margin: 0;
+    padding: 2px;
+    border: 0;
+    font-size: 0.85em
+}
+
+.topic {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer
+}
+
+#matching {
+    min-height: 1.4em;
+    margin: 0 0 10px;
+    font-size: 0.8em;
+    color: var(--muted)
+}
+
 .check {
     gap: 8px
 }

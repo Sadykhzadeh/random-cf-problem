@@ -46,9 +46,20 @@ test("only rated problems inside the range, with the tag, match", () => {
     const names = (filter) => matchingProblems(problems, filter).map((p) => p.name)
     assert.deepEqual(names({}), ["Guess the K-th Zero (Hard version)", "Watermelon", "Spreadsheets"])
     assert.deepEqual(names({ min: 800, max: 1600 }), ["Watermelon", "Spreadsheets"])
-    assert.deepEqual(names({ tag: "math" }), ["Watermelon", "Spreadsheets"])
-    assert.deepEqual(names({ tag: "dp" }), [], "the only dp problem is unrated")
+    assert.deepEqual(names({ tags: ["math"] }), ["Watermelon", "Spreadsheets"])
+    assert.deepEqual(names({ tags: ["dp"] }), [], "the only dp problem is unrated")
     assert.deepEqual(names({ min: 2300 }), [])
+})
+
+test("several tags match all of them, or any of them", () => {
+    const problems = unpackProblemset(packProblemset(result))
+    const names = (filter) => matchingProblems(problems, filter).map((p) => p.name)
+    assert.deepEqual(names({ tags: ["math", "brute force"] }), ["Watermelon"])
+    assert.deepEqual(names({ tags: ["math", "brute force"], mode: "all" }), ["Watermelon"])
+    assert.deepEqual(names({ tags: ["interactive", "brute force"], mode: "any" }),
+        ["Guess the K-th Zero (Hard version)", "Watermelon"])
+    assert.deepEqual(names({ tags: ["interactive", "brute force"] }), [])
+    assert.deepEqual(names({ tags: [], mode: "any" }).length, 3, "no tags is no filter either way")
 })
 
 test("ratings get the colour of the Codeforces rank they fall in", () => {

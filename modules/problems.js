@@ -41,13 +41,18 @@ export const unpackProblemset = (packed) => {
     return problems
 }
 
-// Rated problems within [min, max] that carry the tag, if one is given.
-// Unrated problems are left out: there is no telling whether they fit.
-export const matchingProblems = (problems, { min = 0, max = Infinity, tag = "" } = {}) =>
-    problems.filter((problem) =>
+// Rated problems within [min, max] that carry all of the tags, or any of
+// them when mode is "any"; no tags means any problem. Unrated problems are
+// left out: there is no telling whether they fit.
+export const matchingProblems = (problems, { min = 0, max = Infinity, tags = [], mode = "all" } = {}) => {
+    const hasTags = mode === "any"
+        ? (problem) => tags.some((tag) => problem.tags.includes(tag))
+        : (problem) => tags.every((tag) => problem.tags.includes(tag))
+    return problems.filter((problem) =>
         typeof problem.rating === "number" &&
         min <= problem.rating && problem.rating <= max &&
-        (!tag || problem.tags.includes(tag)))
+        (!tags.length || hasTags(problem)))
+}
 
 // Which Codeforces rank colour a rating is shown in.
 export const rankClass = (rating) => {
