@@ -117,6 +117,14 @@ test("ratings get the colour of the Codeforces rank they fall in", () => {
     assert.equal(rankClass(undefined), "")
 })
 
+test("recent draws are passed over while something else is left", () => {
+    const list = [{ contestId: 1, index: "A" }, { contestId: 1, index: "B" }, { contestId: 2, index: "A" }]
+    const avoid = new Set(["1|A", "2|A"])
+    for (const r of [0, 0.5, 0.99]) assert.deepEqual(pickOne(list, () => r, avoid), { contestId: 1, index: "B" })
+    const all = new Set(["1|A", "1|B", "2|A"])
+    assert.deepEqual(pickOne(list, () => 0, all), { contestId: 1, index: "A" }, "all recent: pick from everything")
+})
+
 test("a pick is uniform over the list and never out of range", () => {
     const list = ["a", "b", "c", "d"]
     assert.equal(pickOne(list, () => 0), "a")

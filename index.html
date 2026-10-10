@@ -76,8 +76,12 @@
                 <input type="checkbox" id="doNotShowTags">
                 <label id="doNotShowTags-label" for="doNotShowTags">Hide the problem's topics</label>
             </div>
-            <button type="submit" id="start">Generate!</button>
+            <button type="submit" id="start" title="Generate (R)" aria-keyshortcuts="r">Generate!</button>
         </form>
+        <section id="recent" hidden>
+            <h2 id="recentHeading">Drawn lately</h2>
+            <ol id="recentList"></ol>
+        </section>
     </main>
     <footer>
         <p id="dataStatus" hidden><span id="dataSummary"></span> <button type="button" id="refreshData">Refresh</button></p>

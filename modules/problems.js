@@ -137,5 +137,12 @@ export const rankClass = (rating) => {
     return "rank-gm"
 }
 
-export const pickOne = (list, random = Math.random) =>
-    list.length ? list[Math.floor(random() * list.length)] : undefined
+// One problem at random. Problems whose keys are in `avoid` (the ones drawn
+// lately) are passed over while anything else is left to choose from.
+export const pickOne = (list, random = Math.random, avoid) => {
+    const fresh = avoid && avoid.size ? list.filter((problem) => !avoid.has(problemKey(problem))) : list
+    const pool = fresh.length ? fresh : list
+    return pool.length ? pool[Math.floor(random() * pool.length)] : undefined
+}
+
+export { problemKey }

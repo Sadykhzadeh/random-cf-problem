@@ -60,6 +60,8 @@ export const strings = {
         apiError: "Codeforces returned an error: {detail}",
         networkError: "Could not reach Codeforces. Check your connection and try again.",
         source: "Source",
+        recent: "Drawn lately",
+        generateHint: "Generate (R)",
     },
     ru: {
         documentTitle: "Случайная задача Codeforces",
@@ -102,5 +104,7 @@ export const strings = {
         apiError: "Codeforces вернул ошибку: {detail}",
         networkError: "Не удалось связаться с Codeforces. Проверьте соединение и попробуйте снова.",
         source: "Исходный код",
+        recent: "Недавние задачи",
+        generateHint: "Сгенерировать (R)",
     },
 }
