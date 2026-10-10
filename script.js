@@ -12,6 +12,7 @@ import {
     packProblemset,
     parseHandles,
     pickOne,
+    problemKey,
     rankClass,
     summarizeSubmissions,
     unpackProblemset
@@ -72,11 +73,13 @@ for (const [id, key] of [
     ["start", "generate"],
     ["refreshData", "refresh"],
     ["sourceLink", "source"],
+    ["recentHeading", "recent"],
 ]) {
     byId(id).textContent = text[key]
 }
 if (!nameEl.querySelector("a")) nameEl.textContent = text.intro
 byId("handles").placeholder = text.handlesPlaceholder
+byId("start").title = text.generateHint
 for (const link of document.querySelectorAll("#langs a[data-lang]")) {
     if (link.dataset.lang === lang) link.setAttribute("aria-current", "true")
 }
@@ -375,7 +378,7 @@ byId("skipTried").addEventListener("change", () => {
 })
 
 
-function showProblem(problem, showTags) {
+function problemLink(problem) {
     // Built as nodes instead of an innerHTML string: the name comes from the
     // API and may contain & or <, which used to land in markup as-is.
     const link = document.createElement("a")
@@ -387,14 +390,23 @@ function showProblem(problem, showTags) {
     // the opened page a handle back to this one.
     link.rel = "noopener noreferrer"
     link.textContent = `${problem.contestId}${problem.index}. ${problem.name}`
-    nameEl.replaceChildren(link)
+    return link
+}
 
-    // The rating in the colour of its Codeforces rank, and how many people
-    // solved the problem, which says more about it than the rating alone.
+// The rating in the colour of its Codeforces rank.
+function ratingBadge(problem) {
     const rating = document.createElement("span")
     rating.className = `rated ${rankClass(problem.rating)}`
     rating.textContent = problem.rating === undefined ? text.unknown : problem.rating
-    ratingEl.replaceChildren(text.ratingLine, rating)
+    return rating
+}
+
+function showProblem(problem, showTags) {
+    nameEl.replaceChildren(problemLink(problem))
+
+    // How many people solved the problem says more about it than the rating
+    // alone.
+    ratingEl.replaceChildren(text.ratingLine, ratingBadge(problem))
     if (problem.solvedCount !== undefined) {
         ratingEl.append(fill(text.solvedBy, { count: countFormat.format(problem.solvedCount) }))
     }
@@ -404,6 +416,49 @@ function showProblem(problem, showTags) {
         tagsEl.textContent = text.topicsLine + problem.tags.map((tag) => localize_tags(tag, lang)).join(", ")
     } else tagsEl.textContent = text.topicsHidden
 }
+
+// The last few draws, newest first, so a problem rolled past by accident
+// can be found again. They are also passed over by the next draws while
+// anything else matches, so a small pool does not keep repeating itself.
+const RECENT_KEY = "random-cf-problem:recent"
+const RECENT_COUNT = 10
+
+function readRecent() {
+    try {
+        const stored = JSON.parse(localStorage.getItem(RECENT_KEY))
+        return Array.isArray(stored)
+            ? stored.filter((p) => p && Number.isFinite(p.contestId) && typeof p.index === "string" &&
+                typeof p.name === "string").slice(0, RECENT_COUNT)
+            : []
+    } catch {
+        return []
+    }
+}
+
+let recent = readRecent()
+
+function showRecent() {
+    byId("recent").hidden = !recent.length
+    byId("recentList").replaceChildren(...recent.map((problem) => {
+        const item = document.createElement("li")
+        item.append(problemLink(problem), " ", ratingBadge(problem))
+        return item
+    }))
+}
+
+function remember(problem) {
+    const { contestId, index, name, rating } = problem
+    recent = [{ contestId, index, name, rating },
+        ...recent.filter((p) => problemKey(p) !== problemKey(problem))].slice(0, RECENT_COUNT)
+    try {
+        localStorage.setItem(RECENT_KEY, JSON.stringify(recent))
+    } catch {
+        // See LANG_KEY.
+    }
+    showRecent()
+}
+
+showRecent()
 
 function showMessage(message) {
     nameEl.textContent = message
@@ -546,7 +601,9 @@ byId("form").addEventListener("submit", async (event) => {
         // side-effecting comparator, only for element [0] to be read: 225 ms
         // of blocked main thread on the 9000-entry archive to choose one
         // problem. A single random index picks just as evenly.
-        showProblem(pickOne(problems), !byId("doNotShowTags").checked)
+        const problem = pickOne(problems, Math.random, new Set(recent.map(problemKey)))
+        showProblem(problem, !byId("doNotShowTags").checked)
+        remember(problem)
     } catch (error) {
         // fetch rejects outright on a network failure. Nothing caught that, so
         // the page sat on "Идёт поиск задач..." with every control disabled.
@@ -557,4 +614,16 @@ byId("form").addEventListener("submit", async (event) => {
         // throw on the way left the form permanently dead.
         enableAll()
     }
+})
+
+// R draws another problem from anywhere but a field being typed in.
+document.addEventListener("keydown", (event) => {
+    if (event.key !== "r" && event.key !== "R") return
+    if (event.ctrlKey || event.metaKey || event.altKey || event.repeat) return
+    const target = event.target
+    if (target instanceof HTMLInputElement && target.type !== "checkbox" && target.type !== "radio") return
+    if (target instanceof HTMLSelectElement || target instanceof HTMLTextAreaElement || target.isContentEditable) return
+    if (byId("start").disabled) return
+    event.preventDefault()
+    byId("form").requestSubmit()
 })

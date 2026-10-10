@@ -300,6 +300,27 @@ select {
     opacity: 0.75
 }
 
+#recent {
+    margin-top: 24px
+}
+
+#recent h2 {
+    margin: 0 0 6px;
+    font-size: 0.8em;
+    font-weight: 600;
+    color: var(--muted)
+}
+
+#recentList {
+    margin: 0;
+    padding-left: 1.6em;
+    font-size: 0.85em
+}
+
+#recentList li {
+    margin: 3px 0
+}
+
 footer {
     margin-top: 28px;
     padding-bottom: 24px;
