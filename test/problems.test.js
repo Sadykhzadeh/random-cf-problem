@@ -5,6 +5,7 @@ import {
     matchingProblems,
     packProblemset,
     pickOne,
+    rankClass,
     unpackProblemset,
 } from "../modules/problems.js"
 
@@ -48,6 +49,19 @@ test("only rated problems inside the range, with the tag, match", () => {
     assert.deepEqual(names({ tag: "math" }), ["Watermelon", "Spreadsheets"])
     assert.deepEqual(names({ tag: "dp" }), [], "the only dp problem is unrated")
     assert.deepEqual(names({ min: 2300 }), [])
+})
+
+test("ratings get the colour of the Codeforces rank they fall in", () => {
+    assert.equal(rankClass(800), "rank-newbie")
+    assert.equal(rankClass(1199), "rank-newbie")
+    assert.equal(rankClass(1200), "rank-pupil")
+    assert.equal(rankClass(1500), "rank-specialist")
+    assert.equal(rankClass(1600), "rank-expert")
+    assert.equal(rankClass(2000), "rank-cm")
+    assert.equal(rankClass(2300), "rank-master")
+    assert.equal(rankClass(2400), "rank-gm")
+    assert.equal(rankClass(3500), "rank-gm")
+    assert.equal(rankClass(undefined), "")
 })
 
 test("a pick is uniform over the list and never out of range", () => {

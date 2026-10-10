@@ -10,6 +10,7 @@ import {
     matchingProblems,
     packProblemset,
     pickOne,
+    rankClass,
     unpackProblemset
 } from "./modules/problems.js"
 
@@ -139,6 +140,8 @@ byId("refreshData").addEventListener("click", async () => {
 
 loadProblemset().catch((error) => console.error(error))
 
+const solvedFormat = new Intl.NumberFormat("ru")
+
 function showProblem(problem, showTags) {
     // Built as nodes instead of an innerHTML string: the name comes from the
     // API and may contain & or <, which used to land in markup as-is.
@@ -150,11 +153,18 @@ function showProblem(problem, showTags) {
     // attribute, and carried no rel - a _blank target without noopener hands
     // the opened page a handle back to this one.
     link.rel = "noopener noreferrer"
-    link.textContent = problem.name
+    link.textContent = `${problem.contestId}${problem.index}. ${problem.name}`
     nameEl.replaceChildren(link)
 
-    ratingEl.textContent = "Рейтинг задачи: " +
-        (problem.rating === undefined ? "Неизвестно" : problem.rating)
+    // The rating in the colour of its Codeforces rank, and how many people
+    // solved the problem, which says more about it than the rating alone.
+    const rating = document.createElement("span")
+    rating.className = `rated ${rankClass(problem.rating)}`
+    rating.textContent = problem.rating === undefined ? "Неизвестно" : problem.rating
+    ratingEl.replaceChildren("Рейтинг задачи: ", rating)
+    if (problem.solvedCount !== undefined) {
+        ratingEl.append(` · решили ${solvedFormat.format(problem.solvedCount)}`)
+    }
 
     if (!problem.tags.length) tagsEl.textContent = "Не найдено тем этой задачи"
     else if (showTags) {
@@ -162,7 +172,9 @@ function showProblem(problem, showTags) {
     } else tagsEl.textContent = "Темы мы не показываем :D"
 }
 
-byId("start").addEventListener("click", async () => {
+// A real form, so Enter in any field draws too.
+byId("form").addEventListener("submit", async (event) => {
+    event.preventDefault()
     disableAll()
     nameEl.textContent = "Идёт поиск задач..."
     ratingEl.textContent = "Рейтинг задачи: [загрузка]"
@@ -185,7 +197,7 @@ byId("start").addEventListener("click", async () => {
         return
     }
 
-    const tagValue = chooseEl.value === "Choose tag" ? "" : chooseEl.value
+    const tagValue = chooseEl.value
 
     try {
         if (!problemset) nameEl.textContent = "Загружаю список задач с Codeforces..."

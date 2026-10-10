@@ -23,30 +23,43 @@
 </head>
 
 <body>
-    <div id="name">Выберите сложность задачи, её тему. Или просто нажмите "Сгенерировать!"</div>
-    <div class="oneLine">
-        <label id="min_num_text" for="min_num">Минимальный рейтинг</label>
-        <label id="max_num_text" for="max_num">Максимальный рейтинг</label>
-    </div>
-    <div class="oneLine up">
-        <div id="rating">Рейтинг задачи: </div>
-        <div class="oneLine">
-            <input type="number" id="min_num" placeholder="0" min="0" max="3800" step="100">
-            <input type="number" id="max_num" placeholder="3800" min="0" max="3800" step="100">
-        </div>
-    </div>
-    <div class="oneLine">
-        <div id="tags">Темы: </div>
-        <select id="choose" aria-labelledby="tags">
-            <option id="choose-child">Choose tag</option>
-        </select>
-    </div>
-    <div class="oneLine down">
-        <input type="checkbox" id="doNotShowTags">
-        <label id="doNotShowTags-label" for="doNotShowTags">Не показывать темы задач</label>
-        <button type="button" id="start">Сгенерировать!</button>
-    </div>
-    <p id="dataStatus" hidden><span id="dataSummary"></span> <button type="button" id="refreshData">Обновить</button></p>
+    <main>
+        <h1>Случайная задача с Codeforces</h1>
+        <!-- The drawn problem. Its lines are always there, so drawing one does
+             not push the form around, and it is announced when it changes. -->
+        <section id="result" aria-live="polite">
+            <p id="name">Выберите сложность задачи, её тему. Или просто нажмите "Сгенерировать!"</p>
+            <p id="rating"></p>
+            <p id="tags"></p>
+        </section>
+        <form id="form">
+            <div class="field">
+                <span class="label" id="rating_label">Рейтинг</span>
+                <span class="range" role="group" aria-labelledby="rating_label">
+                    <label class="visually-hidden" id="min_num_text" for="min_num">Минимальный рейтинг</label>
+                    <input type="number" id="min_num" placeholder="800" min="0" max="3800" step="100" inputmode="numeric">
+                    <span aria-hidden="true">-</span>
+                    <label class="visually-hidden" id="max_num_text" for="max_num">Максимальный рейтинг</label>
+                    <input type="number" id="max_num" placeholder="3500" min="0" max="3800" step="100" inputmode="numeric">
+                </span>
+            </div>
+            <div class="field">
+                <label class="label" id="choose_label" for="choose">Тема</label>
+                <select id="choose">
+                    <option id="choose-child" value="">Любая тема</option>
+                </select>
+            </div>
+            <div class="field check">
+                <input type="checkbox" id="doNotShowTags">
+                <label id="doNotShowTags-label" for="doNotShowTags">Не показывать темы задач</label>
+            </div>
+            <button type="submit" id="start">Сгенерировать!</button>
+        </form>
+    </main>
+    <footer>
+        <p id="dataStatus" hidden><span id="dataSummary"></span> <button type="button" id="refreshData">Обновить</button></p>
+        <p><a href="https://got.az/azer/random-cf-problem">Source</a> | <a href="https://azer.one">Azer Sadykhzadeh</a></p>
+    </footer>
     <script type="module" src="script.js"></script>
 </body>
 
