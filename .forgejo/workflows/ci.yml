@@ -19,6 +19,8 @@ jobs:
             echo "checking $f"
             node --check "$f"
           done
+      - name: tests
+        run: npm test
       - name: every script and style the page references has to exist
         run: |
           grep -oE '(src|href)="[^"#:]+"' index.html \

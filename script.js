@@ -6,6 +6,12 @@ import {
     disableAll,
     enableAll
 } from "./modules/ui.js"
+import {
+    matchingProblems,
+    packProblemset,
+    pickOne,
+    unpackProblemset
+} from "./modules/problems.js"
 
 const byId = (id) => document.getElementById(id)
 
@@ -24,25 +30,114 @@ for (const tag of tags) {
     chooseEl.append(option)
 }
 
-// problemset.problems returns the entire archive - a few megabytes - and it
-// was refetched on every single click. Keyed by tag, so a second draw with the
-// same filter needs no request at all.
-const problemsetCache = new Map()
+// The whole archive is fetched once, without a tag, and filtered here: every
+// new tag used to cost another request and every visit started from nothing.
+// It is kept in the Cache API (a localStorage-sized copy would not fit) for a
+// day; an older copy is still used at once while a fresh one loads for next
+// time. Loading starts with the page, so the first draw rarely waits.
+const PROBLEMSET_URL = "https://codeforces.com/api/problemset.problems"
+const CACHE_NAME = "random-cf-problem"
+const CACHE_KEY = new URL("problemset.v1.json", window.location.href).href
+const FRESH_FOR = 24 * 60 * 60 * 1000
 
-async function loadProblems(tag) {
-    if (problemsetCache.has(tag)) return problemsetCache.get(tag)
-    const response = await fetch(
-        "https://codeforces.com/api/problemset.problems?tags=" + encodeURIComponent(tag))
-    if (!response.ok) throw new Error("Ошибка HTTP: " + response.status)
-    const json = await response.json()
+let problemset = null
+let loading = null
+
+async function openCache() {
+    try {
+        // Missing outside secure contexts, and throws in some private modes.
+        return await caches.open(CACHE_NAME)
+    } catch {
+        return null
+    }
+}
+
+async function readSaved() {
+    const cache = await openCache()
+    if (!cache) return null
+    try {
+        const response = await cache.match(CACHE_KEY)
+        if (!response) return null
+        const data = await response.json()
+        const problems = unpackProblemset(data.problems)
+        return problems && Number.isFinite(data.savedAt) ? { savedAt: data.savedAt, problems } : null
+    } catch {
+        return null
+    }
+}
+
+async function fetchProblemset() {
+    const response = await fetch(PROBLEMSET_URL)
+    const json = await response.json().catch(() => null)
     // The API answers 200 with {status: "FAILED", comment: ...}. json.result
     // was read regardless, so that ended as a TypeError on a dead page.
-    if (json.status !== "OK" || !json.result || !json.result.problems) {
-        throw new Error("Codeforces вернул ошибку: " + (json.comment || json.status))
+    if (!response.ok || !json || json.status !== "OK" || !json.result || !json.result.problems) {
+        throw new Error("Codeforces вернул ошибку: " + ((json && json.comment) || "HTTP " + response.status))
     }
-    problemsetCache.set(tag, json.result.problems)
-    return json.result.problems
+    const packed = packProblemset(json.result)
+    const fresh = { savedAt: Date.now(), problems: unpackProblemset(packed) }
+    const cache = await openCache()
+    if (cache) {
+        const body = JSON.stringify({ savedAt: fresh.savedAt, problems: packed })
+        cache.put(CACHE_KEY, new Response(body, { headers: { "Content-Type": "application/json" } }))
+            .catch(() => {})
+    }
+    return fresh
 }
+
+function useProblemset(loaded) {
+    problemset = loaded
+    showDataStatus()
+    return loaded
+}
+
+function loadProblemset({ refresh = false } = {}) {
+    if (loading && !refresh) return loading
+    loading = (async () => {
+        const saved = refresh ? null : await readSaved()
+        if (!saved) return useProblemset(await fetchProblemset())
+        if (Date.now() - saved.savedAt > FRESH_FOR) {
+            fetchProblemset().then(useProblemset, (error) => console.error(error))
+        }
+        return useProblemset(saved)
+    })()
+    // A failed load is not remembered, so the next draw tries again.
+    loading.catch(() => {
+        loading = null
+    })
+    return loading
+}
+
+const statusEl = byId("dataStatus")
+const ago = new Intl.RelativeTimeFormat("ru", { numeric: "auto" })
+
+function showDataStatus() {
+    if (!problemset) return
+    const minutes = Math.floor((Date.now() - problemset.savedAt) / 60000)
+    const when = minutes < 1 ? "только что"
+        : minutes < 60 ? ago.format(-minutes, "minute")
+        : minutes < 1440 ? ago.format(-Math.floor(minutes / 60), "hour")
+        : ago.format(-Math.floor(minutes / 1440), "day")
+    byId("dataSummary").textContent =
+        `Задач в списке: ${problemset.problems.length}, обновлён ${when}.`
+    statusEl.hidden = false
+}
+
+byId("refreshData").addEventListener("click", async () => {
+    const button = byId("refreshData")
+    button.disabled = true
+    byId("dataSummary").textContent = "Обновляю список задач..."
+    try {
+        await loadProblemset({ refresh: true })
+    } catch (error) {
+        console.error(error)
+        byId("dataSummary").textContent = error.message || String(error)
+    } finally {
+        button.disabled = false
+    }
+})
+
+loadProblemset().catch((error) => console.error(error))
 
 function showProblem(problem, showTags) {
     // Built as nodes instead of an innerHTML string: the name comes from the
@@ -93,11 +188,9 @@ byId("start").addEventListener("click", async () => {
     const tagValue = chooseEl.value === "Choose tag" ? "" : chooseEl.value
 
     try {
-        const all = await loadProblems(tagValue)
-        nameEl.textContent = "Осталось совсем немного..."
-        const problems = all.filter((problem) =>
-            typeof problem.rating === "number" &&
-            min <= problem.rating && problem.rating <= max)
+        if (!problemset) nameEl.textContent = "Загружаю список задач с Codeforces..."
+        const { problems: all } = problemset ?? await loadProblemset()
+        const problems = matchingProblems(all, { min, max, tag: tagValue })
 
         if (!problems.length) {
             nameEl.textContent = "Нет задачи по Вашим параметрам."
@@ -110,8 +203,7 @@ byId("start").addEventListener("click", async () => {
         // side-effecting comparator, only for element [0] to be read: 225 ms
         // of blocked main thread on the 9000-entry archive to choose one
         // problem. A single random index picks just as evenly.
-        const problem = problems[Math.floor(Math.random() * problems.length)]
-        showProblem(problem, !byId("doNotShowTags").checked)
+        showProblem(pickOne(problems), !byId("doNotShowTags").checked)
     } catch (error) {
         // fetch rejects outright on a network failure. Nothing caught that, so
         // the page sat on "Идёт поиск задач..." with every control disabled.
