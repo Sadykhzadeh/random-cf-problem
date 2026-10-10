@@ -1,15 +1,15 @@
 <!DOCTYPE HTML>
-<html lang="ru">
+<html lang="en">
 
 <head>
-    <title>Random Problem Codeforces</title>
+    <title>Random Codeforces Problem</title>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="dark light">
     <meta name="theme-color" content="#111115" media="(prefers-color-scheme: dark)">
     <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
-    <meta name="description" content="Случайная задача с Codeforces по выбранному рейтингу и теме.">
+    <meta name="description" content="A random Codeforces problem in the rating range and topic you choose.">
     <link rel="apple-touch-icon" sizes="57x57" href="https://sta.codeforces.com/s/11868/apple-icon-57x57.png">
     <link rel="apple-touch-icon" sizes="72x72" href="https://sta.codeforces.com/s/11868/apple-icon-72x72.png">
     <link rel="apple-touch-icon" sizes="76x76" href="https://sta.codeforces.com/s/11868/apple-icon-76x76.png">
@@ -26,42 +26,46 @@
 </head>
 
 <body>
+    <nav id="langs">
+        <a href="?lang=en" data-lang="en" lang="en" hreflang="en">English</a>
+        <a href="?lang=ru" data-lang="ru" lang="ru" hreflang="ru">Русский</a>
+    </nav>
     <main>
-        <h1>Случайная задача с Codeforces</h1>
+        <h1 id="heading">Random Codeforces problem</h1>
         <!-- The drawn problem. Its lines are always there, so drawing one does
              not push the form around, and it is announced when it changes. -->
         <section id="result" aria-live="polite">
-            <p id="name">Выберите сложность задачи, её тему. Или просто нажмите "Сгенерировать!"</p>
+            <p id="name">Pick a rating range and a topic, or just press "Generate!"</p>
             <p id="rating"></p>
             <p id="tags"></p>
         </section>
         <form id="form">
             <div class="field">
-                <span class="label" id="rating_label">Рейтинг</span>
+                <span class="label" id="rating_label">Rating</span>
                 <span class="range" role="group" aria-labelledby="rating_label">
-                    <label class="visually-hidden" id="min_num_text" for="min_num">Минимальный рейтинг</label>
+                    <label class="visually-hidden" id="min_num_text" for="min_num">Minimum rating</label>
                     <input type="number" id="min_num" placeholder="800" min="0" max="3800" step="100" inputmode="numeric">
                     <span aria-hidden="true">-</span>
-                    <label class="visually-hidden" id="max_num_text" for="max_num">Максимальный рейтинг</label>
+                    <label class="visually-hidden" id="max_num_text" for="max_num">Maximum rating</label>
                     <input type="number" id="max_num" placeholder="3500" min="0" max="3800" step="100" inputmode="numeric">
                 </span>
             </div>
             <div class="field">
-                <label class="label" id="choose_label" for="choose">Тема</label>
+                <label class="label" id="choose_label" for="choose">Topic</label>
                 <select id="choose">
-                    <option id="choose-child" value="">Любая тема</option>
+                    <option id="choose-child" value="">Any topic</option>
                 </select>
             </div>
             <div class="field check">
                 <input type="checkbox" id="doNotShowTags">
-                <label id="doNotShowTags-label" for="doNotShowTags">Не показывать темы задач</label>
+                <label id="doNotShowTags-label" for="doNotShowTags">Hide the problem's topics</label>
             </div>
-            <button type="submit" id="start">Сгенерировать!</button>
+            <button type="submit" id="start">Generate!</button>
         </form>
     </main>
     <footer>
-        <p id="dataStatus" hidden><span id="dataSummary"></span> <button type="button" id="refreshData">Обновить</button></p>
-        <p><a href="https://got.az/azer/random-cf-problem">Source</a> | <a href="https://azer.one">Azer Sadykhzadeh</a></p>
+        <p id="dataStatus" hidden><span id="dataSummary"></span> <button type="button" id="refreshData">Refresh</button></p>
+        <p><a href="https://got.az/azer/random-cf-problem" id="sourceLink">Source</a> | <a href="https://azer.one">Azer Sadykhzadeh</a></p>
     </footer>
     <script type="module" src="script.js"></script>
 </body>

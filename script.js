@@ -13,6 +13,11 @@ import {
     rankClass,
     unpackProblemset
 } from "./modules/problems.js"
+import {
+    fill,
+    pickLanguage,
+    strings
+} from "./modules/i18n.js"
 
 const byId = (id) => document.getElementById(id)
 
@@ -21,13 +26,54 @@ const nameEl = byId("name"),
     tagsEl = byId("tags"),
     chooseEl = byId("choose")
 
+const LANG_KEY = "random-cf-problem:lang"
+
+function storedLanguage() {
+    try {
+        return localStorage.getItem(LANG_KEY)
+    } catch {
+        return null
+    }
+}
+
+const lang = pickLanguage(window.location.search, storedLanguage(), navigator.languages ?? [])
+const text = strings[lang]
+
+try {
+    localStorage.setItem(LANG_KEY, lang)
+} catch {
+    // Remembering the language is a convenience, not a requirement.
+}
+
+// The page is written in English; Russian is swapped in here.
+document.documentElement.lang = lang
+document.title = text.documentTitle
+for (const [id, key] of [
+    ["heading", "heading"],
+    ["rating_label", "rating"],
+    ["min_num_text", "minRating"],
+    ["max_num_text", "maxRating"],
+    ["choose_label", "topic"],
+    ["choose-child", "anyTopic"],
+    ["doNotShowTags-label", "hideTopics"],
+    ["start", "generate"],
+    ["refreshData", "refresh"],
+    ["sourceLink", "source"],
+]) {
+    byId(id).textContent = text[key]
+}
+if (!nameEl.querySelector("a")) nameEl.textContent = text.intro
+for (const link of document.querySelectorAll("#langs a[data-lang]")) {
+    if (link.dataset.lang === lang) link.setAttribute("aria-current", "true")
+}
+
 // The option list was appended onto innerHTML, which reparses the whole
 // select and pastes tag text straight into markup.
 for (const tag of tags) {
     const option = document.createElement("option")
     option.value = tag.value
-    option.title = tag.title
-    option.textContent = `${tag.name} | ${tag.value}`
+    option.title = lang === "ru" ? tag.title : tag.titleEn
+    option.textContent = lang === "ru" ? `${tag.name} | ${tag.value}` : tag.value
     chooseEl.append(option)
 }
 
@@ -73,7 +119,7 @@ async function fetchProblemset() {
     // The API answers 200 with {status: "FAILED", comment: ...}. json.result
     // was read regardless, so that ended as a TypeError on a dead page.
     if (!response.ok || !json || json.status !== "OK" || !json.result || !json.result.problems) {
-        throw new Error("Codeforces вернул ошибку: " + ((json && json.comment) || "HTTP " + response.status))
+        throw new Error(fill(text.apiError, { detail: (json && json.comment) || "HTTP " + response.status }))
     }
     const packed = packProblemset(json.result)
     const fresh = { savedAt: Date.now(), problems: unpackProblemset(packed) }
@@ -109,38 +155,41 @@ function loadProblemset({ refresh = false } = {}) {
     return loading
 }
 
+// fetch rejects with a TypeError when the request never got an answer.
+const errorText = (error) =>
+    error instanceof TypeError ? text.networkError : (error.message || String(error))
+
 const statusEl = byId("dataStatus")
-const ago = new Intl.RelativeTimeFormat("ru", { numeric: "auto" })
+const ago = new Intl.RelativeTimeFormat(lang, { numeric: "auto" })
+const countFormat = new Intl.NumberFormat(lang)
 
 function showDataStatus() {
     if (!problemset) return
     const minutes = Math.floor((Date.now() - problemset.savedAt) / 60000)
-    const when = minutes < 1 ? "только что"
+    const when = minutes < 1 ? text.justNow
         : minutes < 60 ? ago.format(-minutes, "minute")
         : minutes < 1440 ? ago.format(-Math.floor(minutes / 60), "hour")
         : ago.format(-Math.floor(minutes / 1440), "day")
     byId("dataSummary").textContent =
-        `Задач в списке: ${problemset.problems.length}, обновлён ${when}.`
+        fill(text.listSummary, { count: countFormat.format(problemset.problems.length), ago: when })
     statusEl.hidden = false
 }
 
 byId("refreshData").addEventListener("click", async () => {
     const button = byId("refreshData")
     button.disabled = true
-    byId("dataSummary").textContent = "Обновляю список задач..."
+    byId("dataSummary").textContent = text.refreshing
     try {
         await loadProblemset({ refresh: true })
     } catch (error) {
         console.error(error)
-        byId("dataSummary").textContent = error.message || String(error)
+        byId("dataSummary").textContent = errorText(error)
     } finally {
         button.disabled = false
     }
 })
 
 loadProblemset().catch((error) => console.error(error))
-
-const solvedFormat = new Intl.NumberFormat("ru")
 
 function showProblem(problem, showTags) {
     // Built as nodes instead of an innerHTML string: the name comes from the
@@ -160,25 +209,29 @@ function showProblem(problem, showTags) {
     // solved the problem, which says more about it than the rating alone.
     const rating = document.createElement("span")
     rating.className = `rated ${rankClass(problem.rating)}`
-    rating.textContent = problem.rating === undefined ? "Неизвестно" : problem.rating
-    ratingEl.replaceChildren("Рейтинг задачи: ", rating)
+    rating.textContent = problem.rating === undefined ? text.unknown : problem.rating
+    ratingEl.replaceChildren(text.ratingLine, rating)
     if (problem.solvedCount !== undefined) {
-        ratingEl.append(` · решили ${solvedFormat.format(problem.solvedCount)}`)
+        ratingEl.append(fill(text.solvedBy, { count: countFormat.format(problem.solvedCount) }))
     }
 
-    if (!problem.tags.length) tagsEl.textContent = "Не найдено тем этой задачи"
+    if (!problem.tags.length) tagsEl.textContent = text.noTopics
     else if (showTags) {
-        tagsEl.textContent = "Темы: " + problem.tags.map(localize_tags).join(", ")
-    } else tagsEl.textContent = "Темы мы не показываем :D"
+        tagsEl.textContent = text.topicsLine + problem.tags.map((tag) => localize_tags(tag, lang)).join(", ")
+    } else tagsEl.textContent = text.topicsHidden
+}
+
+function showMessage(message) {
+    nameEl.textContent = message
+    ratingEl.textContent = ""
+    tagsEl.textContent = ""
 }
 
 // A real form, so Enter in any field draws too.
 byId("form").addEventListener("submit", async (event) => {
     event.preventDefault()
     disableAll()
-    nameEl.textContent = "Идёт поиск задач..."
-    ratingEl.textContent = "Рейтинг задачи: [загрузка]"
-    tagsEl.textContent = "Темы: [загрузка]"
+    showMessage(text.searching)
 
     // These arrived as strings and were compared against a numeric rating by
     // coercion. An empty field still means "no bound".
@@ -190,9 +243,7 @@ byId("form").addEventListener("submit", async (event) => {
     if (!Number.isFinite(max) || max > 3800) max = 3800
 
     if (min > max) {
-        nameEl.textContent = "Минимум не может быть больше максимума."
-        ratingEl.textContent = "-____-"
-        tagsEl.textContent = "-____-"
+        showMessage(text.minAboveMax)
         enableAll()
         return
     }
@@ -200,14 +251,12 @@ byId("form").addEventListener("submit", async (event) => {
     const tagValue = chooseEl.value
 
     try {
-        if (!problemset) nameEl.textContent = "Загружаю список задач с Codeforces..."
+        if (!problemset) showMessage(text.loadingList)
         const { problems: all } = problemset ?? await loadProblemset()
         const problems = matchingProblems(all, { min, max, tag: tagValue })
 
         if (!problems.length) {
-            nameEl.textContent = "Нет задачи по Вашим параметрам."
-            ratingEl.textContent = "Рейтинг задачи: :("
-            tagsEl.textContent = "Темы: :("
+            showMessage(text.noMatch)
             return
         }
 
@@ -220,9 +269,7 @@ byId("form").addEventListener("submit", async (event) => {
         // fetch rejects outright on a network failure. Nothing caught that, so
         // the page sat on "Идёт поиск задач..." with every control disabled.
         console.error(error)
-        nameEl.textContent = error.message || String(error)
-        ratingEl.textContent = "Рейтинг задачи: :("
-        tagsEl.textContent = "Темы: :("
+        showMessage(errorText(error))
     } finally {
         // enableAll() used to be the last statement of the handler, so any
         // throw on the way left the form permanently dead.

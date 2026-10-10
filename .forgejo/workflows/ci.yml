@@ -23,7 +23,8 @@ jobs:
         run: npm test
       - name: every script and style the page references has to exist
         run: |
-          grep -oE '(src|href)="[^"#:]+"' index.html \
+          # The ?lang= links are queries against this same page, not files.
+          grep -oE '(src|href)="[^"#:?]+"' index.html \
             | sed -E 's/.*="([^"]+)"/\1/' \
             | while read -r path; do
                 test -f "$path" || { echo "missing: $path"; exit 1; }
