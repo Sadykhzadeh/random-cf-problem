@@ -7,10 +7,13 @@ import {
     enableAll
 } from "./modules/ui.js"
 import {
+    makeSkip,
     matchingProblems,
     packProblemset,
+    parseHandles,
     pickOne,
     rankClass,
+    summarizeSubmissions,
     unpackProblemset
 } from "./modules/problems.js"
 import {
@@ -58,6 +61,8 @@ for (const [id, key] of [
     ["modeAll", "modeAll"],
     ["modeAny", "modeAny"],
     ["clearTopics", "clearTopics"],
+    ["handles_label", "skipLabel"],
+    ["skipTried_label", "skipTried"],
     ["doNotShowTags-label", "hideTopics"],
     ["start", "generate"],
     ["refreshData", "refresh"],
@@ -66,6 +71,7 @@ for (const [id, key] of [
     byId(id).textContent = text[key]
 }
 if (!nameEl.querySelector("a")) nameEl.textContent = text.intro
+byId("handles").placeholder = text.handlesPlaceholder
 for (const link of document.querySelectorAll("#langs a[data-lang]")) {
     if (link.dataset.lang === lang) link.setAttribute("aria-current", "true")
 }
@@ -142,8 +148,22 @@ async function readSaved() {
     }
 }
 
+// Codeforces asks for no more than one API call every two seconds, and
+// answers "Call limit exceeded" past that. Calls from this page queue up
+// to keep to it.
+const API_GAP = 2000
+let nextCallAt = 0
+
+async function politeFetch(url) {
+    const now = Date.now()
+    const at = Math.max(now, nextCallAt)
+    nextCallAt = at + API_GAP
+    if (at > now) await new Promise((resolve) => setTimeout(resolve, at - now))
+    return fetch(url)
+}
+
 async function fetchProblemset() {
-    const response = await fetch(PROBLEMSET_URL)
+    const response = await politeFetch(PROBLEMSET_URL)
     const json = await response.json().catch(() => null)
     // The API answers 200 with {status: "FAILED", comment: ...}. json.result
     // was read regardless, so that ended as a TypeError on a dead page.
@@ -221,6 +241,146 @@ byId("refreshData").addEventListener("click", async () => {
 
 loadProblemset().catch((error) => console.error(error))
 
+// What the handles in "Skip solved by" have solved. user.status returns
+// every submission a handle ever made - 3.2 MB for tourist - so only a
+// summary is kept, in the Cache API next to the problemset, for ten
+// minutes; an older one is used at once and refreshed behind it.
+const SOLVED_FRESH_FOR = 10 * 60 * 1000
+const HANDLES_KEY = "random-cf-problem:handles"
+const solvedInMemory = new Map()
+
+class HandleError extends Error {}
+
+const solvedCacheKey = (handle) =>
+    new URL(`solved.v1/${encodeURIComponent(handle.toLowerCase())}.json`, window.location.href).href
+
+async function readSolved(handle) {
+    const remembered = solvedInMemory.get(handle.toLowerCase())
+    if (remembered) return remembered
+    const cache = await openCache()
+    if (!cache) return null
+    try {
+        const response = await cache.match(solvedCacheKey(handle))
+        const entry = response && await response.json()
+        return entry && Number.isFinite(entry.savedAt) && Array.isArray(entry.summary?.solved) ? entry : null
+    } catch {
+        return null
+    }
+}
+
+async function fetchSolved(handle) {
+    const response = await politeFetch(
+        `https://codeforces.com/api/user.status?handle=${encodeURIComponent(handle)}`)
+    const json = await response.json().catch(() => null)
+    if (!response.ok || !json || json.status !== "OK" || !Array.isArray(json.result)) {
+        const comment = (json && json.comment) || ""
+        if (/not found/i.test(comment)) throw new HandleError(fill(text.noSuchUser, { handle }))
+        if (/call limit/i.test(comment) || response.status === 429) throw new HandleError(text.rateLimited)
+        throw new HandleError(fill(text.apiError, { detail: comment || "HTTP " + response.status }))
+    }
+    const entry = { savedAt: Date.now(), summary: summarizeSubmissions(json.result) }
+    solvedInMemory.set(handle.toLowerCase(), entry)
+    const cache = await openCache()
+    if (cache) {
+        cache.put(solvedCacheKey(handle), new Response(JSON.stringify(entry), {
+            headers: { "Content-Type": "application/json" },
+        })).catch(() => {})
+    }
+    return entry
+}
+
+async function loadSolved(handle) {
+    const saved = await readSolved(handle)
+    if (!saved) return fetchSolved(handle)
+    solvedInMemory.set(handle.toLowerCase(), saved)
+    if (Date.now() - saved.savedAt > SOLVED_FRESH_FOR) {
+        fetchSolved(handle).then(() => {
+            if (skipState.handles.some((h) => h.toLowerCase() === handle.toLowerCase())) loadSkips()
+        }, (error) => console.error(error))
+    }
+    return saved
+}
+
+let skipState = { key: "", handles: [], loaded: [], summaries: [], errors: [] }
+let skipLoading = null
+let skipLoadingKey = ""
+let skipPredicate = null
+
+const handlesKey = (handles) => handles.map((h) => h.toLowerCase()).join(",")
+
+function loadSkips() {
+    const { handles, dropped } = parseHandles(byId("handles").value)
+    const key = handlesKey(handles)
+    try {
+        localStorage.setItem(HANDLES_KEY, byId("handles").value.trim())
+    } catch {
+        // See LANG_KEY.
+    }
+    const status = byId("handlesStatus")
+    if (handles.length) status.textContent = fill(text.loadingHandles, { handles: handles.join(", ") })
+    const loadingNow = (async () => {
+        const summaries = []
+        const loaded = []
+        const errors = dropped ? [text.tooManyHandles] : []
+        for (const handle of handles) {
+            try {
+                summaries.push((await loadSolved(handle)).summary)
+                loaded.push(handle)
+            } catch (error) {
+                console.error(error)
+                errors.push(error instanceof HandleError ? error.message : errorText(error))
+            }
+        }
+        return { key, handles, loaded, summaries, errors }
+    })()
+    skipLoading = loadingNow
+    skipLoadingKey = key
+    loadingNow.then((loaded) => {
+        // A newer list of handles may have been typed in the meantime.
+        if (skipLoading !== loadingNow) return
+        skipState = loaded
+        skipPredicate = null
+        showSkipStatus()
+        showMatching()
+    })
+    return loadingNow
+}
+
+function currentSkip() {
+    if (!skipState.summaries.length) return undefined
+    const includeTried = byId("skipTried").checked
+    if (!skipPredicate || skipPredicate.includeTried !== includeTried) {
+        skipPredicate = { includeTried, skip: makeSkip(skipState.summaries, { includeTried }) }
+    }
+    return skipPredicate.skip
+}
+
+function showSkipStatus() {
+    const status = byId("handlesStatus")
+    const parts = [...skipState.errors]
+    const skip = currentSkip()
+    if (skip && problemset) {
+        const count = problemset.problems.filter(skip).length
+        parts.unshift(fill(byId("skipTried").checked ? text.skippingTried : text.skipping, {
+            count: countFormat.format(count),
+            handles: skipState.loaded.join(", "),
+        }))
+    }
+    status.textContent = parts.join(" ")
+}
+
+byId("handles").addEventListener("change", () => loadSkips())
+byId("skipTried").addEventListener("change", () => {
+    showSkipStatus()
+})
+
+try {
+    byId("handles").value = localStorage.getItem(HANDLES_KEY) ?? ""
+} catch {
+    // See LANG_KEY.
+}
+if (byId("handles").value.trim()) loadSkips()
+
 function showProblem(problem, showTags) {
     // Built as nodes instead of an innerHTML string: the name comes from the
     // API and may contain & or <, which used to land in markup as-is.
@@ -266,7 +426,7 @@ function readFilter() {
         max = maxRaw === "" ? 3800 : Number(maxRaw)
     if (!Number.isFinite(min) || min < 0) min = 0
     if (!Number.isFinite(max) || max > 3800) max = 3800
-    return { min, max, tags: chosenTags(), mode: tagMode() }
+    return { min, max, tags: chosenTags(), mode: tagMode(), skip: currentSkip() }
 }
 
 // How many problems the current settings leave, kept up to date as they
@@ -293,8 +453,7 @@ byId("form").addEventListener("submit", async (event) => {
     disableAll()
     showMessage(text.searching)
 
-    const filter = readFilter()
-    if (filter.min > filter.max) {
+    if (readFilter().min > readFilter().max) {
         showMessage(text.minAboveMax)
         enableAll()
         return
@@ -303,7 +462,14 @@ byId("form").addEventListener("submit", async (event) => {
     try {
         if (!problemset) showMessage(text.loadingList)
         const { problems: all } = problemset ?? await loadProblemset()
-        const problems = matchingProblems(all, filter)
+        // Handles typed but not yet loaded (Enter pressed straight from the
+        // field) are loaded before drawing, so nobody gets a solved problem.
+        const { handles } = parseHandles(byId("handles").value)
+        if (handlesKey(handles) !== skipState.key) {
+            showMessage(fill(text.loadingHandles, { handles: handles.join(", ") }))
+            await (skipLoadingKey === handlesKey(handles) ? skipLoading : loadSkips())
+        }
+        const problems = matchingProblems(all, readFilter())
 
         if (!problems.length) {
             showMessage(text.noMatch)

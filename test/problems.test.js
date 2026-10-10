@@ -2,10 +2,13 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 
 import {
+    makeSkip,
     matchingProblems,
     packProblemset,
+    parseHandles,
     pickOne,
     rankClass,
+    summarizeSubmissions,
     unpackProblemset,
 } from "../modules/problems.js"
 
@@ -60,6 +63,45 @@ test("several tags match all of them, or any of them", () => {
         ["Guess the K-th Zero (Hard version)", "Watermelon"])
     assert.deepEqual(names({ tags: ["interactive", "brute force"] }), [])
     assert.deepEqual(names({ tags: [], mode: "any" }).length, 3, "no tags is no filter either way")
+})
+
+test("handles are split on commas and spaces, once each, five at most", () => {
+    assert.deepEqual(parseHandles(" tourist,  Jiangly;tourist  ksun48 "), {
+        handles: ["tourist", "Jiangly", "ksun48"],
+        dropped: 0,
+    })
+    assert.deepEqual(parseHandles("TOURIST tourist"), { handles: ["TOURIST"], dropped: 0 })
+    assert.deepEqual(parseHandles("a1 b2 c3 d4 e5 f6 g7"), { handles: ["a1", "b2", "c3", "d4", "e5"], dropped: 2 })
+    assert.deepEqual(parseHandles(""), { handles: [], dropped: 0 })
+})
+
+test("solved problems are skipped, tried ones only when asked", () => {
+    const sub = (contestId, index, name, verdict) => ({ verdict, problem: { contestId, index, name } })
+    const summary = summarizeSubmissions([
+        sub(4, "A", "Watermelon", "WRONG_ANSWER"),
+        sub(4, "A", "Watermelon", "OK"),
+        sub(1, "B", "Spreadsheets", "TIME_LIMIT_EXCEEDED"),
+        sub(1501, "E", "Shared Problem", "OK"),
+        sub(1, "C", "Never judged", undefined),
+        { verdict: "OK", problem: { index: "A", name: "acmsguru, no contest" } },
+    ])
+    assert.deepEqual(summary.solved, ["4|A", "1501|E"])
+    assert.deepEqual(summary.tried, ["1|B", "1|C"], "a solved problem is not also tried")
+
+    const problems = unpackProblemset(packProblemset(result))
+    const names = (skip) => matchingProblems(problems, { skip }).map((p) => p.name)
+    assert.deepEqual(names(makeSkip([summary])), ["Guess the K-th Zero (Hard version)", "Spreadsheets"])
+    assert.deepEqual(names(makeSkip([summary], { includeTried: true })), ["Guess the K-th Zero (Hard version)"])
+})
+
+test("a problem solved in the parallel round counts, a namesake elsewhere does not", () => {
+    const solvedIn = (contestId, name) => ({ solved: [`${contestId}|X`], tried: [], names: [[name, [contestId]]] })
+    const skip = makeSkip([solvedIn(1501, "Shared"), solvedIn(900, "Common Name"), solvedIn(77, "Easy Version")])
+    assert.equal(skip({ contestId: 1500, index: "C", name: "Shared" }), true)
+    assert.equal(skip({ contestId: 1503, index: "C", name: "Shared" }), true)
+    assert.equal(skip({ contestId: 1504, index: "C", name: "Shared" }), false)
+    assert.equal(skip({ contestId: 1200, index: "A", name: "Common Name" }), false)
+    assert.equal(skip({ contestId: 77, index: "B", name: "Easy Version" }), false, "same contest, other letter")
 })
 
 test("ratings get the colour of the Codeforces rank they fall in", () => {

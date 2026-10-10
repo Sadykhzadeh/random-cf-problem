@@ -62,6 +62,15 @@
                     <fieldset id="choose" aria-labelledby="choose_label"></fieldset>
                 </details>
             </div>
+            <div class="field">
+                <label class="label" id="handles_label" for="handles">Skip solved by</label>
+                <input type="text" id="handles" placeholder="your handle, or several" autocomplete="off" autocapitalize="off" spellcheck="false">
+            </div>
+            <div class="field check">
+                <input type="checkbox" id="skipTried">
+                <label id="skipTried_label" for="skipTried">Also skip problems they tried</label>
+            </div>
+            <p id="handlesStatus" aria-live="polite"></p>
             <p id="matching" aria-live="polite"></p>
             <div class="field check">
                 <input type="checkbox" id="doNotShowTags">
