@@ -49,5 +49,17 @@ export const matchingProblems = (problems, { min = 0, max = Infinity, tag = "" }
         min <= problem.rating && problem.rating <= max &&
         (!tag || problem.tags.includes(tag)))
 
+// Which Codeforces rank colour a rating is shown in.
+export const rankClass = (rating) => {
+    if (typeof rating !== "number") return ""
+    if (rating < 1200) return "rank-newbie"
+    if (rating < 1400) return "rank-pupil"
+    if (rating < 1600) return "rank-specialist"
+    if (rating < 1900) return "rank-expert"
+    if (rating < 2100) return "rank-cm"
+    if (rating < 2400) return "rank-master"
+    return "rank-gm"
+}
+
 export const pickOne = (list, random = Math.random) =>
     list.length ? list[Math.floor(random() * list.length)] : undefined
