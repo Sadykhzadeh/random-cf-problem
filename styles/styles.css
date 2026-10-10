@@ -18,6 +18,28 @@
     --rank-cm: #d77ad7;
     --rank-master: #ffa53d;
     --rank-gm: #ff6161;
+    color-scheme: dark;
+}
+
+/* Dark stays the default; a system set to light gets the same page in
+   light colours. The rank colours are darkened until each clears 4.5:1 on
+   white - Codeforces' own orange and cyan do not. */
+@media (prefers-color-scheme: light) {
+    :root {
+        --bg: #ffffff;
+        --fg: #1c1c21;
+        --muted: #55555f;
+        --edge: rgba(28, 28, 33, 0.22);
+        --field: #ffffff;
+        --rank-newbie: #707070;
+        --rank-pupil: #007a00;
+        --rank-specialist: #02776f;
+        --rank-expert: #0000e0;
+        --rank-cm: #a000a0;
+        --rank-master: #a65800;
+        --rank-gm: #cc0000;
+        color-scheme: light;
+    }
 }
 
 * {
