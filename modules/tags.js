@@ -1,6 +1,6 @@
 const tags = [{
         name: "2-sat",
-        value: "2 - sat",
+        value: "2-sat",
         title: "2-SAT (2-satisfiability)"
     },
     {
@@ -64,6 +64,10 @@ const tags = [{
         value: "combinatorics",
         title: "Комбинаторика"
 
+    }, {
+        name: "коммуникация",
+        value: "communication",
+        title: "Коммуникационная задача"
     }, {
         name: "конструктив",
         value: "constructive algorithms",
