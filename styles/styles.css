@@ -63,6 +63,24 @@ footer {
     padding: 0 16px
 }
 
+#langs {
+    display: flex;
+    justify-content: flex-end;
+    gap: 14px;
+    padding: 10px 16px 0;
+    font-size: 0.75em
+}
+
+#langs a {
+    color: var(--muted)
+}
+
+#langs a[aria-current] {
+    color: var(--fg);
+    font-weight: 700;
+    text-decoration: none
+}
+
 h1 {
     font-size: 1.3em;
     margin: 1.2em 0 0.8em;
