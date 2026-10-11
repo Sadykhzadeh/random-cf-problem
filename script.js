@@ -13,6 +13,8 @@ import {
     parseHandles,
     pickOne,
     problemKey,
+    isTimeout,
+    REQUEST_TIMEOUT_MS,
     rankClass,
     summarizeSubmissions,
     unpackProblemset
@@ -168,7 +170,7 @@ async function politeFetch(url) {
     const at = Math.max(now, nextCallAt)
     nextCallAt = at + API_GAP
     if (at > now) await new Promise((resolve) => setTimeout(resolve, at - now))
-    return fetch(url)
+    return fetch(url, { signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) })
 }
 
 async function fetchProblemset() {
@@ -216,7 +218,9 @@ function loadProblemset({ refresh = false } = {}) {
 
 // fetch rejects with a TypeError when the request never got an answer.
 const errorText = (error) =>
-    error instanceof TypeError ? text.networkError : (error.message || String(error))
+    isTimeout(error) ? text.timeout
+        : error instanceof TypeError ? text.networkError
+        : (error.message || String(error))
 
 const statusEl = byId("dataStatus")
 const ago = new Intl.RelativeTimeFormat(lang, { numeric: "auto" })

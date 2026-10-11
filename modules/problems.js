@@ -145,4 +145,12 @@ export const pickOne = (list, random = Math.random, avoid) => {
     return pool.length ? pool[Math.floor(random() * pool.length)] : undefined
 }
 
+// How long a Codeforces call may take. Without a limit a connection that
+// stalls leaves the page on "Loading..." for as long as the tab is open.
+export const REQUEST_TIMEOUT_MS = 30000
+
+// AbortSignal.timeout() aborts with a TimeoutError, which is what a stalled
+// call looks like to the code that catches it.
+export const isTimeout = (error) => Boolean(error) && error.name === "TimeoutError"
+
 export { problemKey }
