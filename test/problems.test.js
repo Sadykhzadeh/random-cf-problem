@@ -6,6 +6,7 @@ import {
     matchingProblems,
     packProblemset,
     parseHandles,
+    isTimeout,
     pickOne,
     rankClass,
     summarizeSubmissions,
@@ -138,4 +139,14 @@ test("a pick is uniform over the list and never out of range", () => {
         counts.set(value, (counts.get(value) ?? 0) + 1)
     }
     for (const value of list) assert.ok(Math.abs(counts.get(value) - 10000) < 500, `${value}: ${counts.get(value)}`)
+})
+
+test("a call that never answers is cut off and recognised as a timeout", async () => {
+    // A stand-in for fetch that honours the signal and otherwise hangs.
+    const hang = (url, { signal }) => new Promise((resolve, reject) => {
+        signal.addEventListener("abort", () => reject(signal.reason))
+    })
+    await assert.rejects(hang("x", { signal: AbortSignal.timeout(20) }), isTimeout)
+    assert.equal(isTimeout(new TypeError("Failed to fetch")), false)
+    assert.equal(isTimeout(undefined), false)
 })
