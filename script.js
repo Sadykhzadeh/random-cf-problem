@@ -86,10 +86,8 @@ for (const link of document.querySelectorAll("#langs a[data-lang]")) {
     if (link.dataset.lang === lang) link.setAttribute("aria-current", "true")
 }
 
-// One checkbox per topic, so several can be combined - a single <select>
-// allowed one. (Its options used to be appended onto innerHTML, which
-// reparses the whole list and pastes tag text straight into markup.)
-// The list is in Russian alphabetical order; English gets its own.
+// One checkbox per topic, so several can be combined. The list is in Russian
+// alphabetical order; English gets its own.
 const topicOrder = lang === "ru" ? tags : [...tags].sort((a, b) => a.value.localeCompare(b.value))
 for (const tag of topicOrder) {
     const box = document.createElement("input")
@@ -123,11 +121,11 @@ byId("clearTopics").addEventListener("click", () => {
     saveSettings()
 })
 
-// The whole archive is fetched once, without a tag, and filtered here: every
-// new tag used to cost another request and every visit started from nothing.
-// It is kept in the Cache API (a localStorage-sized copy would not fit) for a
-// day; an older copy is still used at once while a fresh one loads for next
-// time. Loading starts with the page, so the first draw rarely waits.
+// The whole archive is fetched once, without a tag, and filtered here, so a
+// new tag costs no request. It is kept in the Cache API (a localStorage-sized
+// copy would not fit) for a day; an older copy is still used at once while a
+// fresh one loads for next time. Loading starts with the page, so the first
+// draw rarely waits.
 const PROBLEMSET_URL = "https://codeforces.com/api/problemset.problems"
 const CACHE_NAME = "random-cf-problem"
 const CACHE_KEY = new URL("problemset.v1.json", window.location.href).href

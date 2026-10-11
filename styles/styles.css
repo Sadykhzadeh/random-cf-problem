@@ -1,7 +1,4 @@
-/* One column that fits a phone and stays readable on a wide screen. The old
-   layout pushed everything below a 50% offset with percentage margins, so
-   on a 1280x900 window the button sat under the fold and on a phone the
-   page was 487 px wide. */
+/* One column that fits a phone and stays readable on a wide screen. */
 :root {
     --bg: #111115;
     --fg: #ffffff;

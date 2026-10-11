@@ -1,4 +1,4 @@
-// Interface text in English and Russian. The page used to be Russian only.
+// Interface text in English and Russian.
 
 export const LANGUAGES = ["en", "ru"]
 
