@@ -267,7 +267,8 @@ const SOLVED_FRESH_FOR = 10 * 60 * 1000
 const solvedInMemory = new Map()
 
 class HandleError extends Error {}
-class NoSuchUserError extends HandleError {}
+// The handle itself is wrong, so asking again will not help.
+class BadHandleError extends HandleError {}
 
 const solvedCacheKey = (handle) =>
     new URL(`solved.v2/${encodeURIComponent(handle.toLowerCase())}.json`, window.location.href).href
@@ -292,7 +293,10 @@ async function fetchSolved(handle) {
     const json = await response.json().catch(() => null)
     if (!response.ok || !json || json.status !== "OK" || !Array.isArray(json.result)) {
         const comment = (json && json.comment) || ""
-        if (/not found/i.test(comment)) throw new NoSuchUserError(fill(text.noSuchUser, { handle }))
+        if (/not found/i.test(comment)) throw new BadHandleError(fill(text.noSuchUser, { handle }))
+        // A handle no user can have, such as "ab", is refused with a reason
+        // like "handle: Field should contain between 3 and 24 characters".
+        if (/^handle:/i.test(comment)) throw new BadHandleError(fill(text.notAHandle, { handle }))
         if (/call limit/i.test(comment) || response.status === 429) throw new HandleError(text.rateLimited)
         throw new HandleError(fill(text.apiError, { detail: comment || "HTTP " + response.status }))
     }
@@ -395,7 +399,7 @@ function loadSkips() {
             } catch (error) {
                 console.error(error)
                 errors.push(error instanceof HandleError ? error.message : errorText(error))
-                if (!(error instanceof NoSuchUserError)) retry = true
+                if (!(error instanceof BadHandleError)) retry = true
             }
         }
         // Without the start times only the numbering tells parallel rounds
