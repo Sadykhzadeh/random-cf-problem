@@ -41,15 +41,16 @@ export const unpackProblemset = (packed) => {
     return problems
 }
 
-// Rated problems within [min, max] that carry all of the tags, or any of
-// them when mode is "any"; no tags means any problem. Unrated problems are
+// Rated problems within [min, max] that carry all of the tags, any of them
+// when mode is "any", or none of them when it is "none"; no tags means any
+// problem. Unrated problems are
 // left out: there is no telling whether they fit. `special: false` drops
 // the problems Codeforces tags *special - April Fools jokes, rounds in Q#,
 // Kotlin or an unknown language, olympiad mirrors with subtasks. `skip`
 // drops problems someone has already solved.
 export const matchingProblems = (problems, { min = 0, max = Infinity, tags = [], mode = "all", special = true, skip } = {}) => {
-    const hasTags = mode === "any"
-        ? (problem) => tags.some((tag) => problem.tags.includes(tag))
+    const hasTags = mode === "any" ? (problem) => tags.some((tag) => problem.tags.includes(tag))
+        : mode === "none" ? (problem) => !tags.some((tag) => problem.tags.includes(tag))
         : (problem) => tags.every((tag) => problem.tags.includes(tag))
     return problems.filter((problem) =>
         typeof problem.rating === "number" &&

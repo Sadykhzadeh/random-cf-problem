@@ -8,8 +8,8 @@ skipping the ones you have already solved.
 ## What it does
 
 - Draws a rated problem between a minimum and a maximum rating.
-- Narrows by topics: all of the chosen ones, or any of them. A line above
-  the button says how many problems the settings leave.
+- Narrows by topics: all of the chosen ones, any of them, or none of them.
+  A line above the button says how many problems the settings leave.
 - Optionally leaves out the problems Codeforces tags `*special`: April
   Fools contests, Kotlin Heroes, Q# and unknown-language rounds, olympiad
   mirrors.
@@ -34,6 +34,7 @@ skipping the ones you have already solved.
 | `min`, `max` | `min=1400&max=1900` | rating range, inclusive |
 | `tags` | `tags=dp,graphs` | topics, as Codeforces names them |
 | `any` | `any=1` | any of the topics rather than all of them |
+| `none` | `none=1` | none of the topics |
 | `nospecial` | `nospecial=1` | leave out special rounds |
 | `skip` | `skip=tourist,jiangly` | skip what these handles solved |
 | `tried` | `tried=1` | also skip what they tried |
