@@ -43,9 +43,11 @@ export const unpackProblemset = (packed) => {
 
 // Rated problems within [min, max] that carry all of the tags, or any of
 // them when mode is "any"; no tags means any problem. Unrated problems are
-// left out: there is no telling whether they fit. `skip` drops problems
-// someone has already solved.
-export const matchingProblems = (problems, { min = 0, max = Infinity, tags = [], mode = "all", skip } = {}) => {
+// left out: there is no telling whether they fit. `special: false` drops
+// the problems Codeforces tags *special - April Fools jokes, rounds in Q#,
+// Kotlin or an unknown language, olympiad mirrors with subtasks. `skip`
+// drops problems someone has already solved.
+export const matchingProblems = (problems, { min = 0, max = Infinity, tags = [], mode = "all", special = true, skip } = {}) => {
     const hasTags = mode === "any"
         ? (problem) => tags.some((tag) => problem.tags.includes(tag))
         : (problem) => tags.every((tag) => problem.tags.includes(tag))
@@ -53,6 +55,7 @@ export const matchingProblems = (problems, { min = 0, max = Infinity, tags = [],
         typeof problem.rating === "number" &&
         min <= problem.rating && problem.rating <= max &&
         (!tags.length || hasTags(problem)) &&
+        (special || !problem.tags.includes("*special")) &&
         !(skip && skip(problem)))
 }
 

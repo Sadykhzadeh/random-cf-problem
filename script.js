@@ -69,6 +69,7 @@ for (const [id, key] of [
     ["modeAll", "modeAll"],
     ["modeAny", "modeAny"],
     ["clearTopics", "clearTopics"],
+    ["skipSpecial_label", "skipSpecial"],
     ["handles_label", "skipLabel"],
     ["skipTried_label", "skipTried"],
     ["doNotShowTags-label", "hideTopics"],
@@ -497,7 +498,7 @@ function readFilter() {
         max = maxRaw === "" ? 3800 : Number(maxRaw)
     if (!Number.isFinite(min) || min < 0) min = 0
     if (!Number.isFinite(max) || max > 3800) max = 3800
-    return { min, max, tags: chosenTags(), mode: tagMode(), skip: currentSkip() }
+    return { min, max, tags: chosenTags(), mode: tagMode(), special: !byId("skipSpecial").checked, skip: currentSkip() }
 }
 
 // How many problems the current settings leave, kept up to date as they
@@ -531,6 +532,7 @@ function currentSettings() {
         max: byId("max_num").value,
         tags: chosenTags(),
         mode: tagMode(),
+        nospecial: byId("skipSpecial").checked,
         handles: byId("handles").value,
         tried: byId("skipTried").checked,
         hide: byId("doNotShowTags").checked,
@@ -542,6 +544,7 @@ function applySettings(settings) {
     byId("max_num").value = settings.max
     for (const box of chooseEl.querySelectorAll("input")) box.checked = settings.tags.includes(box.value)
     byId("form").elements.mode.value = settings.mode
+    byId("skipSpecial").checked = settings.nospecial
     byId("handles").value = settings.handles
     byId("skipTried").checked = settings.tried
     byId("doNotShowTags").checked = settings.hide

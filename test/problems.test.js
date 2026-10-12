@@ -55,6 +55,18 @@ test("only rated problems inside the range, with the tag, match", () => {
     assert.deepEqual(names({ min: 2300 }), [])
 })
 
+test("special problems are dropped when asked, whatever their other tags", () => {
+    const problems = [
+        { contestId: 4, index: "A", name: "Watermelon", rating: 800, tags: ["brute force", "math"] },
+        { contestId: 1002, index: "A1", name: "Generate superposition of all basis states", rating: 800, tags: ["*special"] },
+        { contestId: 1505, index: "C", name: "Fibonacci Words", rating: 1400, tags: ["*special", "implementation"] },
+    ]
+    const names = (filter) => matchingProblems(problems, filter).map((p) => p.name)
+    assert.deepEqual(names({}), ["Watermelon", "Generate superposition of all basis states", "Fibonacci Words"])
+    assert.deepEqual(names({ special: false }), ["Watermelon"])
+    assert.deepEqual(names({ tags: ["implementation"], special: false }), [])
+})
+
 test("several tags match all of them, or any of them", () => {
     const problems = unpackProblemset(packProblemset(result))
     const names = (filter) => matchingProblems(problems, filter).map((p) => p.name)

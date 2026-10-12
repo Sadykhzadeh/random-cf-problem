@@ -9,12 +9,13 @@ test("settings survive a round trip through the address", () => {
         max: "1600",
         tags: ["dp", "binary search"],
         mode: "any",
+        nospecial: true,
         handles: "tourist, jiangly",
         tried: true,
         hide: true,
     }
     const search = writeParams(settings)
-    assert.equal(search, "min=1200&max=1600&tags=dp,binary+search&any=1&skip=tourist,+jiangly&tried=1&hide=1")
+    assert.equal(search, "min=1200&max=1600&tags=dp,binary+search&any=1&nospecial=1&skip=tourist,+jiangly&tried=1&hide=1")
     assert.deepEqual(readParams(`?${search}`), settings)
 })
 
