@@ -262,6 +262,7 @@ const SOLVED_FRESH_FOR = 10 * 60 * 1000
 const solvedInMemory = new Map()
 
 class HandleError extends Error {}
+class NoSuchUserError extends HandleError {}
 
 const solvedCacheKey = (handle) =>
     new URL(`solved.v1/${encodeURIComponent(handle.toLowerCase())}.json`, window.location.href).href
@@ -286,7 +287,7 @@ async function fetchSolved(handle) {
     const json = await response.json().catch(() => null)
     if (!response.ok || !json || json.status !== "OK" || !Array.isArray(json.result)) {
         const comment = (json && json.comment) || ""
-        if (/not found/i.test(comment)) throw new HandleError(fill(text.noSuchUser, { handle }))
+        if (/not found/i.test(comment)) throw new NoSuchUserError(fill(text.noSuchUser, { handle }))
         if (/call limit/i.test(comment) || response.status === 429) throw new HandleError(text.rateLimited)
         throw new HandleError(fill(text.apiError, { detail: comment || "HTTP " + response.status }))
     }
@@ -313,7 +314,7 @@ async function loadSolved(handle) {
     return saved
 }
 
-let skipState = { key: "", handles: [], loaded: [], summaries: [], errors: [] }
+let skipState = { key: "", handles: [], loaded: [], summaries: [], errors: [], retry: false }
 let skipLoading = null
 let skipLoadingKey = ""
 let skipPredicate = null
@@ -329,6 +330,9 @@ function loadSkips() {
         const summaries = []
         const loaded = []
         const errors = dropped ? [text.tooManyHandles] : []
+        // Set when a handle failed for a reason that may pass, such as the
+        // rate limit or a lost connection, so the next draw tries it again.
+        let retry = false
         for (const handle of handles) {
             try {
                 summaries.push((await loadSolved(handle)).summary)
@@ -336,9 +340,10 @@ function loadSkips() {
             } catch (error) {
                 console.error(error)
                 errors.push(error instanceof HandleError ? error.message : errorText(error))
+                if (!(error instanceof NoSuchUserError)) retry = true
             }
         }
-        return { key, handles, loaded, summaries, errors }
+        return { key, handles, loaded, summaries, errors, retry }
     })()
     skipLoading = loadingNow
     skipLoadingKey = key
@@ -588,11 +593,13 @@ byId("form").addEventListener("submit", async (event) => {
         if (!problemset) showMessage(text.loadingList)
         const { problems: all } = problemset ?? await loadProblemset()
         // Handles typed but not yet loaded (Enter pressed straight from the
-        // field) are loaded before drawing, so nobody gets a solved problem.
+        // field), or that failed to load last time, are loaded before
+        // drawing, so nobody gets a solved problem.
         const { handles } = parseHandles(byId("handles").value)
-        if (handlesKey(handles) !== skipState.key) {
+        const key = handlesKey(handles)
+        if (key !== skipState.key || skipState.retry) {
             showMessage(fill(text.loadingHandles, { handles: handles.join(", ") }))
-            await (skipLoadingKey === handlesKey(handles) ? skipLoading : loadSkips())
+            await (key !== skipState.key && skipLoadingKey === key ? skipLoading : loadSkips())
         }
         const problems = matchingProblems(all, readFilter())
 
