@@ -580,6 +580,9 @@ if (byId("handles").value.trim()) loadSkips()
 // A real form, so Enter in any field draws too.
 byId("form").addEventListener("submit", async (event) => {
     event.preventDefault()
+    // Disabling the focused field or button drops the focus to the page
+    // when the draw has to wait, so it is put back afterwards.
+    const focused = document.activeElement
     disableAll()
     showMessage(text.searching)
 
@@ -624,6 +627,7 @@ byId("form").addEventListener("submit", async (event) => {
         // enableAll() used to be the last statement of the handler, so any
         // throw on the way left the form permanently dead.
         enableAll()
+        if (document.activeElement === document.body) focused?.focus()
     }
 })
 
