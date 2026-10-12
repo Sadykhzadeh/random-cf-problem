@@ -4,12 +4,14 @@ import assert from "node:assert/strict"
 import {
     makeSkip,
     matchingProblems,
+    packContestStarts,
     packProblemset,
     parseHandles,
     isTimeout,
     pickOne,
     rankClass,
     summarizeSubmissions,
+    unpackContestStarts,
     unpackProblemset,
 } from "../modules/problems.js"
 
@@ -108,13 +110,54 @@ test("solved problems are skipped, tried ones only when asked", () => {
 })
 
 test("a problem solved in the parallel round counts, a namesake elsewhere does not", () => {
-    const solvedIn = (contestId, name) => ({ solved: [`${contestId}|X`], tried: [], names: [[name, [contestId]]] })
-    const skip = makeSkip([solvedIn(1501, "Shared"), solvedIn(900, "Common Name"), solvedIn(77, "Easy Version")])
-    assert.equal(skip({ contestId: 1500, index: "C", name: "Shared" }), true)
-    assert.equal(skip({ contestId: 1503, index: "C", name: "Shared" }), true)
-    assert.equal(skip({ contestId: 1504, index: "C", name: "Shared" }), false)
-    assert.equal(skip({ contestId: 1200, index: "A", name: "Common Name" }), false)
-    assert.equal(skip({ contestId: 77, index: "B", name: "Easy Version" }), false, "same contest, other letter")
+    const solvedIn = (contestId, name, rating = 1500, start = null) =>
+        ({ solved: [`${contestId}|X`], tried: [], names: [[name, [[contestId, rating, start]]]] })
+    const skip = makeSkip([
+        solvedIn(1501, "Shared"),
+        solvedIn(900, "Common Name"),
+        solvedIn(77, "Easy Version"),
+        solvedIn(515, "Same Title", 1300),
+        solvedIn(1972, "Far Apart", 1400, 1714487700),
+    ], { starts: new Map([[1967, 1714487700], [1900, 1700000000]]) })
+    assert.equal(skip({ contestId: 1500, index: "C", name: "Shared", rating: 1500 }), true)
+    assert.equal(skip({ contestId: 1503, index: "C", name: "Shared", rating: 1500 }), true)
+    assert.equal(skip({ contestId: 1504, index: "C", name: "Shared", rating: 1500 }), false)
+    assert.equal(skip({ contestId: 1200, index: "A", name: "Common Name", rating: 1500 }), false)
+    assert.equal(skip({ contestId: 77, index: "B", name: "Easy Version", rating: 1500 }), false, "same contest, other letter")
+    assert.equal(skip({ contestId: 516, index: "E", name: "Same Title", rating: 3100 }), false, "same name, other rating")
+    assert.equal(skip({ contestId: 1967, index: "A", name: "Far Apart", rating: 1400 }), true, "started together")
+    assert.equal(skip({ contestId: 1900, index: "A", name: "Far Apart", rating: 1400 }), false, "started at another time")
+    assert.equal(makeSkip([solvedIn(1972, "Far Apart", 1400, 1714487700)])(
+        { contestId: 1967, index: "A", name: "Far Apart", rating: 1400 }), false, "no start times, no match")
+})
+
+test("a solved problem keeps its contest's start time, unless it came from a virtual run or the gym", () => {
+    const sub = (contestId, index, name, verdict, participantType, startTimeSeconds) =>
+        ({ verdict, problem: { contestId, index, name, rating: 1400 }, author: { participantType, startTimeSeconds } })
+    const { names } = summarizeSubmissions([
+        sub(1972, "C", "Permutation Counting", "OK", "PRACTICE", 1714487700),
+        sub(1975, "A", "Virtual Only", "OK", "VIRTUAL", 1720000000),
+        sub(1976, "A", "Tried In Contest", "WRONG_ANSWER", "CONTESTANT", 1715000000),
+        sub(1976, "B", "Solved Virtually", "OK", "VIRTUAL", 1730000000),
+        sub(100093, "E", "E", "OK", "PRACTICE", 1350000000),
+    ])
+    assert.deepEqual(names, [
+        ["Permutation Counting", [[1972, 1400, 1714487700]]],
+        ["Virtual Only", [[1975, 1400, null]]],
+        ["Solved Virtually", [[1976, 1400, 1715000000]]],
+    ])
+})
+
+test("contest start times survive a round trip, and anything else is refused", () => {
+    const contests = [
+        { id: 1967, startTimeSeconds: 1714487700 },
+        { id: 1972, startTimeSeconds: 1714487700 },
+        { id: 2300 },
+    ]
+    const starts = unpackContestStarts(JSON.parse(JSON.stringify(packContestStarts(contests))))
+    assert.deepEqual([...starts], [[1967, 1714487700], [1972, 1714487700]])
+    assert.equal(unpackContestStarts(null), null)
+    assert.equal(unpackContestStarts([[1967, "1714487700"]]), null)
 })
 
 test("ratings get the colour of the Codeforces rank they fall in", () => {
