@@ -9,6 +9,7 @@ import {
 import {
     makeSkip,
     matchingProblems,
+    packContestStarts,
     packProblemset,
     parseHandles,
     pickOne,
@@ -17,6 +18,7 @@ import {
     REQUEST_TIMEOUT_MS,
     rankClass,
     summarizeSubmissions,
+    unpackContestStarts,
     unpackProblemset
 } from "./modules/problems.js"
 import {
@@ -266,7 +268,7 @@ class HandleError extends Error {}
 class NoSuchUserError extends HandleError {}
 
 const solvedCacheKey = (handle) =>
-    new URL(`solved.v1/${encodeURIComponent(handle.toLowerCase())}.json`, window.location.href).href
+    new URL(`solved.v2/${encodeURIComponent(handle.toLowerCase())}.json`, window.location.href).href
 
 async function readSolved(handle) {
     const remembered = solvedInMemory.get(handle.toLowerCase())
@@ -315,6 +317,55 @@ async function loadSolved(handle) {
     return saved
 }
 
+// When each contest started, so a problem solved in a parallel round is
+// recognised however far apart the two are numbered (see makeSkip). Only
+// needed once there are handles; contest.list is 410 KB of JSON, of which
+// the start times are kept for a day. An older copy is used for this visit
+// and replaced for the next one.
+const CONTESTS_URL = "https://codeforces.com/api/contest.list"
+const STARTS_KEY = new URL("starts.v1.json", window.location.href).href
+let startsLoading = null
+
+async function fetchContestStarts() {
+    const response = await politeFetch(CONTESTS_URL)
+    const json = await response.json().catch(() => null)
+    if (!response.ok || !json || json.status !== "OK" || !Array.isArray(json.result)) {
+        throw new Error(fill(text.apiError, { detail: (json && json.comment) || "HTTP " + response.status }))
+    }
+    const packed = packContestStarts(json.result)
+    const cache = await openCache()
+    if (cache) {
+        cache.put(STARTS_KEY, new Response(JSON.stringify({ savedAt: Date.now(), starts: packed }), {
+            headers: { "Content-Type": "application/json" },
+        })).catch(() => {})
+    }
+    return unpackContestStarts(packed)
+}
+
+function loadContestStarts() {
+    if (startsLoading) return startsLoading
+    startsLoading = (async () => {
+        const cache = await openCache()
+        try {
+            const response = cache && await cache.match(STARTS_KEY)
+            const data = response && await response.json()
+            const starts = data && unpackContestStarts(data.starts)
+            if (starts && Number.isFinite(data.savedAt)) {
+                if (Date.now() - data.savedAt > FRESH_FOR) fetchContestStarts().catch((error) => console.error(error))
+                return starts
+            }
+        } catch {
+            // Unreadable; fetched again below.
+        }
+        return fetchContestStarts()
+    })()
+    // A failed load is not remembered, so the next one tries again.
+    startsLoading.catch(() => {
+        startsLoading = null
+    })
+    return startsLoading
+}
+
 let skipState = { key: "", handles: [], loaded: [], summaries: [], errors: [], retry: false }
 let skipLoading = null
 let skipLoadingKey = ""
@@ -344,7 +395,12 @@ function loadSkips() {
                 if (!(error instanceof NoSuchUserError)) retry = true
             }
         }
-        return { key, handles, loaded, summaries, errors, retry }
+        // Without the start times only the numbering tells parallel rounds
+        // apart, which is still most of them.
+        const starts = summaries.length
+            ? await loadContestStarts().catch((error) => console.error(error))
+            : undefined
+        return { key, handles, loaded, summaries, errors, retry, starts }
     })()
     skipLoading = loadingNow
     skipLoadingKey = key
@@ -363,7 +419,7 @@ function currentSkip() {
     if (!skipState.summaries.length) return undefined
     const includeTried = byId("skipTried").checked
     if (!skipPredicate || skipPredicate.includeTried !== includeTried) {
-        skipPredicate = { includeTried, skip: makeSkip(skipState.summaries, { includeTried }) }
+        skipPredicate = { includeTried, skip: makeSkip(skipState.summaries, { includeTried, starts: skipState.starts }) }
     }
     return skipPredicate.skip
 }

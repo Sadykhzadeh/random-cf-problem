@@ -47,8 +47,9 @@ whole problemset (`problemset.problems`) is fetched once and kept in the
 browser's Cache Storage for a day; an older copy is used straight away
 while a fresh one loads, and "Refresh" at the bottom fetches it on demand.
 For each handle to skip, `user.status` is boiled down to the problems it
-solved and tried, and kept for ten minutes. Calls to the API are spaced
-two seconds apart, as Codeforces asks.
+solved and tried, and kept for ten minutes; the start times from
+`contest.list`, which tell parallel rounds apart, are kept for a day.
+Calls to the API are spaced two seconds apart, as Codeforces asks.
 
 ## Running it locally
 

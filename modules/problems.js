@@ -74,58 +74,94 @@ export const parseHandles = (text, limit = 5) => {
 
 const problemKey = (problem) => `${problem.contestId}|${problem.index}`
 
+// Gym contests are numbered from 100001.
+const isGym = (contestId) => contestId > 100000
+
 // What a handle's submissions say, small enough to keep: the problems it
 // solved, the ones it only tried, and the names of the solved ones with
-// their contests (see makeSkip for why).
+// their contest, rating and the contest's start time (see makeSkip for why).
+// Gym problems are left out of the names: the gym has no parallel rounds,
+// and its problems are often named after their letter.
 export const summarizeSubmissions = (submissions) => {
     const solved = new Set()
     const tried = new Set()
-    const names = new Map()
+    const solvedProblems = new Map()
+    // A submission made in a contest, or in practice after it, carries the
+    // contest's start time; a virtual one carries its own.
+    const startOf = new Map()
     for (const submission of submissions) {
         const problem = submission.problem
         if (!problem || problem.contestId === undefined) continue
+        const start = submission.author?.startTimeSeconds
+        if (submission.author?.participantType !== "VIRTUAL" && Number.isFinite(start)) {
+            startOf.set(problem.contestId, start)
+        }
         const key = problemKey(problem)
         if (submission.verdict === "OK") {
             solved.add(key)
-            if (!names.has(problem.name)) names.set(problem.name, new Set())
-            names.get(problem.name).add(problem.contestId)
+            if (!isGym(problem.contestId)) solvedProblems.set(key, problem)
         } else {
             tried.add(key)
         }
     }
     for (const key of solved) tried.delete(key)
+    const names = new Map()
+    for (const problem of solvedProblems.values()) {
+        if (!names.has(problem.name)) names.set(problem.name, [])
+        names.get(problem.name).push(
+            [problem.contestId, problem.rating ?? null, startOf.get(problem.contestId) ?? null])
+    }
     return {
         solved: [...solved],
         tried: [...tried],
-        names: [...names].map(([name, contests]) => [name, [...contests]]),
+        names: [...names],
     }
 }
 
 // A problem shared by a Div. 1 and a Div. 2 round is listed once in the
 // problemset, under one of the two contests, while a submission records the
 // contest it was made in. So a problem also counts as solved when a problem
-// of the same name was solved in a contest one or two numbers away -
-// parallel rounds are numbered side by side. For tourist that is 49 solved
-// problems the contest and letter alone would have offered again.
-export const makeSkip = (summaries, { includeTried = false } = {}) => {
+// of the same name and rating was solved in a contest that started at the
+// same second (`starts` maps a contest to its start time), or in one
+// numbered one or two away, as an online mirror of an onsite round is.
+// Round 942 is 1967 for Div. 1 and 1972 for Div. 2, and the problemset
+// lists its shared problems under 1967 only.
+export const makeSkip = (summaries, { includeTried = false, starts = new Map() } = {}) => {
     const keys = new Set()
     const names = new Map()
     for (const summary of summaries) {
         for (const key of summary.solved) keys.add(key)
         if (includeTried) for (const key of summary.tried) keys.add(key)
-        for (const [name, contests] of summary.names) {
+        for (const [name, solvedIn] of summary.names) {
             if (!names.has(name)) names.set(name, [])
-            names.get(name).push(...contests)
+            names.get(name).push(...solvedIn)
         }
     }
     return (problem) => {
         if (keys.has(problemKey(problem))) return true
-        const contests = names.get(problem.name)
-        return Boolean(contests) && contests.some((contestId) => {
-            const apart = Math.abs(contestId - problem.contestId)
-            return apart >= 1 && apart <= 2
-        })
+        const solvedIn = names.get(problem.name)
+        if (!solvedIn) return false
+        const start = starts.get(problem.contestId)
+        return solvedIn.some(([contestId, rating, solvedStart]) =>
+            contestId !== problem.contestId && rating === (problem.rating ?? null) &&
+            (Math.abs(contestId - problem.contestId) <= 2 || (start !== undefined && start === solvedStart)))
     }
+}
+
+// contest.list boiled down to [contest, start time] pairs, and back to a
+// map; anything that does not read back cleanly is no data at all.
+export const packContestStarts = (contests) =>
+    contests.filter((contest) => Number.isFinite(contest.startTimeSeconds))
+        .map((contest) => [contest.id, contest.startTimeSeconds])
+
+export const unpackContestStarts = (packed) => {
+    if (!Array.isArray(packed)) return null
+    const starts = new Map()
+    for (const item of packed) {
+        if (!Array.isArray(item) || !Number.isFinite(item[0]) || !Number.isFinite(item[1])) return null
+        starts.set(item[0], item[1])
+    }
+    return starts
 }
 
 // Which Codeforces rank colour a rating is shown in.
