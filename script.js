@@ -366,7 +366,8 @@ function loadContestStarts() {
     return startsLoading
 }
 
-let skipState = { key: "", handles: [], loaded: [], summaries: [], errors: [], retry: false }
+const RETRY_AFTER = 60 * 1000
+let skipState = { key: "", handles: [], loaded: [], summaries: [], errors: [], retry: false, failures: 0, failedAt: 0 }
 let skipLoading = null
 let skipLoadingKey = ""
 let skipPredicate = null
@@ -400,7 +401,10 @@ function loadSkips() {
         const starts = summaries.length
             ? await loadContestStarts().catch((error) => console.error(error))
             : undefined
-        return { key, handles, loaded, summaries, errors, retry, starts }
+        // How many loads of these handles in a row have failed, so draws
+        // stop waiting on a Codeforces that keeps failing.
+        const failures = retry ? (skipState.key === key ? skipState.failures : 0) + 1 : 0
+        return { key, handles, loaded, summaries, errors, retry, starts, failures, failedAt: Date.now() }
     })()
     skipLoading = loadingNow
     skipLoadingKey = key
@@ -667,10 +671,14 @@ byId("form").addEventListener("submit", async (event) => {
         const { problems: all } = problemset ?? await loadProblemset()
         // Handles typed but not yet loaded (Enter pressed straight from the
         // field), or that failed to load last time, are loaded before
-        // drawing, so nobody gets a solved problem.
+        // drawing, so nobody gets a solved problem. When trying again fails
+        // too, draws go ahead without them and try once a minute, rather
+        // than each waiting up to 30 seconds for Codeforces.
         const { handles } = parseHandles(byId("handles").value)
         const key = handlesKey(handles)
-        if (key !== skipState.key || skipState.retry) {
+        const retry = skipState.retry &&
+            (skipState.failures < 2 || Date.now() - skipState.failedAt > RETRY_AFTER)
+        if (key !== skipState.key || retry) {
             showMessage(fill(text.loadingHandles, { handles: handles.join(", ") }))
             await (key !== skipState.key && skipLoadingKey === key ? skipLoading : loadSkips())
         }
