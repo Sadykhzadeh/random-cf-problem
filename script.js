@@ -410,7 +410,22 @@ function ratingBadge(problem) {
     return rating
 }
 
-function showProblem(problem, showTags) {
+// The problem on screen, so the topics box can show or hide its topics.
+let shownProblem = null
+
+function showTopics(problem) {
+    if (!problem.tags.length) tagsEl.textContent = text.noTopics
+    else if (!byId("doNotShowTags").checked) {
+        tagsEl.textContent = text.topicsLine + problem.tags.map((tag) => localize_tags(tag, lang)).join(", ")
+    } else tagsEl.textContent = text.topicsHidden
+}
+
+byId("doNotShowTags").addEventListener("change", () => {
+    if (shownProblem) showTopics(shownProblem)
+})
+
+function showProblem(problem) {
+    shownProblem = problem
     nameEl.replaceChildren(problemLink(problem))
 
     // How many people solved the problem says more about it than the rating
@@ -420,10 +435,7 @@ function showProblem(problem, showTags) {
         ratingEl.append(fill(text.solvedBy, { count: countFormat.format(problem.solvedCount) }))
     }
 
-    if (!problem.tags.length) tagsEl.textContent = text.noTopics
-    else if (showTags) {
-        tagsEl.textContent = text.topicsLine + problem.tags.map((tag) => localize_tags(tag, lang)).join(", ")
-    } else tagsEl.textContent = text.topicsHidden
+    showTopics(problem)
 }
 
 // The last few draws, newest first, so a problem rolled past by accident
@@ -470,6 +482,7 @@ function remember(problem) {
 showRecent()
 
 function showMessage(message) {
+    shownProblem = null
     nameEl.textContent = message
     ratingEl.textContent = ""
     tagsEl.textContent = ""
@@ -616,7 +629,7 @@ byId("form").addEventListener("submit", async (event) => {
         // of blocked main thread on the 9000-entry archive to choose one
         // problem. A single random index picks just as evenly.
         const problem = pickOne(problems, Math.random, new Set(recent.map(problemKey)))
-        showProblem(problem, !byId("doNotShowTags").checked)
+        showProblem(problem)
         remember(problem)
     } catch (error) {
         // fetch rejects outright on a network failure. Nothing caught that, so
