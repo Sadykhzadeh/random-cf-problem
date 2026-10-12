@@ -208,10 +208,9 @@ const tags = [{
 
 const tagNames = new Map(tags.map((tag) => [tag.value, tag.name]))
 
-// A value that is not in the list used to fall out of the loop and return
-// undefined, which the page then rendered as "Темы: undefined". Codeforces
-// adds tags over time, so that is reachable without touching this file.
-// Codeforces' own tag names are English, so only Russian needs a lookup.
+// A tag that is not in the list, such as *special or one Codeforces adds
+// later, keeps its own name. Codeforces' own tag names are English, so only
+// Russian needs a lookup.
 const localize_tags = (arg, lang = "ru") => (lang === "ru" && tagNames.get(arg)) || arg
 
 export { tags, localize_tags }

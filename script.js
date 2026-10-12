@@ -175,8 +175,8 @@ async function politeFetch(url) {
 async function fetchProblemset() {
     const response = await politeFetch(PROBLEMSET_URL)
     const json = await response.json().catch(() => null)
-    // The API answers 200 with {status: "FAILED", comment: ...}. json.result
-    // was read regardless, so that ended as a TypeError on a dead page.
+    // A failure comes as {status: "FAILED", comment: ...}, and not always
+    // with an error status, so the body is checked as well.
     if (!response.ok || !json || json.status !== "OK" || !json.result || !json.result.problems) {
         throw new Error(fill(text.apiError, { detail: (json && json.comment) || "HTTP " + response.status }))
     }
@@ -389,15 +389,14 @@ byId("skipTried").addEventListener("change", () => {
 
 
 function problemLink(problem) {
-    // Built as nodes instead of an innerHTML string: the name comes from the
-    // API and may contain & or <, which used to land in markup as-is.
+    // Built as nodes rather than markup: the name comes from the API and may
+    // contain & or <.
     const link = document.createElement("a")
     link.href =
         `https://codeforces.com/problemset/problem/${problem.contestId}/${problem.index}`
     link.target = "_blank"
-    // The old markup read `"target="_blank"` with no space before the
-    // attribute, and carried no rel - a _blank target without noopener hands
-    // the opened page a handle back to this one.
+    // A _blank target without noopener hands the opened page a handle back
+    // to this one.
     link.rel = "noopener noreferrer"
     link.textContent = `${problem.contestId}${problem.index}. ${problem.name}`
     return link
@@ -490,8 +489,7 @@ function showMessage(message) {
 }
 
 function readFilter() {
-    // These arrived as strings and were compared against a numeric rating by
-    // coercion. An empty field still means "no bound".
+    // The fields hold strings; an empty one means "no bound".
     const minRaw = byId("min_num").value,
         maxRaw = byId("max_num").value
     let min = minRaw === "" ? 0 : Number(minRaw),
@@ -627,21 +625,16 @@ byId("form").addEventListener("submit", async (event) => {
             return
         }
 
-        // The whole filtered list used to be run through Array#sort with a
-        // side-effecting comparator, only for element [0] to be read: 225 ms
-        // of blocked main thread on the 9000-entry archive to choose one
-        // problem. A single random index picks just as evenly.
         const problem = pickOne(problems, Math.random, new Set(recent.map(problemKey)))
         showProblem(problem)
         remember(problem)
     } catch (error) {
-        // fetch rejects outright on a network failure. Nothing caught that, so
-        // the page sat on "Идёт поиск задач..." with every control disabled.
+        // fetch rejects outright on a network failure; the card says what
+        // went wrong rather than staying on "Looking for a problem...".
         console.error(error)
         showMessage(errorText(error))
     } finally {
-        // enableAll() used to be the last statement of the handler, so any
-        // throw on the way left the form permanently dead.
+        // Whatever happened on the way, the form is usable again.
         enableAll()
         if (document.activeElement === document.body) focused?.focus()
     }
