@@ -264,10 +264,12 @@ select {
 }
 
 .check {
+    flex-wrap: nowrap;
     gap: 8px
 }
 
 .check input {
+    flex: none;
     width: 1.1em;
     height: 1.1em;
     margin: 0
