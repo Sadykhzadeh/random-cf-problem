@@ -12,7 +12,7 @@ export const DEFAULTS = Object.freeze({
     hide: false,
 })
 
-const KNOWN = ["min", "max", "tags", "any", "nospecial", "skip", "tried", "hide"]
+const KNOWN = ["min", "max", "tags", "any", "none", "nospecial", "skip", "tried", "hide"]
 
 const rating = (value) => {
     const text = String(value ?? "").trim()
@@ -28,7 +28,7 @@ export const readParams = (search) => {
         min: rating(params.get("min")),
         max: rating(params.get("max")),
         tags: (params.get("tags") ?? "").split(",").map((tag) => tag.trim()).filter(Boolean),
-        mode: params.get("any") === "1" ? "any" : "all",
+        mode: params.get("any") === "1" ? "any" : params.get("none") === "1" ? "none" : "all",
         nospecial: params.get("nospecial") === "1",
         handles: (params.get("skip") ?? "").trim(),
         tried: params.get("tried") === "1",
@@ -43,6 +43,7 @@ export const writeParams = (settings, lang) => {
     if (rating(settings.max)) params.set("max", rating(settings.max))
     if (settings.tags?.length) params.set("tags", settings.tags.join(","))
     if (settings.mode === "any" && settings.tags?.length) params.set("any", "1")
+    if (settings.mode === "none" && settings.tags?.length) params.set("none", "1")
     if (settings.nospecial) params.set("nospecial", "1")
     if (settings.handles?.trim()) params.set("skip", settings.handles.trim())
     if (settings.tried && settings.handles?.trim()) params.set("tried", "1")

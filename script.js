@@ -70,6 +70,7 @@ for (const [id, key] of [
     ["topicsSummary", "anyTopic"],
     ["modeAll", "modeAll"],
     ["modeAny", "modeAny"],
+    ["modeNone", "modeNone"],
     ["clearTopics", "clearTopics"],
     ["skipSpecial_label", "skipSpecial"],
     ["handles_label", "skipLabel"],
@@ -108,13 +109,14 @@ const chosenTags = () =>
 const tagMode = () => byId("form").elements.mode.value
 
 // The summary line names the chosen topics, joined by "and" or "or" as
-// the mode says.
+// the mode says, or the ones left out.
 function showTopicsSummary() {
     const chosen = chosenTags().map((tag) => localize_tags(tag, lang))
-    const type = tagMode() === "any" ? "disjunction" : "conjunction"
-    byId("topicsSummary").textContent = chosen.length
-        ? new Intl.ListFormat(lang, { type }).format(chosen)
-        : text.anyTopic
+    const mode = tagMode()
+    const list = new Intl.ListFormat(lang, { type: mode === "any" ? "disjunction" : "conjunction" }).format(chosen)
+    byId("topicsSummary").textContent = !chosen.length ? text.anyTopic
+        : mode === "none" ? fill(text.allBut, { topics: list })
+        : list
 }
 
 byId("clearTopics").addEventListener("click", () => {

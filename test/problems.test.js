@@ -69,7 +69,7 @@ test("special problems are dropped when asked, whatever their other tags", () =>
     assert.deepEqual(names({ tags: ["implementation"], special: false }), [])
 })
 
-test("several tags match all of them, or any of them", () => {
+test("several tags match all of them, any of them, or none of them", () => {
     const problems = unpackProblemset(packProblemset(result))
     const names = (filter) => matchingProblems(problems, filter).map((p) => p.name)
     assert.deepEqual(names({ tags: ["math", "brute force"] }), ["Watermelon"])
@@ -77,7 +77,8 @@ test("several tags match all of them, or any of them", () => {
     assert.deepEqual(names({ tags: ["interactive", "brute force"], mode: "any" }),
         ["Guess the K-th Zero (Hard version)", "Watermelon"])
     assert.deepEqual(names({ tags: ["interactive", "brute force"] }), [])
-    assert.deepEqual(names({ tags: [], mode: "any" }).length, 3, "no tags is no filter either way")
+    assert.deepEqual(names({ tags: ["interactive", "brute force"], mode: "none" }), ["Spreadsheets"])
+    for (const mode of ["any", "none"]) assert.equal(names({ tags: [], mode }).length, 3, "no tags is no filter")
 })
 
 test("handles are split on commas and spaces, once each, five at most", () => {

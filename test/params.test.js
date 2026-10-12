@@ -34,3 +34,10 @@ test("an address without settings says so, and bad values are dropped", () => {
     })
     assert.equal(readParams("?min=0800").min, "800")
 })
+
+test("leaving the topics out survives a round trip", () => {
+    const settings = { ...DEFAULTS, tags: ["interactive", "geometry"], mode: "none" }
+    assert.equal(writeParams(settings), "tags=interactive,geometry&none=1")
+    assert.deepEqual(readParams("?tags=interactive,geometry&none=1"), settings)
+    assert.equal(writeParams({ ...DEFAULTS, mode: "none" }), "", "nothing to leave out")
+})
