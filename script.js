@@ -193,6 +193,8 @@ async function fetchProblemset() {
 function useProblemset(loaded) {
     problemset = loaded
     showDataStatus()
+    // The handles can finish loading first; their count waits for the list.
+    if (skipState.summaries.length) showSkipStatus()
     showMatching()
     return loaded
 }
