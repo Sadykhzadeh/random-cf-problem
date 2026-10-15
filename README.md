@@ -23,7 +23,8 @@ skipping the ones you have already solved.
   matches.
 - Remembers the settings, and keeps them in the address so a link
   reproduces them.
-- `R` draws again; Enter in any field does too.
+- `R` draws again, or the key in its place on a Russian layout; Enter in
+  any field does too.
 - English and Russian; follows the system's light or dark theme; fits a
   phone.
 

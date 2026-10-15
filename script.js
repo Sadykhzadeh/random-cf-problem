@@ -4,7 +4,8 @@ import {
 } from "./modules/tags.js"
 import {
     disableAll,
-    enableAll
+    enableAll,
+    isDrawKey
 } from "./modules/ui.js"
 import {
     makeSkip,
@@ -712,7 +713,7 @@ byId("form").addEventListener("submit", async (event) => {
 
 // R draws another problem from anywhere but a field being typed in.
 document.addEventListener("keydown", (event) => {
-    if (event.key !== "r" && event.key !== "R") return
+    if (!isDrawKey(event.key, event.code)) return
     if (event.ctrlKey || event.metaKey || event.altKey || event.repeat) return
     const target = event.target
     if (target instanceof HTMLInputElement && target.type !== "checkbox" && target.type !== "radio") return
