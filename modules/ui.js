@@ -13,4 +13,10 @@ const disableAll = () => {
         document.getElementById("max_num").disabled = false
     }
 
-export { disableAll, enableAll }
+// Whether a key press is R, the key that draws again. On a layout without
+// Latin letters, such as Russian, the key where R sits counts: it types "к"
+// there. On one that has R elsewhere, such as Dvorak, R itself does.
+const isDrawKey = (key, code) =>
+    /^[a-z]$/i.test(key) ? key.toLowerCase() === "r" : code === "KeyR"
+
+export { disableAll, enableAll, isDrawKey }
