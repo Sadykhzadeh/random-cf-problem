@@ -20,7 +20,8 @@ import {
     rankClass,
     summarizeSubmissions,
     unpackContestStarts,
-    unpackProblemset
+    unpackProblemset,
+    yearStart
 } from "./modules/problems.js"
 import {
     fill,
@@ -67,6 +68,7 @@ for (const [id, key] of [
     ["rating_label", "rating"],
     ["min_num_text", "minRating"],
     ["max_num_text", "maxRating"],
+    ["since_label", "since"],
     ["choose_label", "topic"],
     ["topicsSummary", "anyTopic"],
     ["modeAll", "modeAll"],
@@ -337,13 +339,14 @@ async function loadSolved(handle) {
 }
 
 // When each contest started, so a problem solved in a parallel round is
-// recognised however far apart the two are numbered (see makeSkip). Only
-// needed once there are handles; contest.list is 410 KB of JSON, of which
-// the start times are kept for a day. An older copy is used for this visit
-// and replaced for the next one.
+// recognised however far apart the two are numbered (see makeSkip), and
+// problems can be drawn from recent contests only. Only needed for either;
+// contest.list is 410 KB of JSON, of which the start times are kept for a
+// day. An older copy is used for this visit and replaced for the next one.
 const CONTESTS_URL = "https://codeforces.com/api/contest.list"
 const STARTS_KEY = new URL("starts.v1.json", window.location.href).href
 let startsLoading = null
+let contestStarts = null
 
 async function fetchContestStarts() {
     const response = await politeFetch(CONTESTS_URL)
@@ -379,7 +382,10 @@ function loadContestStarts() {
         return fetchContestStarts()
     })()
     // A failed load is not remembered, so the next one tries again.
-    startsLoading.catch(() => {
+    startsLoading.then((starts) => {
+        contestStarts = starts
+        showMatching()
+    }, () => {
         startsLoading = null
     })
     return startsLoading
@@ -574,7 +580,17 @@ function readFilter() {
         max = maxRaw === "" ? 3800 : Number(maxRaw)
     if (!Number.isFinite(min) || min < 0) min = 0
     if (!Number.isFinite(max) || max > 3800) max = 3800
-    return { min, max, tags: chosenTags(), mode: tagMode(), special: !byId("skipSpecial").checked, skip: currentSkip() }
+    const year = Number(byId("since").value)
+    return {
+        min,
+        max,
+        since: year > 0 ? yearStart(year) : undefined,
+        starts: contestStarts ?? undefined,
+        tags: chosenTags(),
+        mode: tagMode(),
+        special: !byId("skipSpecial").checked,
+        skip: currentSkip(),
+    }
 }
 
 // How many problems the current settings leave, kept up to date as they
@@ -584,7 +600,13 @@ function showMatching() {
     const matching = byId("matching")
     if (!problemset) matching.textContent = ""
     else if (filter.min > filter.max) matching.textContent = text.minAboveMax
-    else {
+    else if (filter.since !== undefined && !contestStarts) {
+        matching.textContent = text.loadingContests
+        loadContestStarts().catch((error) => {
+            console.error(error)
+            matching.textContent = errorText(error)
+        })
+    } else {
         const count = matchingProblems(problemset.problems, filter).length
         matching.textContent = count ? fill(text.matching, { count: countFormat.format(count) }) : text.noMatch
     }
@@ -606,6 +628,7 @@ function currentSettings() {
     return {
         min: byId("min_num").value,
         max: byId("max_num").value,
+        since: byId("since").value,
         tags: chosenTags(),
         mode: tagMode(),
         nospecial: byId("skipSpecial").checked,
@@ -618,6 +641,7 @@ function currentSettings() {
 function applySettings(settings) {
     byId("min_num").value = settings.min
     byId("max_num").value = settings.max
+    byId("since").value = settings.since
     for (const box of chooseEl.querySelectorAll("input")) box.checked = settings.tags.includes(box.value)
     byId("form").elements.mode.value = settings.mode
     byId("skipSpecial").checked = settings.nospecial
@@ -705,6 +729,11 @@ byId("form").addEventListener("submit", async (event) => {
             // In a tab left open, what the handles have solved since is
             // fetched behind this draw, in time for the next one.
             loadSkips()
+        }
+        // Contest dates are only fetched once a year is asked for.
+        if (readFilter().since !== undefined && !contestStarts) {
+            showMessage(text.loadingContests)
+            await loadContestStarts()
         }
         const problems = matchingProblems(all, readFilter())
 

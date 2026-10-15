@@ -47,8 +47,10 @@ export const unpackProblemset = (packed) => {
 // left out: there is no telling whether they fit. `special: false` drops
 // the problems Codeforces tags *special - April Fools jokes, rounds in Q#,
 // Kotlin or an unknown language, olympiad mirrors with subtasks. `skip`
-// drops problems someone has already solved.
-export const matchingProblems = (problems, { min = 0, max = Infinity, tags = [], mode = "all", special = true, skip } = {}) => {
+// drops problems someone has already solved. `since` drops problems from
+// contests that started before it (`starts` maps a contest to its start
+// time); a contest missing from `starts` is newer than the list, so it stays.
+export const matchingProblems = (problems, { min = 0, max = Infinity, tags = [], mode = "all", special = true, skip, since, starts } = {}) => {
     const hasTags = mode === "any" ? (problem) => tags.some((tag) => problem.tags.includes(tag))
         : mode === "none" ? (problem) => !tags.some((tag) => problem.tags.includes(tag))
         : (problem) => tags.every((tag) => problem.tags.includes(tag))
@@ -57,8 +59,12 @@ export const matchingProblems = (problems, { min = 0, max = Infinity, tags = [],
         min <= problem.rating && problem.rating <= max &&
         (!tags.length || hasTags(problem)) &&
         (special || !problem.tags.includes("*special")) &&
+        !(since !== undefined && starts?.get(problem.contestId) < since) &&
         !(skip && skip(problem)))
 }
+
+// The first second of a year, in the seconds contest.list counts in.
+export const yearStart = (year) => Date.UTC(year, 0, 1) / 1000
 
 // Handles typed into one field, separated by commas or spaces: each once,
 // whatever its case, and no more than `limit` of them.
