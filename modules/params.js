@@ -4,6 +4,7 @@
 export const DEFAULTS = Object.freeze({
     min: "",
     max: "",
+    since: "",
     tags: [],
     mode: "all",
     nospecial: false,
@@ -12,11 +13,16 @@ export const DEFAULTS = Object.freeze({
     hide: false,
 })
 
-const KNOWN = ["min", "max", "tags", "any", "none", "nospecial", "skip", "tried", "hide"]
+const KNOWN = ["min", "max", "since", "tags", "any", "none", "nospecial", "skip", "tried", "hide"]
 
 const rating = (value) => {
     const text = String(value ?? "").trim()
     return /^\d{1,4}$/.test(text) ? String(Number(text)) : ""
+}
+
+const year = (value) => {
+    const text = String(value ?? "").trim()
+    return /^\d{4}$/.test(text) ? text : ""
 }
 
 // null when the address says nothing about the settings, so the caller can
@@ -27,6 +33,7 @@ export const readParams = (search) => {
     return {
         min: rating(params.get("min")),
         max: rating(params.get("max")),
+        since: year(params.get("since")),
         tags: (params.get("tags") ?? "").split(",").map((tag) => tag.trim()).filter(Boolean),
         mode: params.get("any") === "1" ? "any" : params.get("none") === "1" ? "none" : "all",
         nospecial: params.get("nospecial") === "1",
@@ -41,6 +48,7 @@ export const writeParams = (settings, lang) => {
     if (lang) params.set("lang", lang)
     if (rating(settings.min)) params.set("min", rating(settings.min))
     if (rating(settings.max)) params.set("max", rating(settings.max))
+    if (year(settings.since)) params.set("since", year(settings.since))
     if (settings.tags?.length) params.set("tags", settings.tags.join(","))
     if (settings.mode === "any" && settings.tags?.length) params.set("any", "1")
     if (settings.mode === "none" && settings.tags?.length) params.set("none", "1")

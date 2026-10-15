@@ -13,6 +13,7 @@ import {
     summarizeSubmissions,
     unpackContestStarts,
     unpackProblemset,
+    yearStart,
 } from "../modules/problems.js"
 
 const result = {
@@ -79,6 +80,22 @@ test("several tags match all of them, any of them, or none of them", () => {
     assert.deepEqual(names({ tags: ["interactive", "brute force"] }), [])
     assert.deepEqual(names({ tags: ["interactive", "brute force"], mode: "none" }), ["Spreadsheets"])
     for (const mode of ["any", "none"]) assert.equal(names({ tags: [], mode }).length, 3, "no tags is no filter")
+})
+
+test("problems from contests that started before a year are left out", () => {
+    const problems = [
+        { contestId: 4, index: "A", name: "Watermelon", rating: 800, tags: [] },
+        { contestId: 1520, index: "A", name: "Do Not Be Distracted!", rating: 800, tags: [] },
+        { contestId: 2276, index: "A", name: "Not in contest.list yet", rating: 800, tags: [] },
+    ]
+    // 4 started in March 2010, 1520 in May 2021.
+    const starts = new Map([[4, 1268395200], [1520, 1620225300]])
+    const names = (filter) => matchingProblems(problems, filter).map((p) => p.name)
+    assert.equal(yearStart(2021), 1609459200)
+    assert.deepEqual(names({ since: yearStart(2021), starts }), ["Do Not Be Distracted!", "Not in contest.list yet"])
+    assert.deepEqual(names({ since: yearStart(2010), starts }).length, 3)
+    assert.deepEqual(names({ since: yearStart(2022), starts }), ["Not in contest.list yet"])
+    assert.deepEqual(names({ starts }).length, 3, "no year, no filter")
 })
 
 test("handles are split on commas and spaces, once each, five at most", () => {

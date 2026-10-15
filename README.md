@@ -8,6 +8,7 @@ skipping the ones you have already solved.
 ## What it does
 
 - Draws a rated problem between a minimum and a maximum rating.
+- Optionally only from contests held in a given year or later.
 - Narrows by topics: all of the chosen ones, any of them, or none of them.
   A line above the button says how many problems the settings leave.
 - Optionally leaves out the problems Codeforces tags `*special`: April
@@ -33,6 +34,7 @@ skipping the ones you have already solved.
 | Parameter | Example | Meaning |
 | --- | --- | --- |
 | `min`, `max` | `min=1400&max=1900` | rating range, inclusive |
+| `since` | `since=2019` | contests held in that year or later |
 | `tags` | `tags=dp,graphs` | topics, as Codeforces names them |
 | `any` | `any=1` | any of the topics rather than all of them |
 | `none` | `none=1` | none of the topics |
@@ -51,7 +53,8 @@ while a fresh one loads, and "Refresh" at the bottom fetches it on demand.
 For each handle to skip, `user.status` is boiled down to the problems it
 solved and tried, and kept for ten minutes. In a tab left open longer,
 either is fetched again behind the next draw. The start times from
-`contest.list`, which tell parallel rounds apart, are kept for a day.
+`contest.list`, which date the contests and tell parallel rounds apart,
+are fetched once a year or a handle is given, and kept for a day.
 Calls to the API are spaced two seconds apart, as Codeforces asks.
 
 ## Running it locally
