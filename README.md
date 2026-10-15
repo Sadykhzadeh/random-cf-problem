@@ -16,7 +16,8 @@ skipping the ones you have already solved.
   mirrors.
 - Skips problems solved by one or more handles (up to five, separated by
   commas or spaces), and optionally the ones they tried too. A problem
-  solved in the parallel Div. 1 or Div. 2 round counts as solved.
+  solved or tried in the parallel Div. 1 or Div. 2 round counts as solved
+  or tried.
 - Shows the problem's rating in its Codeforces rank colour and how many
   people solved it; the topics can be hidden, and shown again for the
   problem on screen when you get stuck.

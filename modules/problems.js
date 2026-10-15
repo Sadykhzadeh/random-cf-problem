@@ -85,14 +85,14 @@ const problemKey = (problem) => `${problem.contestId}|${problem.index}`
 const isGym = (contestId) => contestId > 100000
 
 // What a handle's submissions say, small enough to keep: the problems it
-// solved, the ones it only tried, and the names of the solved ones with
-// their contest, rating and the contest's start time (see makeSkip for why).
-// Gym problems are left out of the names: the gym has no parallel rounds,
-// and its problems are often named after their letter.
+// solved, the ones it only tried, and the names of each with their contest,
+// rating and the contest's start time (see makeSkip for why). Gym problems
+// are left out of the names: the gym has no parallel rounds, and its
+// problems are often named after their letter.
 export const summarizeSubmissions = (submissions) => {
     const solved = new Set()
     const tried = new Set()
-    const solvedProblems = new Map()
+    const problems = new Map()
     // A submission made in a contest, or in practice after it, carries the
     // contest's start time; a virtual one carries its own.
     const startOf = new Map()
@@ -104,24 +104,27 @@ export const summarizeSubmissions = (submissions) => {
             startOf.set(problem.contestId, start)
         }
         const key = problemKey(problem)
-        if (submission.verdict === "OK") {
-            solved.add(key)
-            if (!isGym(problem.contestId)) solvedProblems.set(key, problem)
-        } else {
-            tried.add(key)
-        }
+        if (submission.verdict === "OK") solved.add(key)
+        else tried.add(key)
+        if (!isGym(problem.contestId)) problems.set(key, problem)
     }
     for (const key of solved) tried.delete(key)
-    const names = new Map()
-    for (const problem of solvedProblems.values()) {
-        if (!names.has(problem.name)) names.set(problem.name, [])
-        names.get(problem.name).push(
-            [problem.contestId, problem.rating ?? null, startOf.get(problem.contestId) ?? null])
+    const namesOf = (keys) => {
+        const names = new Map()
+        for (const key of keys) {
+            const problem = problems.get(key)
+            if (!problem) continue
+            if (!names.has(problem.name)) names.set(problem.name, [])
+            names.get(problem.name).push(
+                [problem.contestId, problem.rating ?? null, startOf.get(problem.contestId) ?? null])
+        }
+        return [...names]
     }
     return {
         solved: [...solved],
         tried: [...tried],
-        names: [...names],
+        names: namesOf(solved),
+        triedNames: namesOf(tried),
     }
 }
 
@@ -132,16 +135,23 @@ export const summarizeSubmissions = (submissions) => {
 // same second (`starts` maps a contest to its start time), or in one
 // numbered one or two away, as an online mirror of an onsite round is.
 // Round 942 is 1967 for Div. 1 and 1972 for Div. 2, and the problemset
-// lists its shared problems under 1967 only.
+// lists its shared problems under 1967 only. With `includeTried`, the same
+// goes for a problem tried there.
 export const makeSkip = (summaries, { includeTried = false, starts = new Map() } = {}) => {
     const keys = new Set()
     const names = new Map()
-    for (const summary of summaries) {
-        for (const key of summary.solved) keys.add(key)
-        if (includeTried) for (const key of summary.tried) keys.add(key)
-        for (const [name, solvedIn] of summary.names) {
+    const addNames = (list) => {
+        for (const [name, solvedIn] of list) {
             if (!names.has(name)) names.set(name, [])
             names.get(name).push(...solvedIn)
+        }
+    }
+    for (const summary of summaries) {
+        for (const key of summary.solved) keys.add(key)
+        addNames(summary.names)
+        if (includeTried) {
+            for (const key of summary.tried) keys.add(key)
+            addNames(summary.triedNames)
         }
     }
     return (problem) => {
