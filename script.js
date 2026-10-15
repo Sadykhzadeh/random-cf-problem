@@ -464,7 +464,10 @@ function showSkipStatus() {
     const skip = currentSkip()
     if (skip && problemset) {
         const count = problemset.problems.filter(skip).length
-        parts.unshift(fill(byId("skipTried").checked ? text.skippingTried : text.skipping, {
+        const tried = byId("skipTried").checked
+        const template = count === 1 ? (tried ? text.skippingTriedOne : text.skippingOne)
+            : (tried ? text.skippingTried : text.skipping)
+        parts.unshift(fill(template, {
             count: countFormat.format(count),
             handles: skipState.loaded.join(", "),
         }))
@@ -614,7 +617,8 @@ function showMatching() {
         })
     } else {
         const count = matchingProblems(problemset.problems, filter).length
-        matching.textContent = count ? fill(text.matching, { count: countFormat.format(count) }) : text.noMatch
+        matching.textContent = !count ? text.noMatch
+            : fill(count === 1 ? text.matchingOne : text.matching, { count: countFormat.format(count) })
     }
 }
 
