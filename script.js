@@ -280,6 +280,10 @@ loadProblemset().catch((error) => console.error(error))
 // minutes; an older one is used at once and refreshed behind it.
 const SOLVED_FRESH_FOR = 10 * 60 * 1000
 const solvedInMemory = new Map()
+// Handles being refreshed behind the scenes. Each one that finishes loads
+// the handles again, and the others, still on their old copy, must not be
+// fetched a second time.
+const refreshingSolved = new Set()
 
 class HandleError extends Error {}
 // The handle itself is wrong, so asking again will not help.
@@ -329,11 +333,13 @@ async function fetchSolved(handle) {
 async function loadSolved(handle) {
     const saved = await readSolved(handle)
     if (!saved) return fetchSolved(handle)
-    solvedInMemory.set(handle.toLowerCase(), saved)
-    if (Date.now() - saved.savedAt > SOLVED_FRESH_FOR) {
+    const key = handle.toLowerCase()
+    solvedInMemory.set(key, saved)
+    if (Date.now() - saved.savedAt > SOLVED_FRESH_FOR && !refreshingSolved.has(key)) {
+        refreshingSolved.add(key)
         fetchSolved(handle).then(() => {
-            if (skipState.handles.some((h) => h.toLowerCase() === handle.toLowerCase())) loadSkips()
-        }, (error) => console.error(error))
+            if (skipState.handles.some((h) => h.toLowerCase() === key)) loadSkips()
+        }, (error) => console.error(error)).finally(() => refreshingSolved.delete(key))
     }
     return saved
 }
