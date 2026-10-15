@@ -71,9 +71,11 @@
                 <details id="topics">
                     <summary id="topicsSummary">Any topic</summary>
                     <div id="topicMode">
-                        <label><input type="radio" name="mode" value="all" checked> <span id="modeAll">all of them</span></label>
-                        <label><input type="radio" name="mode" value="any"> <span id="modeAny">any of them</span></label>
-                        <label><input type="radio" name="mode" value="none"> <span id="modeNone">none of them</span></label>
+                        <span id="modes" role="radiogroup" aria-labelledby="choose_label">
+                            <label><input type="radio" name="mode" value="all" checked> <span id="modeAll">all of them</span></label>
+                            <label><input type="radio" name="mode" value="any"> <span id="modeAny">any of them</span></label>
+                            <label><input type="radio" name="mode" value="none"> <span id="modeNone">none of them</span></label>
+                        </span>
                         <button type="button" id="clearTopics">Clear</button>
                     </div>
                     <fieldset id="choose" aria-labelledby="choose_label"></fieldset>

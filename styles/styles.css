@@ -215,6 +215,12 @@ select {
     font-size: 0.85em
 }
 
+/* Groups the switches for screen readers and leaves them laid out as
+   if they sat beside the button directly. */
+#modes {
+    display: contents
+}
+
 #clearTopics {
     margin-left: auto;
     background: none;
