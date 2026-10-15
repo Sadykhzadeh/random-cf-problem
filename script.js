@@ -136,6 +136,7 @@ const PROBLEMSET_URL = "https://codeforces.com/api/problemset.problems"
 const CACHE_NAME = "random-cf-problem"
 const CACHE_KEY = new URL("problemset.v1.json", window.location.href).href
 const FRESH_FOR = 24 * 60 * 60 * 1000
+const RETRY_AFTER = 60 * 1000
 
 let problemset = null
 let loading = null
@@ -210,16 +211,27 @@ function loadProblemset({ refresh = false } = {}) {
     loading = (async () => {
         const saved = refresh ? null : await readSaved()
         if (!saved) return useProblemset(await fetchProblemset())
-        if (Date.now() - saved.savedAt > FRESH_FOR) {
-            fetchProblemset().then(useProblemset, (error) => console.error(error))
-        }
-        return useProblemset(saved)
+        useProblemset(saved)
+        refreshIfStale()
+        return saved
     })()
     // A failed load is not remembered, so the next draw tries again.
     loading.catch(() => {
         loading = null
     })
     return loading
+}
+
+// A list older than a day is replaced behind the scenes: one read from the
+// cache at once, and in a tab left open that long, on the next draw. While
+// Codeforces keeps failing it is asked once a minute at most.
+let listRefreshedAt = 0
+
+function refreshIfStale() {
+    const now = Date.now()
+    if (!problemset || now - problemset.savedAt <= FRESH_FOR || now - listRefreshedAt < RETRY_AFTER) return
+    listRefreshedAt = now
+    fetchProblemset().then(useProblemset, (error) => console.error(error))
 }
 
 // fetch rejects with a TypeError when the request never got an answer.
@@ -373,8 +385,7 @@ function loadContestStarts() {
     return startsLoading
 }
 
-const RETRY_AFTER = 60 * 1000
-let skipState = { key: "", handles: [], loaded: [], summaries: [], errors: [], retry: false, failures: 0, failedAt: 0 }
+let skipState = { key: "", handles: [], loaded: [], summaries: [], errors: [], retry: false, failures: 0, loadedAt: 0 }
 let skipLoading = null
 let skipLoadingKey = ""
 let skipPredicate = null
@@ -411,7 +422,7 @@ function loadSkips() {
         // How many loads of these handles in a row have failed, so draws
         // stop waiting on a Codeforces that keeps failing.
         const failures = retry ? (skipState.key === key ? skipState.failures : 0) + 1 : 0
-        return { key, handles, loaded, summaries, errors, retry, starts, failures, failedAt: Date.now() }
+        return { key, handles, loaded, summaries, errors, retry, starts, failures, loadedAt: Date.now() }
     })()
     skipLoading = loadingNow
     skipLoadingKey = key
@@ -676,6 +687,8 @@ byId("form").addEventListener("submit", async (event) => {
     try {
         if (!problemset) showMessage(text.loadingList)
         const { problems: all } = problemset ?? await loadProblemset()
+        refreshIfStale()
+        showDataStatus()
         // Handles typed but not yet loaded (Enter pressed straight from the
         // field), or that failed to load last time, are loaded before
         // drawing, so nobody gets a solved problem. When trying again fails
@@ -684,10 +697,14 @@ byId("form").addEventListener("submit", async (event) => {
         const { handles } = parseHandles(byId("handles").value)
         const key = handlesKey(handles)
         const retry = skipState.retry &&
-            (skipState.failures < 2 || Date.now() - skipState.failedAt > RETRY_AFTER)
+            (skipState.failures < 2 || Date.now() - skipState.loadedAt > RETRY_AFTER)
         if (key !== skipState.key || retry) {
             showMessage(fill(text.loadingHandles, { handles: handles.join(", ") }))
             await (key !== skipState.key && skipLoadingKey === key ? skipLoading : loadSkips())
+        } else if (skipState.summaries.length && Date.now() - skipState.loadedAt > SOLVED_FRESH_FOR) {
+            // In a tab left open, what the handles have solved since is
+            // fetched behind this draw, in time for the next one.
+            loadSkips()
         }
         const problems = matchingProblems(all, readFilter())
 
