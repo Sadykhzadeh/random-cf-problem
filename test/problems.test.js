@@ -166,6 +166,21 @@ test("a solved problem keeps its contest's start time, unless it came from a vir
     ])
 })
 
+test("a problem tried in the parallel round counts as tried", () => {
+    const sub = (verdict) => ({
+        verdict,
+        problem: { contestId: 1972, index: "C", name: "Permutation Counting", rating: 1400 },
+        author: { participantType: "CONTESTANT", startTimeSeconds: 1714487700 },
+    })
+    const summary = summarizeSubmissions([sub("WRONG_ANSWER"), sub("TIME_LIMIT_EXCEEDED")])
+    assert.deepEqual(summary.names, [])
+    assert.deepEqual(summary.triedNames, [["Permutation Counting", [[1972, 1400, 1714487700]]]])
+    const starts = new Map([[1967, 1714487700], [1972, 1714487700]])
+    const shared = { contestId: 1967, index: "A", name: "Permutation Counting", rating: 1400 }
+    assert.equal(makeSkip([summary], { starts })(shared), false, "tried is not solved")
+    assert.equal(makeSkip([summary], { starts, includeTried: true })(shared), true)
+})
+
 test("contest start times survive a round trip, and anything else is refused", () => {
     const contests = [
         { id: 1967, startTimeSeconds: 1714487700 },

@@ -290,7 +290,15 @@ class HandleError extends Error {}
 class BadHandleError extends HandleError {}
 
 const solvedCacheKey = (handle) =>
-    new URL(`solved.v2/${encodeURIComponent(handle.toLowerCase())}.json`, window.location.href).href
+    new URL(`solved.v3/${encodeURIComponent(handle.toLowerCase())}.json`, window.location.href).href
+
+// Summaries kept in an older shape are never read again.
+openCache().then(async (cache) => {
+    if (!cache) return
+    for (const request of await cache.keys()) {
+        if (/\/solved\.v[12]\//.test(request.url)) cache.delete(request).catch(() => {})
+    }
+}).catch(() => {})
 
 async function readSolved(handle) {
     const remembered = solvedInMemory.get(handle.toLowerCase())
