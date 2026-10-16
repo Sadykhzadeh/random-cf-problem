@@ -133,15 +133,21 @@ byId("clearTopics").addEventListener("click", () => {
 // new tag costs no request. It is kept in the Cache API (a localStorage-sized
 // copy would not fit) for a day; an older copy is still used at once while a
 // fresh one loads for next time. Loading starts with the page, so the first
-// draw rarely waits.
-const PROBLEMSET_URL = "https://codeforces.com/api/problemset.problems"
+// draw rarely waits. Codeforces names the problems in the language asked
+// for, where it has a translation, so each language keeps its own copy.
+const PROBLEMSET_URL = `https://codeforces.com/api/problemset.problems?lang=${lang}`
 const CACHE_NAME = "random-cf-problem"
-const CACHE_KEY = new URL("problemset.v1.json", window.location.href).href
+// English keeps the names its copies have always had.
+const inLanguage = (name) => lang === "en" ? name : name.replace(/\.v/, `.${lang}.v`)
+const CACHE_KEY = new URL(inLanguage("problemset.v1.json"), window.location.href).href
 const FRESH_FOR = 24 * 60 * 60 * 1000
 const RETRY_AFTER = 60 * 1000
 
 let problemset = null
 let loading = null
+// The name of each problem in the list, so the recent draws read in the
+// page's language whichever one they were drawn in.
+let namesByKey = new Map()
 
 async function openCache() {
     try {
@@ -201,7 +207,9 @@ async function fetchProblemset() {
 
 function useProblemset(loaded) {
     problemset = loaded
+    namesByKey = new Map(loaded.problems.map((problem) => [problemKey(problem), problem.name]))
     showDataStatus()
+    showRecent()
     // The handles can finish loading first; their count waits for the list.
     if (skipState.summaries.length) showSkipStatus()
     showMatching()
@@ -277,7 +285,8 @@ loadProblemset().catch((error) => console.error(error))
 // What the handles in "Skip solved by" have solved. user.status returns
 // every submission a handle ever made - 3.2 MB for tourist - so only a
 // summary is kept, in the Cache API next to the problemset, for ten
-// minutes; an older one is used at once and refreshed behind it.
+// minutes; an older one is used at once and refreshed behind it. The
+// summary names problems as the problemset does, in the page's language.
 const SOLVED_FRESH_FOR = 10 * 60 * 1000
 const solvedInMemory = new Map()
 // Handles being refreshed behind the scenes. Each one that finishes loads
@@ -290,7 +299,7 @@ class HandleError extends Error {}
 class BadHandleError extends HandleError {}
 
 const solvedCacheKey = (handle) =>
-    new URL(`solved.v3/${encodeURIComponent(handle.toLowerCase())}.json`, window.location.href).href
+    new URL(`${inLanguage("solved.v3")}/${encodeURIComponent(handle.toLowerCase())}.json`, window.location.href).href
 
 // Summaries kept in an older shape are never read again.
 openCache().then(async (cache) => {
@@ -316,7 +325,7 @@ async function readSolved(handle) {
 
 async function fetchSolved(handle) {
     const response = await politeFetch(
-        `https://codeforces.com/api/user.status?handle=${encodeURIComponent(handle)}`)
+        `https://codeforces.com/api/user.status?handle=${encodeURIComponent(handle)}&lang=${lang}`)
     const json = await response.json().catch(() => null)
     if (!response.ok || !json || json.status !== "OK" || !Array.isArray(json.result)) {
         const comment = (json && json.comment) || ""
@@ -564,7 +573,8 @@ let recent = readRecent()
 function showRecent() {
     const solved = skipState.summaries.length ? makeSkip(skipState.summaries, { starts: skipState.starts }) : null
     byId("recent").hidden = !recent.length
-    byId("recentList").replaceChildren(...recent.map((problem) => {
+    byId("recentList").replaceChildren(...recent.map((drawn) => {
+        const problem = { ...drawn, name: namesByKey.get(problemKey(drawn)) ?? drawn.name }
         const item = document.createElement("li")
         item.append(problemLink(problem), " ", ratingBadge(problem))
         if (solved?.(problem)) {
