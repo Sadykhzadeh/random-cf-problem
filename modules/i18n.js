@@ -71,6 +71,7 @@ export const strings = {
         timeout: "Codeforces did not answer within 30 seconds. Try again in a moment.",
         source: "Source",
         recent: "Drawn lately",
+        solvedMark: " · solved",
         generateHint: "Generate (R)",
     },
     ru: {
@@ -125,6 +126,7 @@ export const strings = {
         timeout: "Codeforces не ответил за 30 секунд. Попробуйте ещё раз чуть позже.",
         source: "Исходный код",
         recent: "Недавние задачи",
+        solvedMark: " · решена",
         generateHint: "Сгенерировать (R)",
     },
 }

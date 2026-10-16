@@ -326,6 +326,10 @@ select {
     margin: 3px 0
 }
 
+#recentList .solved {
+    color: var(--muted)
+}
+
 footer {
     margin-top: 28px;
     padding-bottom: 24px;

@@ -453,6 +453,7 @@ function loadSkips() {
         skipPredicate = null
         showSkipStatus()
         showMatching()
+        showRecent()
     })
     return loadingNow
 }
@@ -559,11 +560,19 @@ function readRecent() {
 
 let recent = readRecent()
 
+// With handles to skip, the draws they have solved since are marked.
 function showRecent() {
+    const solved = skipState.summaries.length ? makeSkip(skipState.summaries, { starts: skipState.starts }) : null
     byId("recent").hidden = !recent.length
     byId("recentList").replaceChildren(...recent.map((problem) => {
         const item = document.createElement("li")
         item.append(problemLink(problem), " ", ratingBadge(problem))
+        if (solved?.(problem)) {
+            const mark = document.createElement("span")
+            mark.className = "solved"
+            mark.textContent = text.solvedMark
+            item.append(mark)
+        }
         return item
     }))
 }
