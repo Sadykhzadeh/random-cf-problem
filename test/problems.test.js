@@ -108,6 +108,15 @@ test("handles are split on commas and spaces, once each, five at most", () => {
     assert.deepEqual(parseHandles(""), { handles: [], dropped: 0 })
 })
 
+test("a profile link stands for its handle", () => {
+    assert.deepEqual(parseHandles("https://codeforces.com/profile/tourist, codeforces.com/profile/Um_nik/").handles,
+        ["tourist", "Um_nik"])
+    assert.deepEqual(parseHandles("https://m1.codeforces.com/profile/jiangly?locale=ru jiangly").handles, ["jiangly"])
+    assert.deepEqual(parseHandles("http://codeforces.ml/profile/ksun48#").handles, ["ksun48"])
+    assert.deepEqual(parseHandles("https://codeforces.com/contest/4").handles, ["https://codeforces.com/contest/4"],
+        "anything else is left for Codeforces to judge")
+})
+
 test("solved problems are skipped, tried ones only when asked", () => {
     const sub = (contestId, index, name, verdict) => ({ verdict, problem: { contestId, index, name } })
     const summary = summarizeSubmissions([

@@ -66,12 +66,16 @@ export const matchingProblems = (problems, { min = 0, max = Infinity, tags = [],
 // The first second of a year, in the seconds contest.list counts in.
 export const yearStart = (year) => Date.UTC(year, 0, 1) / 1000
 
+// A link to a profile, as copied from the address bar, stands for its handle.
+const PROFILE_LINK = /^(?:https?:\/\/)?(?:[\w-]+\.)*codeforces\.(?:com|ml)\/profile\/([^/?#]+)/i
+
 // Handles typed into one field, separated by commas or spaces: each once,
 // whatever its case, and no more than `limit` of them.
 export const parseHandles = (text, limit = 5) => {
     const seen = new Set()
     const handles = []
-    for (const handle of String(text).split(/[\s,;]+/)) {
+    for (const word of String(text).split(/[\s,;]+/)) {
+        const handle = PROFILE_LINK.exec(word)?.[1] ?? word
         if (!handle || seen.has(handle.toLowerCase())) continue
         seen.add(handle.toLowerCase())
         handles.push(handle)
