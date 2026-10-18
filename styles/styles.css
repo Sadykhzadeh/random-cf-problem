@@ -257,12 +257,14 @@ select {
     min-width: 0
 }
 
+/* A handle typed without a space has no place to wrap, so it breaks. */
 #handlesStatus,
 #matching {
     min-height: 1.4em;
     margin: 0 0 10px;
     font-size: 0.8em;
-    color: var(--muted)
+    color: var(--muted);
+    overflow-wrap: anywhere
 }
 
 .check {
