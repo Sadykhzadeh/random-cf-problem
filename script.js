@@ -370,6 +370,9 @@ const CONTESTS_URL = "https://codeforces.com/api/contest.list"
 const STARTS_KEY = new URL("starts.v1.json", window.location.href).href
 let startsLoading = null
 let contestStarts = null
+// The last failed attempt. Edits to the form do not each ask again within a
+// minute of it; a draw always does.
+let startsFailure = null
 
 async function fetchContestStarts() {
     const response = await politeFetch(CONTESTS_URL)
@@ -408,8 +411,9 @@ function loadContestStarts() {
     startsLoading.then((starts) => {
         contestStarts = starts
         showMatching()
-    }, () => {
+    }, (error) => {
         startsLoading = null
+        startsFailure = { error, at: Date.now() }
     })
     return startsLoading
 }
@@ -637,11 +641,15 @@ function showMatching() {
     if (!problemset) matching.textContent = ""
     else if (filter.min > filter.max) matching.textContent = text.minAboveMax
     else if (filter.since !== undefined && !contestStarts) {
-        matching.textContent = text.loadingContests
-        loadContestStarts().catch((error) => {
-            console.error(error)
-            matching.textContent = errorText(error)
-        })
+        if (startsFailure && Date.now() - startsFailure.at < RETRY_AFTER) {
+            matching.textContent = errorText(startsFailure.error)
+        } else {
+            matching.textContent = text.loadingContests
+            loadContestStarts().catch((error) => {
+                console.error(error)
+                matching.textContent = errorText(error)
+            })
+        }
     } else {
         const count = matchingProblems(problemset.problems, filter).length
         matching.textContent = !count ? text.noMatch
