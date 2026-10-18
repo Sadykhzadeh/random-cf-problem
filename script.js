@@ -717,7 +717,7 @@ function saveSettings() {
         } catch {
             // See LANG_KEY.
         }
-        const search = writeParams(settings)
+        const search = writeParams(settings, lang)
         history.replaceState(history.state, "", `${window.location.pathname}${search ? `?${search}` : ""}`)
         for (const link of document.querySelectorAll("#langs a[data-lang]")) {
             link.href = `?${writeParams(settings, link.dataset.lang)}`
