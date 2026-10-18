@@ -15,7 +15,6 @@ import {
     parseHandles,
     pickOne,
     problemKey,
-    isTimeout,
     REQUEST_TIMEOUT_MS,
     rankClass,
     staleSummaries,
@@ -29,6 +28,12 @@ import {
     pickLanguage,
     strings
 } from "./modules/i18n.js"
+import {
+    BadHandleError,
+    HandleError,
+    errorMessage,
+    handleFailure
+} from "./modules/errors.js"
 import {
     DEFAULTS,
     readParams,
@@ -245,11 +250,7 @@ function refreshIfStale() {
     fetchProblemset().then(useProblemset, (error) => console.error(error))
 }
 
-// fetch rejects with a TypeError when the request never got an answer.
-const errorText = (error) =>
-    isTimeout(error) ? text.timeout
-        : error instanceof TypeError ? text.networkError
-        : (error.message || String(error))
+const errorText = (error) => errorMessage(error, text)
 
 const statusEl = byId("dataStatus")
 const ago = new Intl.RelativeTimeFormat(lang, { numeric: "auto" })
@@ -294,10 +295,6 @@ const solvedInMemory = new Map()
 // the handles again, and the others, still on their old copy, must not be
 // fetched a second time.
 const refreshingSolved = new Set()
-
-class HandleError extends Error {}
-// The handle itself is wrong, so asking again will not help.
-class BadHandleError extends HandleError {}
 
 const solvedCacheKey = (handle) =>
     new URL(`${inLanguage("solved.v3")}/${encodeURIComponent(handle.toLowerCase())}.json`, window.location.href).href
@@ -355,13 +352,7 @@ async function fetchSolved(handle) {
         `https://codeforces.com/api/user.status?handle=${encodeURIComponent(handle)}&lang=${lang}`)
     const json = await response.json().catch(() => null)
     if (!response.ok || !json || json.status !== "OK" || !Array.isArray(json.result)) {
-        const comment = (json && json.comment) || ""
-        if (/not found/i.test(comment)) throw new BadHandleError(fill(text.noSuchUser, { handle }))
-        // A handle no user can have, such as "ab", is refused with a reason
-        // like "handle: Field should contain between 3 and 24 characters".
-        if (/^handle:/i.test(comment)) throw new BadHandleError(fill(text.notAHandle, { handle }))
-        if (/call limit/i.test(comment) || response.status === 429) throw new HandleError(text.rateLimited)
-        throw new HandleError(fill(text.apiError, { detail: comment || "HTTP " + response.status }))
+        throw handleFailure(response.status, json, handle, text)
     }
     const entry = { savedAt: Date.now(), summary: summarizeSubmissions(json.result) }
     solvedInMemory.set(handle.toLowerCase(), entry)
