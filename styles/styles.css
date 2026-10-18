@@ -257,10 +257,6 @@ select {
     min-width: 0
 }
 
-#handlesStatus:empty {
-    display: none
-}
-
 #handlesStatus,
 #matching {
     min-height: 1.4em;
