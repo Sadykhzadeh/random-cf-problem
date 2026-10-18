@@ -18,6 +18,7 @@ import {
     isTimeout,
     REQUEST_TIMEOUT_MS,
     rankClass,
+    staleSummaries,
     summarizeSubmissions,
     unpackContestStarts,
     unpackProblemset,
@@ -301,13 +302,39 @@ class BadHandleError extends HandleError {}
 const solvedCacheKey = (handle) =>
     new URL(`${inLanguage("solved.v3")}/${encodeURIComponent(handle.toLowerCase())}.json`, window.location.href).href
 
-// Summaries kept in an older shape are never read again.
-openCache().then(async (cache) => {
+// A summary is kept while its handle is used, since each refresh restamps it,
+// and for no longer than this, or beyond the newest of this many.
+const SOLVED_KEPT_FOR = 30 * 24 * 60 * 60 * 1000
+const SOLVED_KEPT_MAX = 20
+
+async function savedAtOf(cache, request) {
+    try {
+        const response = await cache.match(request)
+        const stamp = Number(response.headers.get("X-Saved-At"))
+        // Summaries stored before the stamp was added carry it in the body.
+        return stamp > 0 ? stamp : (await response.json()).savedAt ?? 0
+    } catch {
+        return 0
+    }
+}
+
+// Summaries kept in an older shape are never read again, and the rest are
+// pruned, so the cache does not grow with every handle ever typed.
+async function pruneSolved() {
+    const cache = await openCache()
     if (!cache) return
+    const prefix = new URL(`${inLanguage("solved.v3")}/`, window.location.href).href
+    const entries = []
     for (const request of await cache.keys()) {
         if (/\/solved\.v[12]\//.test(request.url)) cache.delete(request).catch(() => {})
+        else if (request.url.startsWith(prefix)) entries.push({ request, savedAt: await savedAtOf(cache, request) })
     }
-}).catch(() => {})
+    for (const { request } of staleSummaries(entries, Date.now(), { maxAge: SOLVED_KEPT_FOR, maxCount: SOLVED_KEPT_MAX })) {
+        cache.delete(request).catch(() => {})
+    }
+}
+
+pruneSolved().catch(() => {})
 
 async function readSolved(handle) {
     const remembered = solvedInMemory.get(handle.toLowerCase())
@@ -341,8 +368,8 @@ async function fetchSolved(handle) {
     const cache = await openCache()
     if (cache) {
         cache.put(solvedCacheKey(handle), new Response(JSON.stringify(entry), {
-            headers: { "Content-Type": "application/json" },
-        })).catch(() => {})
+            headers: { "Content-Type": "application/json", "X-Saved-At": String(entry.savedAt) },
+        })).then(pruneSolved).catch(() => {})
     }
     return entry
 }

@@ -10,6 +10,7 @@ import {
     isTimeout,
     pickOne,
     rankClass,
+    staleSummaries,
     summarizeSubmissions,
     unpackContestStarts,
     unpackProblemset,
@@ -249,4 +250,22 @@ test("a call that never answers is cut off and recognised as a timeout", async (
     clearTimeout(keepAlive)
     assert.equal(isTimeout(new TypeError("Failed to fetch")), false)
     assert.equal(isTimeout(undefined), false)
+})
+
+test("summaries not used for a month, and all but the newest twenty, are pruned", () => {
+    const day = 24 * 60 * 60 * 1000
+    const now = Date.UTC(2026, 9, 19)
+    const entries = [
+        { key: "fresh", savedAt: now - day },
+        { key: "old", savedAt: now - 31 * day },
+        { key: "edge", savedAt: now - 30 * day },
+        { key: "unstamped", savedAt: 0 },
+    ]
+    assert.deepEqual(staleSummaries(entries, now, { maxAge: 30 * day, maxCount: 20 }).map((e) => e.key),
+        ["old", "unstamped"], "a month exactly is still kept")
+
+    const many = Array.from({ length: 23 }, (_, i) => ({ key: `h${i}`, savedAt: now - i * 1000 }))
+    const dropped = staleSummaries(many, now, { maxAge: 30 * day, maxCount: 20 }).map((e) => e.key)
+    assert.deepEqual(dropped, ["h20", "h21", "h22"], "the three least recently saved go")
+    assert.deepEqual(staleSummaries([], now, { maxAge: day, maxCount: 20 }), [])
 })
