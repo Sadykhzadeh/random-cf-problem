@@ -185,6 +185,15 @@ export const unpackContestStarts = (packed) => {
     return starts
 }
 
+// Of the entries, each with a savedAt time, the ones to drop: those not saved
+// within `maxAge` of `now`, and then all but the `maxCount` newest.
+export const staleSummaries = (entries, now, { maxAge, maxCount }) => {
+    const fresh = entries.filter((entry) => now - entry.savedAt <= maxAge)
+        .sort((a, b) => b.savedAt - a.savedAt)
+    const stale = entries.filter((entry) => now - entry.savedAt > maxAge)
+    return [...stale, ...fresh.slice(maxCount)]
+}
+
 // Which Codeforces rank colour a rating is shown in.
 export const rankClass = (rating) => {
     if (typeof rating !== "number") return ""
