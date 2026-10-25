@@ -4,6 +4,7 @@
     --fg: #ffffff;
     --muted: #b4b4bd;
     --edge: rgba(255, 255, 255, 0.18);
+    --field-edge: #707078;
     --field: #000000;
     --button: #0f0f52;
     --button-hover: #1212cd;
@@ -27,6 +28,7 @@
         --fg: #1c1c21;
         --muted: #55555f;
         --edge: rgba(28, 28, 33, 0.22);
+        --field-edge: #8a8a93;
         --field: #ffffff;
         --rank-newbie: #707070;
         --rank-pupil: #007a00;
@@ -168,7 +170,7 @@ input[type="text"],
 select {
     background-color: var(--field);
     color: var(--fg);
-    border: 1px solid var(--edge);
+    border: 1px solid var(--field-edge);
     border-radius: 6px;
     font: inherit;
     font-size: 0.9em;
@@ -200,7 +202,7 @@ select {
 #topics summary {
     cursor: pointer;
     padding: 6px 8px;
-    border: 1px solid var(--edge);
+    border: 1px solid var(--field-edge);
     border-radius: 6px;
     background-color: var(--field);
     font-size: 0.9em
