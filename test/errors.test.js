@@ -1,7 +1,7 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 
-import { BadHandleError, HandleError, errorMessage, handleFailure } from "../modules/errors.js"
+import { BadHandleError, HandleError, apiFailure, errorMessage, handleFailure } from "../modules/errors.js"
 import { strings } from "../modules/i18n.js"
 
 const text = strings.en
@@ -37,4 +37,11 @@ test("a rate limit is retried; any other failure says what Codeforces answered",
     assert.equal(other.message, text.apiError.replace("{detail}", "internal error"))
 
     assert.equal(handleFailure(503, null, "tourist", text).message, text.apiError.replace("{detail}", "HTTP 503"))
+})
+
+test("a problemset or contest call that hits the rate limit says so in the page's words", () => {
+    assert.equal(apiFailure(200, { status: "FAILED", comment: "Call limit exceeded" }, text).message, text.rateLimited)
+    assert.equal(apiFailure(429, null, text).message, text.rateLimited)
+    assert.equal(apiFailure(503, null, text).message, text.apiError.replace("{detail}", "HTTP 503"))
+    assert.equal(apiFailure(400, { status: "FAILED", comment: "oops" }, text).message, text.apiError.replace("{detail}", "oops"))
 })

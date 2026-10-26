@@ -14,6 +14,15 @@ export const errorMessage = (error, text) =>
         : error instanceof TypeError ? text.networkError
         : (error?.message || String(error))
 
+// The error for a call that did not come back OK. A rate limit is told
+// apart, as it passes within seconds; anything else says what Codeforces
+// answered.
+export const apiFailure = (status, json, text) => {
+    const comment = (json && json.comment) || ""
+    if (/call limit/i.test(comment) || status === 429) return new HandleError(text.rateLimited)
+    return new HandleError(fill(text.apiError, { detail: comment || "HTTP " + status }))
+}
+
 // The error for a user.status call that did not come back OK. Codeforces
 // says why in a comment, and the reason decides whether a retry can help.
 export const handleFailure = (status, json, handle, text) => {
@@ -22,6 +31,5 @@ export const handleFailure = (status, json, handle, text) => {
     // A handle no user can have, such as "ab", is refused with a reason
     // like "handle: Field should contain between 3 and 24 characters".
     if (/^handle:/i.test(comment)) return new BadHandleError(fill(text.notAHandle, { handle }))
-    if (/call limit/i.test(comment) || status === 429) return new HandleError(text.rateLimited)
-    return new HandleError(fill(text.apiError, { detail: comment || "HTTP " + status }))
+    return apiFailure(status, json, text)
 }
