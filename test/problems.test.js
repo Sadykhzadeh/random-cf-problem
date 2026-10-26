@@ -7,6 +7,7 @@ import {
     packContestStarts,
     packProblemset,
     parseHandles,
+    isStale,
     isTimeout,
     pickOne,
     rankClass,
@@ -268,4 +269,20 @@ test("summaries not used for a month, and all but the newest twenty, are pruned"
     const dropped = staleSummaries(many, now, { maxAge: 30 * day, maxCount: 20 }).map((e) => e.key)
     assert.deepEqual(dropped, ["h20", "h21", "h22"], "the three least recently saved go")
     assert.deepEqual(staleSummaries([], now, { maxAge: day, maxCount: 20 }), [])
+})
+
+test("a copy is stale past its age, and also when it is dated well ahead of the clock", () => {
+    const minute = 60 * 1000
+    const now = Date.UTC(2026, 9, 19)
+    assert.equal(isStale(now - 10 * minute, now, 10 * minute), false, "exactly its age is still fresh")
+    assert.equal(isStale(now - 10 * minute - 1, now, 10 * minute), true)
+    assert.equal(isStale(now + 30 * 1000, now, 10 * minute), false, "a clock set back a little is not a reason to fetch")
+    assert.equal(isStale(now + 2 * minute, now, 10 * minute), true, "stamped by a clock that was ahead")
+})
+
+test("a summary stamped in the future is pruned like an old one", () => {
+    const day = 24 * 60 * 60 * 1000
+    const now = Date.UTC(2026, 9, 19)
+    const entries = [{ key: "fresh", savedAt: now - day }, { key: "ahead", savedAt: now + 400 * day }]
+    assert.deepEqual(staleSummaries(entries, now, { maxAge: 30 * day, maxCount: 20 }).map((e) => e.key), ["ahead"])
 })
