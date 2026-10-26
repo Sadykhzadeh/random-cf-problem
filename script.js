@@ -31,6 +31,7 @@ import {
 import {
     BadHandleError,
     HandleError,
+    apiFailure,
     errorMessage,
     handleFailure
 } from "./modules/errors.js"
@@ -198,7 +199,7 @@ async function fetchProblemset() {
     // A failure comes as {status: "FAILED", comment: ...}, and not always
     // with an error status, so the body is checked as well.
     if (!response.ok || !json || json.status !== "OK" || !json.result || !json.result.problems) {
-        throw new Error(fill(text.apiError, { detail: (json && json.comment) || "HTTP " + response.status }))
+        throw apiFailure(response.status, json, text)
     }
     const packed = packProblemset(json.result)
     const fresh = { savedAt: Date.now(), problems: unpackProblemset(packed) }
@@ -396,7 +397,7 @@ async function fetchContestStarts() {
     const response = await politeFetch(CONTESTS_URL)
     const json = await response.json().catch(() => null)
     if (!response.ok || !json || json.status !== "OK" || !Array.isArray(json.result)) {
-        throw new Error(fill(text.apiError, { detail: (json && json.comment) || "HTTP " + response.status }))
+        throw apiFailure(response.status, json, text)
     }
     const packed = packContestStarts(json.result)
     const cache = await openCache()
