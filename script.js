@@ -8,6 +8,7 @@ import {
     isDrawKey
 } from "./modules/ui.js"
 import {
+    isStale,
     makeSkip,
     matchingProblems,
     packContestStarts,
@@ -246,7 +247,7 @@ let listRefreshedAt = 0
 
 function refreshIfStale() {
     const now = Date.now()
-    if (!problemset || now - problemset.savedAt <= FRESH_FOR || now - listRefreshedAt < RETRY_AFTER) return
+    if (!problemset || !isStale(problemset.savedAt, now, FRESH_FOR) || now - listRefreshedAt < RETRY_AFTER) return
     listRefreshedAt = now
     fetchProblemset().then(useProblemset, (error) => console.error(error))
 }
@@ -371,7 +372,7 @@ async function loadSolved(handle) {
     if (!saved) return fetchSolved(handle)
     const key = handle.toLowerCase()
     solvedInMemory.set(key, saved)
-    if (Date.now() - saved.savedAt > SOLVED_FRESH_FOR && !refreshingSolved.has(key)) {
+    if (isStale(saved.savedAt, Date.now(), SOLVED_FRESH_FOR) && !refreshingSolved.has(key)) {
         refreshingSolved.add(key)
         fetchSolved(handle).then(() => {
             if (skipState.handles.some((h) => h.toLowerCase() === key)) loadSkips()
@@ -418,7 +419,7 @@ function loadContestStarts() {
             const data = response && await response.json()
             const starts = data && unpackContestStarts(data.starts)
             if (starts && Number.isFinite(data.savedAt)) {
-                if (Date.now() - data.savedAt > FRESH_FOR) fetchContestStarts().catch((error) => console.error(error))
+                if (isStale(data.savedAt, Date.now(), FRESH_FOR)) fetchContestStarts().catch((error) => console.error(error))
                 return starts
             }
         } catch {

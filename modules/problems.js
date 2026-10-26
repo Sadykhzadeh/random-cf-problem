@@ -185,12 +185,19 @@ export const unpackContestStarts = (packed) => {
     return starts
 }
 
-// Of the entries, each with a savedAt time, the ones to drop: those not saved
-// within `maxAge` of `now`, and then all but the `maxCount` newest.
+// Whether a copy saved at `savedAt` is older than `maxAge`. One saved by a
+// clock that ran ahead looks younger than it is, and would stay fresh until
+// the clock caught up, so a stamp more than a minute in the future counts as
+// stale too; a smaller step back is an ordinary clock adjustment.
+const CLOCK_SLACK = 60 * 1000
+export const isStale = (savedAt, now, maxAge) => now - savedAt > maxAge || savedAt - now > CLOCK_SLACK
+
+// Of the entries, each with a savedAt time, the ones to drop: those stale
+// by `maxAge`, and then all but the `maxCount` newest.
 export const staleSummaries = (entries, now, { maxAge, maxCount }) => {
-    const fresh = entries.filter((entry) => now - entry.savedAt <= maxAge)
+    const fresh = entries.filter((entry) => !isStale(entry.savedAt, now, maxAge))
         .sort((a, b) => b.savedAt - a.savedAt)
-    const stale = entries.filter((entry) => now - entry.savedAt > maxAge)
+    const stale = entries.filter((entry) => isStale(entry.savedAt, now, maxAge))
     return [...stale, ...fresh.slice(maxCount)]
 }
 
