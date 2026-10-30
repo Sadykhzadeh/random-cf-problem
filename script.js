@@ -16,7 +16,7 @@ import {
     parseHandles,
     pickOne,
     problemKey,
-    REQUEST_TIMEOUT_MS,
+    fetchJson,
     rankClass,
     staleSummaries,
     summarizeSubmissions,
@@ -191,12 +191,11 @@ async function politeFetch(url) {
     const at = Math.max(now, nextCallAt)
     nextCallAt = at + API_GAP
     if (at > now) await new Promise((resolve) => setTimeout(resolve, at - now))
-    return fetch(url, { signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) })
+    return fetchJson(url)
 }
 
 async function fetchProblemset() {
-    const response = await politeFetch(PROBLEMSET_URL)
-    const json = await response.json().catch(() => null)
+    const { response, json } = await politeFetch(PROBLEMSET_URL)
     // A failure comes as {status: "FAILED", comment: ...}, and not always
     // with an error status, so the body is checked as well.
     if (!response.ok || !json || json.status !== "OK" || !json.result || !json.result.problems) {
@@ -350,9 +349,8 @@ async function readSolved(handle) {
 }
 
 async function fetchSolved(handle) {
-    const response = await politeFetch(
+    const { response, json } = await politeFetch(
         `https://codeforces.com/api/user.status?handle=${encodeURIComponent(handle)}&lang=${lang}`)
-    const json = await response.json().catch(() => null)
     if (!response.ok || !json || json.status !== "OK" || !Array.isArray(json.result)) {
         throw handleFailure(response.status, json, handle, text)
     }
@@ -395,8 +393,7 @@ let contestStarts = null
 let startsFailure = null
 
 async function fetchContestStarts() {
-    const response = await politeFetch(CONTESTS_URL)
-    const json = await response.json().catch(() => null)
+    const { response, json } = await politeFetch(CONTESTS_URL)
     if (!response.ok || !json || json.status !== "OK" || !Array.isArray(json.result)) {
         throw apiFailure(response.status, json, text)
     }
