@@ -7,6 +7,7 @@ import {
     packContestStarts,
     packProblemset,
     parseHandles,
+    fetchJson,
     isStale,
     isTimeout,
     pickOne,
@@ -291,4 +292,57 @@ test("a summary stamped in the future is pruned like an old one", () => {
     const now = Date.UTC(2026, 9, 19)
     const entries = [{ key: "fresh", savedAt: now - day }, { key: "ahead", savedAt: now + 400 * day }]
     assert.deepEqual(staleSummaries(entries, now, { maxAge: 30 * day, maxCount: 20 }).map((e) => e.key), ["ahead"])
+})
+
+// A stand-in for fetch whose body arrives in `parts`, `gap` milliseconds apart,
+// and fails as a real body does when the signal aborts.
+const trickle = (parts, gap) => (url, { signal }) => {
+    let timer = 0
+    const body = new ReadableStream({
+        start(controller) {
+            let next = 0
+            const send = () => {
+                if (next === parts.length) return controller.close()
+                timer = setTimeout(() => {
+                    controller.enqueue(new TextEncoder().encode(parts[next++]))
+                    send()
+                }, gap)
+            }
+            signal.addEventListener("abort", () => {
+                clearTimeout(timer)
+                controller.error(signal.reason)
+            })
+            send()
+        },
+    })
+    return Promise.resolve(new Response(body, { status: 200 }))
+}
+
+test("a slow download is kept, a stalled one is cut off", async () => {
+    const parts = Array.from({ length: 12 }, (_, i) => {
+        if (i === 0) return '{"status":"OK","result":['
+        if (i === 10) return "1"
+        return i === 11 ? "]}" : "1,"
+    })
+    // Twelve chunks 30 ms apart take longer than the 200 ms limit, yet nothing goes quiet for anything
+    // like that long; the wide margin keeps a busy machine's late timers from tripping it.
+    const { response, json } = await fetchJson("x", { idleMs: 200, fetchFn: trickle(parts, 30) })
+    assert.equal(response.status, 200)
+    assert.equal(json.result.length, 10)
+
+    const keepAlive = setTimeout(() => {}, 1000)
+    await assert.rejects(
+        fetchJson("x", { idleMs: 40, fetchFn: trickle(['{"status":"OK"', "}"], 400) }),
+        isTimeout,
+    )
+    clearTimeout(keepAlive)
+})
+
+test("an error answer keeps its status and comment, and an HTML page parses as nothing", async () => {
+    const limited = async () => new Response('{"status":"FAILED","comment":"Call limit exceeded"}', { status: 503 })
+    const { response, json } = await fetchJson("x", { fetchFn: limited })
+    assert.equal(response.status, 503)
+    assert.equal(json.comment, "Call limit exceeded")
+    const html = async () => new Response("<html>down</html>", { status: 502 })
+    assert.equal((await fetchJson("x", { fetchFn: html })).json, null)
 })
