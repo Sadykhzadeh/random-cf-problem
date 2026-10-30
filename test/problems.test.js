@@ -147,17 +147,23 @@ test("a problem solved in the parallel round counts, a namesake elsewhere does n
         solvedIn(77, "Easy Version"),
         solvedIn(515, "Same Title", 1300),
         solvedIn(1972, "Far Apart", 1400, 1714487700),
-    ], { starts: new Map([[1967, 1714487700], [1900, 1700000000]]) })
+    ], { starts: new Map([[1950, 1714487700], [1900, 1700000000]]) })
     assert.equal(skip({ contestId: 1500, index: "C", name: "Shared", rating: 1500 }), true)
     assert.equal(skip({ contestId: 1503, index: "C", name: "Shared", rating: 1500 }), true)
-    assert.equal(skip({ contestId: 1504, index: "C", name: "Shared", rating: 1500 }), false)
+    assert.equal(skip({ contestId: 1510, index: "C", name: "Shared", rating: 1500 }), false)
+    // The finals of a cup and its online mirror are days apart, a few contests apart:
+    // VK Cup 2015 Finals is 562 and the mirror 566, ABBYY Cup 3.0 finals 324 and 331.
+    const mirror = makeSkip([solvedIn(566, "Matching Names", 2300), solvedIn(331, "Second Mirror", 2400)])
+    assert.equal(mirror({ contestId: 562, index: "F", name: "Matching Names", rating: 2300 }), true)
+    assert.equal(mirror({ contestId: 324, index: "D", name: "Second Mirror", rating: 2400 }), true)
+    assert.equal(mirror({ contestId: 557, index: "F", name: "Matching Names", rating: 2300 }), false, "nine apart")
     assert.equal(skip({ contestId: 1200, index: "A", name: "Common Name", rating: 1500 }), false)
     assert.equal(skip({ contestId: 77, index: "B", name: "Easy Version", rating: 1500 }), false, "same contest, other letter")
     assert.equal(skip({ contestId: 516, index: "E", name: "Same Title", rating: 3100 }), false, "same name, other rating")
-    assert.equal(skip({ contestId: 1967, index: "A", name: "Far Apart", rating: 1400 }), true, "started together")
+    assert.equal(skip({ contestId: 1950, index: "A", name: "Far Apart", rating: 1400 }), true, "started together")
     assert.equal(skip({ contestId: 1900, index: "A", name: "Far Apart", rating: 1400 }), false, "started at another time")
     assert.equal(makeSkip([solvedIn(1972, "Far Apart", 1400, 1714487700)])(
-        { contestId: 1967, index: "A", name: "Far Apart", rating: 1400 }), false, "no start times, no match")
+        { contestId: 1950, index: "A", name: "Far Apart", rating: 1400 }), false, "no start times, no match")
 })
 
 test("a solved problem keeps its contest's start time, unless it came from a virtual run or the gym", () => {

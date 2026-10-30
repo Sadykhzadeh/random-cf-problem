@@ -132,12 +132,19 @@ export const summarizeSubmissions = (submissions) => {
     }
 }
 
+// How far apart two contests can be numbered and still hold the same problem
+// without starting together: the finals of a cup and its online mirror run on
+// other days (VK Cup 2015 Finals 562 and 566, ABBYY Cup 3.0 Finals 324 and
+// 331). Of all the problems Codeforces lists, the closest two contests
+// holding different problems of one name and rating are nine apart.
+const PARALLEL_GAP = 7
+
 // A problem shared by a Div. 1 and a Div. 2 round is listed once in the
 // problemset, under one of the two contests, while a submission records the
 // contest it was made in. So a problem also counts as solved when a problem
 // of the same name and rating was solved in a contest that started at the
 // same second (`starts` maps a contest to its start time), or in one
-// numbered one or two away, as an online mirror of an onsite round is.
+// numbered up to PARALLEL_GAP away, as an online mirror of an onsite round is.
 // Round 942 is 1967 for Div. 1 and 1972 for Div. 2, and the problemset
 // lists its shared problems under 1967 only. With `includeTried`, the same
 // goes for a problem tried there.
@@ -165,7 +172,7 @@ export const makeSkip = (summaries, { includeTried = false, starts = new Map() }
         const start = starts.get(problem.contestId)
         return solvedIn.some(([contestId, rating, solvedStart]) =>
             contestId !== problem.contestId && rating === (problem.rating ?? null) &&
-            (Math.abs(contestId - problem.contestId) <= 2 || (start !== undefined && start === solvedStart)))
+            (Math.abs(contestId - problem.contestId) <= PARALLEL_GAP || (start !== undefined && start === solvedStart)))
     }
 }
 
