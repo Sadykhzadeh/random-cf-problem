@@ -66,8 +66,9 @@ export const matchingProblems = (problems, { min = 0, max = Infinity, tags = [],
 // The first second of a year, in the seconds contest.list counts in.
 export const yearStart = (year) => Date.UTC(year, 0, 1) / 1000
 
-// A link to a profile, as copied from the address bar, stands for its handle.
-const PROFILE_LINK = /^(?:https?:\/\/)?(?:[\w-]+\.)*codeforces\.(?:com|ml)\/profile\/([^/?#]+)/i
+// A link to a profile or to someone's submissions, as copied from the address
+// bar on any Codeforces host, stands for its handle.
+const PROFILE_LINK = /^(?:https?:\/\/)?(?:[\w-]+\.)*codeforces\.[a-z]+\/(?:profile|submissions)\/([^/?#]+)/i
 
 // Handles typed into one field, separated by commas or spaces: each once,
 // whatever its case, and no more than `limit` of them.

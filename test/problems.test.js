@@ -116,6 +116,11 @@ test("a profile link stands for its handle", () => {
         ["tourist", "Um_nik"])
     assert.deepEqual(parseHandles("https://m1.codeforces.com/profile/jiangly?locale=ru jiangly").handles, ["jiangly"])
     assert.deepEqual(parseHandles("http://codeforces.ml/profile/ksun48#").handles, ["ksun48"])
+    assert.deepEqual(parseHandles("https://codeforces.net/profile/tourist codeforces.es/profile/Petr").handles, ["tourist", "Petr"],
+        "any Codeforces host")
+    assert.deepEqual(parseHandles("https://codeforces.com/submissions/jiangly/page/2").handles, ["jiangly"],
+        "a link to someone's submissions")
+    assert.deepEqual(parseHandles("https://example.com/profile/tourist").handles, ["https://example.com/profile/tourist"])
     assert.deepEqual(parseHandles("https://codeforces.com/contest/4").handles, ["https://codeforces.com/contest/4"],
         "anything else is left for Codeforces to judge")
 })
