@@ -7,6 +7,7 @@ import {
     packContestStarts,
     packProblemset,
     parseHandles,
+    fetchApi,
     fetchJson,
     isStale,
     isTimeout,
@@ -350,4 +351,47 @@ test("an error answer keeps its status and comment, and an HTML page parses as n
     assert.equal(json.comment, "Call limit exceeded")
     const html = async () => new Response("<html>down</html>", { status: 502 })
     assert.equal((await fetchJson("x", { fetchFn: html })).json, null)
+})
+
+test("a call answered with the rate limit or a busy server is made once more, when the caller wants it to be", async () => {
+    const answers = (...list) => {
+        const calls = []
+        const fetchFn = async () => {
+            calls.push(1)
+            return list.shift()
+        }
+        return { fetchFn, calls }
+    }
+    const limited = () => new Response('{"status":"FAILED","comment":"Call limit exceeded"}', { status: 503 })
+    const ok = () => new Response('{"status":"OK","result":[]}', { status: 200 })
+    let paused = 0
+    const again = async () => {
+        paused += 1
+        return true
+    }
+
+    const first = answers(limited(), ok())
+    const result = await fetchApi("x", { fetchFn: first.fetchFn, again })
+    assert.equal(result.json.status, "OK")
+    assert.equal(first.calls.length, 2)
+    assert.equal(paused, 1)
+
+    // A gateway error under load passes too.
+    const busy = answers(new Response("<html>busy</html>", { status: 504 }), ok())
+    assert.equal((await fetchApi("x", { fetchFn: busy.fetchFn, again })).response.status, 200)
+
+    // Only once: a second refusal is the answer.
+    const stuck = answers(limited(), limited(), ok())
+    assert.equal((await fetchApi("x", { fetchFn: stuck.fetchFn, again })).response.status, 503)
+    assert.equal(stuck.calls.length, 2)
+
+    // An answer that will not change is not asked for again.
+    const missing = answers(new Response('{"status":"FAILED","comment":"handle: User with handle x not found"}', { status: 400 }))
+    assert.equal((await fetchApi("x", { fetchFn: missing.fetchFn, again })).response.status, 400)
+    assert.equal(missing.calls.length, 1)
+
+    // Without a way to wait, the first answer stands.
+    const alone = answers(limited(), ok())
+    assert.equal((await fetchApi("x", { fetchFn: alone.fetchFn })).response.status, 503)
+    assert.equal(alone.calls.length, 1)
 })

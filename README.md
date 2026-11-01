@@ -57,7 +57,9 @@ and kept for ten minutes. In a tab left open longer, either is fetched
 again behind the next draw. The start times from `contest.list`, which
 date the contests and tell parallel rounds apart, are fetched once a year
 or a handle is given, and kept for a day.
-Calls to the API are spaced two seconds apart, as Codeforces asks.
+Calls to the API are spaced two seconds apart, as Codeforces asks. A call
+refused for the rate limit, or by a busy gateway, is made once more after the
+next two seconds.
 
 ## Running it locally
 

@@ -16,7 +16,7 @@ import {
     parseHandles,
     pickOne,
     problemKey,
-    fetchJson,
+    fetchApi,
     rankClass,
     staleSummaries,
     summarizeSubmissions,
@@ -186,12 +186,18 @@ async function readSaved() {
 const API_GAP = 2000
 let nextCallAt = 0
 
-async function politeFetch(url) {
+async function waitForTurn() {
     const now = Date.now()
     const at = Math.max(now, nextCallAt)
     nextCallAt = at + API_GAP
     if (at > now) await new Promise((resolve) => setTimeout(resolve, at - now))
-    return fetchJson(url)
+    return true
+}
+
+// A call refused for the rate limit takes the next turn and goes out again.
+async function politeFetch(url) {
+    await waitForTurn()
+    return fetchApi(url, { again: waitForTurn })
 }
 
 async function fetchProblemset() {
