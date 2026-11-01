@@ -9,6 +9,9 @@ skipping the ones you have already solved.
 
 - Draws a rated problem between a minimum and a maximum rating.
 - Optionally only from contests held in a given year or later.
+- Optionally only from rounds for chosen divisions: Div. 1 to 4 and Educational,
+  taken from the contest names. A problem the Div. 1 and Div. 2 rounds share
+  counts for both.
 - Narrows by topics: all of the chosen ones, any of them, or none of them.
   A line above the button says how many problems the settings leave.
 - Optionally leaves out the problems Codeforces tags `*special`: April
@@ -36,6 +39,7 @@ skipping the ones you have already solved.
 | --- | --- | --- |
 | `min`, `max` | `min=1400&max=1900` | rating range, inclusive |
 | `since` | `since=2019` | contests held in that year or later |
+| `div` | `div=2,edu` | rounds for these divisions: `1`, `2`, `3`, `4` or `edu` |
 | `tags` | `tags=dp,graphs` | topics, as Codeforces names them |
 | `any` | `any=1` | any of the topics rather than all of them |
 | `none` | `none=1` | none of the topics |
@@ -54,9 +58,9 @@ copy is used straight away while a fresh one loads, and "Refresh" at the
 bottom fetches it on demand. For each handle to skip, `user.status`, in
 the same language, is boiled down to the problems it solved and tried,
 and kept for ten minutes. In a tab left open longer, either is fetched
-again behind the next draw. The start times from `contest.list`, which
-date the contests and tell parallel rounds apart, are fetched once a year
-or a handle is given, and kept for a day.
+again behind the next draw. The start times and divisions from `contest.list`, which
+date the contests and tell parallel rounds apart, are fetched once a year,
+a division or a handle is given, and kept for a day.
 Calls to the API are spaced two seconds apart, as Codeforces asks. A call
 refused for the rate limit, or by a busy gateway, is made once more after the
 next two seconds.

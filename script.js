@@ -13,6 +13,7 @@ import {
     matchingProblems,
     packContestStarts,
     packProblemset,
+    unpackContestDivisions,
     parseHandles,
     pickOne,
     problemKey,
@@ -38,6 +39,7 @@ import {
 } from "./modules/errors.js"
 import {
     DEFAULTS,
+    DIVISIONS,
     readParams,
     writeParams
 } from "./modules/params.js"
@@ -77,6 +79,7 @@ for (const [id, key] of [
     ["min_num_text", "minRating"],
     ["max_num_text", "maxRating"],
     ["since_label", "since"],
+    ["division_label", "division"],
     ["choose_label", "topic"],
     ["topicsSummary", "anyTopic"],
     ["modeAll", "modeAll"],
@@ -114,6 +117,20 @@ for (const tag of topicOrder) {
     label.append(box, " ", lang === "ru" ? tag.name : tag.value)
     chooseEl.append(label)
 }
+
+// One checkbox per division of a round; none ticked leaves them all in.
+for (const division of DIVISIONS) {
+    const box = document.createElement("input")
+    box.type = "checkbox"
+    box.value = division
+    const label = document.createElement("label")
+    label.className = "topic"
+    label.append(box, " ", division === "edu" ? text.educational : fill(text.divisionN, { n: division }))
+    byId("divisions").append(label)
+}
+
+const chosenDivisions = () =>
+    [...byId("divisions").querySelectorAll("input:checked")].map((box) => box.value)
 
 const chosenTags = () =>
     [...chooseEl.querySelectorAll("input:checked")].map((box) => box.value)
@@ -391,9 +408,10 @@ async function loadSolved(handle) {
 // contest.list is 410 KB of JSON, of which the start times are kept for a
 // day. An older copy is used for this visit and replaced for the next one.
 const CONTESTS_URL = "https://codeforces.com/api/contest.list"
-const STARTS_KEY = new URL("starts.v1.json", window.location.href).href
+const STARTS_KEY = new URL("starts.v2.json", window.location.href).href
 let startsLoading = null
 let contestStarts = null
+let divisionsOfContest = null
 // The last failed attempt. Edits to the form do not each ask again within a
 // minute of it; a draw always does.
 let startsFailure = null
@@ -410,6 +428,7 @@ async function fetchContestStarts() {
             headers: { "Content-Type": "application/json" },
         })).catch(() => {})
     }
+    divisionsOfContest = unpackContestDivisions(packed)
     return unpackContestStarts(packed)
 }
 
@@ -421,7 +440,9 @@ function loadContestStarts() {
             const response = cache && await cache.match(STARTS_KEY)
             const data = response && await response.json()
             const starts = data && unpackContestStarts(data.starts)
-            if (starts && Number.isFinite(data.savedAt)) {
+            const divisions = data && unpackContestDivisions(data.starts)
+            if (starts && divisions && Number.isFinite(data.savedAt)) {
+                divisionsOfContest = divisions
                 if (isStale(data.savedAt, Date.now(), FRESH_FOR)) fetchContestStarts().catch((error) => console.error(error))
                 return starts
             }
@@ -648,6 +669,8 @@ function readFilter() {
         min,
         max,
         since: year > 0 ? yearStart(year) : undefined,
+        divisions: chosenDivisions(),
+        contestDivisions: divisionsOfContest ?? undefined,
         starts: contestStarts ?? undefined,
         tags: chosenTags(),
         mode: tagMode(),
@@ -656,6 +679,10 @@ function readFilter() {
     }
 }
 
+// The contest dates and names are only needed to date the contests or to tell
+// their divisions.
+const needsContests = (filter) => filter.since !== undefined || filter.divisions.length > 0
+
 // How many problems the current settings leave, kept up to date as they
 // change, so an empty combination shows before anything is drawn.
 function showMatching() {
@@ -663,7 +690,7 @@ function showMatching() {
     const matching = byId("matching")
     if (!problemset) matching.textContent = ""
     else if (filter.min > filter.max) matching.textContent = text.minAboveMax
-    else if (filter.since !== undefined && !contestStarts) {
+    else if (needsContests(filter) && !contestStarts) {
         if (startsFailure && Date.now() - startsFailure.at < RETRY_AFTER) {
             matching.textContent = errorText(startsFailure.error)
         } else {
@@ -697,6 +724,7 @@ function currentSettings() {
         min: byId("min_num").value,
         max: byId("max_num").value,
         since: byId("since").value,
+        divisions: chosenDivisions(),
         tags: chosenTags(),
         mode: tagMode(),
         nospecial: byId("skipSpecial").checked,
@@ -710,6 +738,7 @@ function applySettings(settings) {
     byId("min_num").value = settings.min
     byId("max_num").value = settings.max
     byId("since").value = settings.since
+    for (const box of byId("divisions").querySelectorAll("input")) box.checked = settings.divisions.includes(box.value)
     for (const box of chooseEl.querySelectorAll("input")) box.checked = settings.tags.includes(box.value)
     byId("form").elements.mode.value = settings.mode
     byId("skipSpecial").checked = settings.nospecial
@@ -798,8 +827,8 @@ byId("form").addEventListener("submit", async (event) => {
             // fetched behind this draw, in time for the next one.
             loadSkips()
         }
-        // Contest dates are only fetched once a year is asked for.
-        if (readFilter().since !== undefined && !contestStarts) {
+        // Contest dates are only fetched once a year or a division is asked for.
+        if (needsContests(readFilter()) && !contestStarts) {
             showMessage(text.loadingContests)
             await loadContestStarts()
         }

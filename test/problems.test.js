@@ -7,6 +7,7 @@ import {
     packContestStarts,
     packProblemset,
     parseHandles,
+    contestDivisions,
     fetchApi,
     fetchJson,
     isStale,
@@ -15,6 +16,7 @@ import {
     rankClass,
     staleSummaries,
     summarizeSubmissions,
+    unpackContestDivisions,
     unpackContestStarts,
     unpackProblemset,
     yearStart,
@@ -217,6 +219,42 @@ test("contest start times survive a round trip, and anything else is refused", (
     assert.deepEqual([...starts], [[1967, 1714487700], [1972, 1714487700]])
     assert.equal(unpackContestStarts(null), null)
     assert.equal(unpackContestStarts([[1967, "1714487700"]]), null)
+})
+
+test("a contest name says which divisions it is for", () => {
+    assert.deepEqual(contestDivisions("Codeforces Round 942 (Div. 1)"), ["1"])
+    assert.deepEqual(contestDivisions("Codeforces Round 1131 (Div. 3)"), ["3"])
+    assert.deepEqual(contestDivisions("Codeforces Round (Div. 1, Based on Mexican Olympiad)"), ["1"])
+    assert.deepEqual(contestDivisions("WorldQuant Round 1 (Codeforces Round 1128, Div. 1 + Div. 2)"), ["1", "2"])
+    // Rated for Div. 2 is what Educational rounds say, and they are a kind of their own.
+    assert.deepEqual(contestDivisions("Educational Codeforces Round 196 (Rated for Div. 2)"), ["edu"])
+    assert.deepEqual(contestDivisions("Codeforces Global Round 27"), [])
+    assert.deepEqual(contestDivisions(undefined), [])
+})
+
+test("a problem listed under one of two parallel rounds belongs to both divisions", () => {
+    const contests = [
+        { id: 1967, name: "Codeforces Round 942 (Div. 1)", startTimeSeconds: 1714487700 },
+        { id: 1972, name: "Codeforces Round 942 (Div. 2)", startTimeSeconds: 1714487700 },
+        { id: 1973, name: "Codeforces Round 943 (Div. 3)", startTimeSeconds: 1714500000 },
+        { id: 1974, name: "Educational Codeforces Round 1 (Rated for Div. 2)", startTimeSeconds: 1714487700 },
+        { id: 1975, name: "Codeforces Global Round 1", startTimeSeconds: 1714487700 },
+        { id: 2300, name: "Codeforces Round 9 (Div. 4)" },
+    ]
+    const divisions = unpackContestDivisions(JSON.parse(JSON.stringify(packContestStarts(contests))))
+    assert.deepEqual([...divisions], [
+        [1967, ["1", "2"]], [1972, ["1", "2"]], [1973, ["3"]], [1974, ["edu"]], [1975, []],
+    ])
+    assert.equal(unpackContestDivisions(null), null)
+    assert.equal(unpackContestDivisions([[1967, 1714487700]]), null, "a copy kept before divisions were")
+
+    const problems = [1967, 1972, 1973, 1974, 1975, 2300].map((contestId) =>
+        ({ contestId, index: "A", name: `P${contestId}`, rating: 800, tags: [] }))
+    const names = (filter) => matchingProblems(problems, { divisions: [], ...filter, contestDivisions: divisions }).map((p) => p.name)
+    assert.equal(names({}).length, 6, "no division chosen is no filter")
+    assert.deepEqual(names({ divisions: ["2"] }), ["P1967", "P1972"])
+    assert.deepEqual(names({ divisions: ["3", "edu"] }), ["P1973", "P1974"])
+    assert.deepEqual(names({ divisions: ["4"] }), [], "a contest missing from the list cannot be told")
 })
 
 test("ratings get the colour of the Codeforces rank they fall in", () => {

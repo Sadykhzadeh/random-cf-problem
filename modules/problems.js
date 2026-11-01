@@ -50,7 +50,7 @@ export const unpackProblemset = (packed) => {
 // drops problems someone has already solved. `since` drops problems from
 // contests that started before it (`starts` maps a contest to its start
 // time); a contest missing from `starts` is newer than the list, so it stays.
-export const matchingProblems = (problems, { min = 0, max = Infinity, tags = [], mode = "all", special = true, skip, since, starts } = {}) => {
+export const matchingProblems = (problems, { min = 0, max = Infinity, tags = [], mode = "all", special = true, skip, since, starts, divisions = [], contestDivisions: divisionsOf } = {}) => {
     const hasTags = mode === "any" ? (problem) => tags.some((tag) => problem.tags.includes(tag))
         : mode === "none" ? (problem) => !tags.some((tag) => problem.tags.includes(tag))
         : (problem) => tags.every((tag) => problem.tags.includes(tag))
@@ -60,6 +60,7 @@ export const matchingProblems = (problems, { min = 0, max = Infinity, tags = [],
         (!tags.length || hasTags(problem)) &&
         (special || !problem.tags.includes("*special")) &&
         !(since !== undefined && starts?.get(problem.contestId) < since) &&
+        (!divisions.length || divisions.some((division) => divisionsOf?.get(problem.contestId)?.includes(division))) &&
         !(skip && skip(problem)))
 }
 
@@ -177,11 +178,44 @@ export const makeSkip = (summaries, { includeTried = false, starts = new Map() }
     }
 }
 
-// contest.list boiled down to [contest, start time] pairs, and back to a
-// map; anything that does not read back cleanly is no data at all.
-export const packContestStarts = (contests) =>
-    contests.filter((contest) => Number.isFinite(contest.startTimeSeconds))
-        .map((contest) => [contest.id, contest.startTimeSeconds])
+// The divisions a contest is for, as its name says: 1 to 4, or "edu" for an
+// Educational round, whose "Rated for Div. 2" is not a Div. 2 round. A
+// Global round or a cup names none.
+export const contestDivisions = (name) => {
+    if (/educational/i.test(name ?? "")) return ["edu"]
+    const numbers = [...String(name ?? "").matchAll(/Div[.]?[ ]*([1-4])/gi)].map((match) => match[1])
+    return [...new Set(numbers)].sort()
+}
+
+// contest.list boiled down to [contest, start time, divisions] triples, the
+// divisions as one string, and back to maps; anything that does not read back
+// cleanly is no data at all. The problemset lists the problems two parallel
+// rounds share under one of them, so a Div. 1 round holds problems of Div. 2
+// as well: each of the two takes the divisions of both.
+export const packContestStarts = (contests) => {
+    const started = contests.filter((contest) => Number.isFinite(contest.startTimeSeconds))
+    const together = new Map()
+    for (const contest of started) {
+        const own = contestDivisions(contest.name).filter((division) => division !== "edu")
+        if (!own.length) continue
+        together.set(contest.startTimeSeconds, [...(together.get(contest.startTimeSeconds) ?? []), ...own])
+    }
+    return started.map((contest) => {
+        const own = contestDivisions(contest.name)
+        const all = own.length && own[0] !== "edu" ? [...new Set(together.get(contest.startTimeSeconds))].sort() : own
+        return [contest.id, contest.startTimeSeconds, all.join(",")]
+    })
+}
+
+export const unpackContestDivisions = (packed) => {
+    if (!Array.isArray(packed)) return null
+    const divisions = new Map()
+    for (const item of packed) {
+        if (!Array.isArray(item) || !Number.isFinite(item[0]) || typeof item[2] !== "string") return null
+        divisions.set(item[0], item[2] ? item[2].split(",") : [])
+    }
+    return divisions
+}
 
 export const unpackContestStarts = (packed) => {
     if (!Array.isArray(packed)) return null
