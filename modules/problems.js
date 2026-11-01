@@ -68,7 +68,7 @@ export const yearStart = (year) => Date.UTC(year, 0, 1) / 1000
 
 // A link to a profile or to someone's submissions, as copied from the address
 // bar on any Codeforces host, stands for its handle.
-const PROFILE_LINK = /^(?:https?:\/\/)?(?:[\w-]+\.)*codeforces\.[a-z]+\/(?:profile|submissions)\/([^/?#]+)/i
+const PROFILE_LINK = /^(?:https?:\/\/)?(?:[\w-]+\.)*(?:codeforces\.[a-z]+|codeforc\.es)\/(?:profile|submissions)\/([^/?#]+)/i
 
 // Handles typed into one field, separated by commas or spaces: each once,
 // whatever its case, and no more than `limit` of them.
