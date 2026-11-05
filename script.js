@@ -289,7 +289,7 @@ function refreshIfStale() {
     const now = Date.now()
     if (!problemset || !isStale(problemset.savedAt, now, FRESH_FOR) || now - listRefreshedAt < RETRY_AFTER) return
     listRefreshedAt = now
-    fetchProblemset().then(useProblemset, (error) => console.error(error))
+    fetchProblemset().then(useProblemset, showListFailure)
 }
 
 const errorText = (error) => errorMessage(error, text)
@@ -298,15 +298,27 @@ const statusEl = byId("dataStatus")
 const ago = new Intl.RelativeTimeFormat(lang, { numeric: "auto" })
 const countFormat = new Intl.NumberFormat(lang)
 
-function showDataStatus() {
-    if (!problemset) return
+function listSummary() {
     const minutes = Math.floor((Date.now() - problemset.savedAt) / 60000)
     const when = minutes < 1 ? text.justNow
         : minutes < 60 ? ago.format(-minutes, "minute")
         : minutes < 1440 ? ago.format(-Math.floor(minutes / 60), "hour")
         : ago.format(-Math.floor(minutes / 1440), "day")
-    byId("dataSummary").textContent =
-        fill(text.listSummary, { count: countFormat.format(problemset.problems.length), ago: when })
+    return fill(text.listSummary, { count: countFormat.format(problemset.problems.length), ago: when })
+}
+
+function showDataStatus() {
+    if (!problemset) return
+    byId("dataSummary").textContent = listSummary()
+    statusEl.hidden = false
+}
+
+// A list that could not be loaded or renewed says so at the bottom, with
+// Refresh to try again, rather than only on the console: the copy in use, if
+// there is one, is shown with its age next to the reason.
+function showListFailure(error) {
+    console.error(error)
+    byId("dataSummary").textContent = problemset ? `${errorText(error)} ${listSummary()}` : errorText(error)
     statusEl.hidden = false
 }
 
@@ -324,7 +336,7 @@ byId("refreshData").addEventListener("click", async () => {
     }
 })
 
-loadProblemset().catch((error) => console.error(error))
+loadProblemset().catch(showListFailure)
 
 // What the handles in "Skip solved by" have solved. user.status returns
 // every submission a handle ever made - 3.2 MB for tourist - so only a
