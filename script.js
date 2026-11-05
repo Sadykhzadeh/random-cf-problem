@@ -790,6 +790,17 @@ showTopicsSummary()
 saveSettings()
 if (byId("handles").value.trim()) loadSkips()
 
+// On a phone the card is above the form and the button below it, so a draw
+// from the button lands out of sight. Scrolled to only when it is not already
+// in view.
+function revealResult() {
+    const card = byId("result")
+    const { top, bottom } = card.getBoundingClientRect()
+    if (top >= 0 && bottom <= window.innerHeight) return
+    const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    card.scrollIntoView({ block: "nearest", behavior: calm ? "auto" : "smooth" })
+}
+
 // A real form, so Enter in any field draws too.
 byId("form").addEventListener("submit", async (event) => {
     event.preventDefault()
@@ -848,6 +859,7 @@ byId("form").addEventListener("submit", async (event) => {
         console.error(error)
         showMessage(errorText(error))
     } finally {
+        revealResult()
         // Whatever happened on the way, the form is usable again.
         enableAll()
         if (document.activeElement === document.body) focused?.focus()
