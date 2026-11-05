@@ -8,6 +8,7 @@ test("settings survive a round trip through the address", () => {
         min: "1200",
         max: "1600",
         since: "2019",
+        minSolved: "5000",
         divisions: ["2", "edu"],
         tags: ["dp", "binary search"],
         mode: "any",
@@ -17,7 +18,7 @@ test("settings survive a round trip through the address", () => {
         hide: true,
     }
     const search = writeParams(settings)
-    assert.equal(search, "min=1200&max=1600&since=2019&div=2,edu&tags=dp,binary+search&any=1&nospecial=1&skip=tourist,+jiangly&tried=1&hide=1")
+    assert.equal(search, "min=1200&max=1600&since=2019&solved=5000&div=2,edu&tags=dp,binary+search&any=1&nospecial=1&skip=tourist,+jiangly&tried=1&hide=1")
     assert.deepEqual(readParams(`?${search}`), settings)
 })
 
@@ -50,4 +51,12 @@ test("leaving the topics out survives a round trip", () => {
     assert.equal(writeParams(settings), "tags=interactive,geometry&none=1")
     assert.deepEqual(readParams("?tags=interactive,geometry&none=1"), settings)
     assert.equal(writeParams({ ...DEFAULTS, mode: "none" }), "", "nothing to leave out")
+})
+
+test("the least number of solvers is kept only when it asks for something", () => {
+    assert.equal(writeParams({ ...DEFAULTS, minSolved: "2500" }), "solved=2500")
+    assert.equal(writeParams({ ...DEFAULTS, minSolved: "0" }), "")
+    assert.equal(readParams("?solved=02500").minSolved, "2500")
+    for (const solved of ["0", "-5", "many", "12345678", "1.5"]) assert.equal(readParams(`?solved=${solved}`).minSolved, "", solved)
+    assert.equal(readParams("?solved=300") === null, false, "a link with only this carries settings")
 })

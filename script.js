@@ -79,6 +79,7 @@ for (const [id, key] of [
     ["min_num_text", "minRating"],
     ["max_num_text", "maxRating"],
     ["since_label", "since"],
+    ["minSolved_label", "minSolved"],
     ["division_label", "division"],
     ["choose_label", "topic"],
     ["topicsSummary", "anyTopic"],
@@ -669,6 +670,7 @@ function readFilter() {
         min,
         max,
         since: year > 0 ? yearStart(year) : undefined,
+        minSolved: Number(byId("min_solved").value) || 0,
         divisions: chosenDivisions(),
         contestDivisions: divisionsOfContest ?? undefined,
         starts: contestStarts ?? undefined,
@@ -724,6 +726,7 @@ function currentSettings() {
         min: byId("min_num").value,
         max: byId("max_num").value,
         since: byId("since").value,
+        minSolved: byId("min_solved").value,
         divisions: chosenDivisions(),
         tags: chosenTags(),
         mode: tagMode(),
@@ -738,6 +741,7 @@ function applySettings(settings) {
     byId("min_num").value = settings.min
     byId("max_num").value = settings.max
     byId("since").value = settings.since
+    byId("min_solved").value = settings.minSolved
     for (const box of byId("divisions").querySelectorAll("input")) box.checked = settings.divisions.includes(box.value)
     for (const box of chooseEl.querySelectorAll("input")) box.checked = settings.tags.includes(box.value)
     byId("form").elements.mode.value = settings.mode

@@ -50,13 +50,16 @@ export const unpackProblemset = (packed) => {
 // drops problems someone has already solved. `since` drops problems from
 // contests that started before it (`starts` maps a contest to its start
 // time); a contest missing from `starts` is newer than the list, so it stays.
-export const matchingProblems = (problems, { min = 0, max = Infinity, tags = [], mode = "all", special = true, skip, since, starts, divisions = [], contestDivisions: divisionsOf } = {}) => {
+// `minSolved` keeps the problems at least that many people have solved, and
+// leaves out one whose count is not known.
+export const matchingProblems = (problems, { min = 0, max = Infinity, minSolved = 0, tags = [], mode = "all", special = true, skip, since, starts, divisions = [], contestDivisions: divisionsOf } = {}) => {
     const hasTags = mode === "any" ? (problem) => tags.some((tag) => problem.tags.includes(tag))
         : mode === "none" ? (problem) => !tags.some((tag) => problem.tags.includes(tag))
         : (problem) => tags.every((tag) => problem.tags.includes(tag))
     return problems.filter((problem) =>
         typeof problem.rating === "number" &&
         min <= problem.rating && problem.rating <= max &&
+        (!minSolved || problem.solvedCount >= minSolved) &&
         (!tags.length || hasTags(problem)) &&
         (special || !problem.tags.includes("*special")) &&
         !(since !== undefined && starts?.get(problem.contestId) < since) &&

@@ -5,6 +5,7 @@ export const DEFAULTS = Object.freeze({
     min: "",
     max: "",
     since: "",
+    minSolved: "",
     divisions: [],
     tags: [],
     mode: "all",
@@ -16,7 +17,7 @@ export const DEFAULTS = Object.freeze({
 
 export const DIVISIONS = ["1", "2", "3", "4", "edu"]
 
-const KNOWN = ["min", "max", "since", "div", "tags", "any", "none", "nospecial", "skip", "tried", "hide"]
+const KNOWN = ["min", "max", "since", "solved", "div", "tags", "any", "none", "nospecial", "skip", "tried", "hide"]
 
 const rating = (value) => {
     const text = String(value ?? "").trim()
@@ -26,6 +27,12 @@ const rating = (value) => {
 const year = (value) => {
     const text = String(value ?? "").trim()
     return /^\d{4}$/.test(text) ? text : ""
+}
+
+// How many people at least have solved a problem; zero asks for nothing.
+const solvers = (value) => {
+    const text = String(value ?? "").trim()
+    return /^\d{1,7}$/.test(text) && Number(text) > 0 ? String(Number(text)) : ""
 }
 
 // The known divisions among those given, as a list or as a comma-separated
@@ -44,6 +51,7 @@ export const readParams = (search) => {
         min: rating(params.get("min")),
         max: rating(params.get("max")),
         since: year(params.get("since")),
+        minSolved: solvers(params.get("solved")),
         divisions: divisions(params.get("div")),
         tags: (params.get("tags") ?? "").split(",").map((tag) => tag.trim()).filter(Boolean),
         mode: params.get("any") === "1" ? "any" : params.get("none") === "1" ? "none" : "all",
@@ -60,6 +68,7 @@ export const writeParams = (settings, lang) => {
     if (rating(settings.min)) params.set("min", rating(settings.min))
     if (rating(settings.max)) params.set("max", rating(settings.max))
     if (year(settings.since)) params.set("since", year(settings.since))
+    if (solvers(settings.minSolved)) params.set("solved", solvers(settings.minSolved))
     if (divisions(settings.divisions).length) params.set("div", divisions(settings.divisions).join(","))
     if (settings.tags?.length) params.set("tags", settings.tags.join(","))
     if (settings.mode === "any" && settings.tags?.length) params.set("any", "1")

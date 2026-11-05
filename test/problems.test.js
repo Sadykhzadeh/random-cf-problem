@@ -64,6 +64,18 @@ test("only rated problems inside the range, with the tag, match", () => {
     assert.deepEqual(names({ min: 2300 }), [])
 })
 
+test("problems solved by too few people are left out, and so are those with no count", () => {
+    const problems = unpackProblemset(packProblemset(result))
+    const names = (filter) => matchingProblems(problems, filter).map((p) => p.name)
+    assert.deepEqual(names({ minSolved: 10000 }), ["Watermelon", "Spreadsheets"])
+    assert.deepEqual(names({ minSolved: 20000 }), ["Watermelon", "Spreadsheets"], "as many as asked counts")
+    assert.deepEqual(names({ minSolved: 20001 }), ["Watermelon"])
+    assert.deepEqual(names({ minSolved: 0 }), names({}))
+    const unknown = [{ contestId: 9, index: "A", name: "Counted late", rating: 1000, tags: [] }]
+    assert.deepEqual(matchingProblems(unknown, { minSolved: 1 }), [])
+    assert.equal(matchingProblems(unknown, {}).length, 1)
+})
+
 test("special problems are dropped when asked, whatever their other tags", () => {
     const problems = [
         { contestId: 4, index: "A", name: "Watermelon", rating: 800, tags: ["brute force", "math"] },
