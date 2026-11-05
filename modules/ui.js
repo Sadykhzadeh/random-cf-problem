@@ -15,10 +15,14 @@ const disableAll = () => {
         document.getElementById("since").disabled = false
     }
 
-// Whether a key press is R, the key that draws again. On a layout without
-// Latin letters, such as Russian, the key where R sits counts: it types "к"
-// there. On one that has R elsewhere, such as Dvorak, R itself does.
-const isDrawKey = (key, code) =>
-    /^[a-z]$/i.test(key) ? key.toLowerCase() === "r" : code === "KeyR"
+// Whether a key press is the letter given, the one that draws again (R) or
+// opens the problem (O). On a layout without Latin letters, such as Russian,
+// the key where the letter sits counts: it types "к" there. On one that has
+// the letter elsewhere, such as Dvorak, the letter itself does.
+const isLetterKey = (letter) => (key, code) =>
+    /^[a-z]$/i.test(key) ? key.toLowerCase() === letter : code === `Key${letter.toUpperCase()}`
 
-export { disableAll, enableAll, isDrawKey }
+const isDrawKey = isLetterKey("r")
+const isOpenKey = isLetterKey("o")
+
+export { disableAll, enableAll, isDrawKey, isOpenKey }

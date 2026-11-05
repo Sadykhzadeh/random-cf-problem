@@ -30,8 +30,8 @@ skipping the ones you have already solved.
   avoids repeating them while anything else matches.
 - Remembers the settings, and keeps them in the address so a link
   reproduces them.
-- `R` draws again, or the key in its place on a Russian layout; Enter in
-  any field does too.
+- `R` draws again and `O` opens the problem on screen, or the keys in their
+  place on a Russian layout; Enter in any field draws too.
 - English and Russian, problem names included where Codeforces has them
   translated; follows the system's light or dark theme; fits a phone.
 

@@ -77,6 +77,7 @@ export const strings = {
         recent: "Drawn lately",
         solvedMark: " · solved",
         generateHint: "Generate (R)",
+        openHint: "Open on Codeforces (O)",
     },
     ru: {
         documentTitle: "Случайная задача Codeforces",
@@ -136,5 +137,6 @@ export const strings = {
         recent: "Недавние задачи",
         solvedMark: " · решена",
         generateHint: "Сгенерировать (R)",
+        openHint: "Открыть на Codeforces (O)",
     },
 }

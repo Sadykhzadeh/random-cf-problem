@@ -5,7 +5,8 @@ import {
 import {
     disableAll,
     enableAll,
-    isDrawKey
+    isDrawKey,
+    isOpenKey
 } from "./modules/ui.js"
 import {
     isStale,
@@ -548,12 +549,14 @@ byId("skipTried").addEventListener("change", () => {
 })
 
 
+const problemUrl = (problem) =>
+    `https://codeforces.com/problemset/problem/${problem.contestId}/${problem.index}`
+
 function problemLink(problem) {
     // Built as nodes rather than markup: the name comes from the API and may
     // contain & or <.
     const link = document.createElement("a")
-    link.href =
-        `https://codeforces.com/problemset/problem/${problem.contestId}/${problem.index}`
+    link.href = problemUrl(problem)
     link.target = "_blank"
     // A _blank target without noopener hands the opened page a handle back
     // to this one.
@@ -586,7 +589,10 @@ byId("doNotShowTags").addEventListener("change", () => {
 
 function showProblem(problem) {
     shownProblem = problem
-    nameEl.replaceChildren(problemLink(problem))
+    const link = problemLink(problem)
+    link.title = text.openHint
+    link.setAttribute("aria-keyshortcuts", "o")
+    nameEl.replaceChildren(link)
 
     // How many people solved the problem says more about it than the rating
     // alone.
@@ -870,13 +876,21 @@ byId("form").addEventListener("submit", async (event) => {
     }
 })
 
-// R draws another problem from anywhere but a field being typed in.
+// R draws another problem, and O opens the one on screen, from anywhere but
+// a field being typed in.
 document.addEventListener("keydown", (event) => {
-    if (!isDrawKey(event.key, event.code)) return
+    const draws = isDrawKey(event.key, event.code)
+    if (!draws && !isOpenKey(event.key, event.code)) return
     if (event.ctrlKey || event.metaKey || event.altKey || event.repeat) return
     const target = event.target
     if (target instanceof HTMLInputElement && target.type !== "checkbox" && target.type !== "radio") return
     if (target instanceof HTMLSelectElement || target instanceof HTMLTextAreaElement || target.isContentEditable) return
+    if (!draws) {
+        if (!shownProblem) return
+        event.preventDefault()
+        window.open(problemUrl(shownProblem), "_blank", "noopener,noreferrer")
+        return
+    }
     if (byId("start").disabled) return
     event.preventDefault()
     byId("form").requestSubmit()
