@@ -176,6 +176,17 @@ const RETRY_AFTER = 60 * 1000
 
 let problemset = null
 let loading = null
+// A page opened again (a phone drops background tabs) shows the problem drawn
+// last, once the list is in, unless a draw has started.
+let drawStarted = false
+
+function showLastDrawn(problems) {
+    if (drawStarted || shownProblem || !recent.length) return
+    const key = problemKey(recent[0])
+    const last = problems.find((problem) => problemKey(problem) === key)
+    if (last) showProblem(last)
+}
+
 // The name of each problem in the list, so the recent draws read in the
 // page's language whichever one they were drawn in.
 let namesByKey = new Map()
@@ -244,6 +255,7 @@ async function fetchProblemset() {
 function useProblemset(loaded) {
     problemset = loaded
     namesByKey = new Map(loaded.problems.map((problem) => [problemKey(problem), problem.name]))
+    showLastDrawn(loaded.problems)
     showDataStatus()
     showRecent()
     // The handles can finish loading first; their count waits for the list.
@@ -850,6 +862,7 @@ byId("form").addEventListener("submit", async (event) => {
     // Disabling the focused field or button drops the focus to the page
     // when the draw has to wait, so it is put back afterwards.
     const focused = document.activeElement
+    drawStarted = true
     disableAll()
     showMessage(text.searching)
 

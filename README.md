@@ -26,6 +26,7 @@ skipping the ones you have already solved.
 - Shows the problem's rating in its Codeforces rank colour and how many
   people solved it; the topics can be hidden, and shown again for the
   problem on screen when you get stuck.
+- Shows the problem drawn last again when the page is opened or reloaded.
 - Lists the last ten draws, marking the ones the handles have solved, and
   avoids repeating them while anything else matches.
 - Remembers the settings, and keeps them in the address so a link
