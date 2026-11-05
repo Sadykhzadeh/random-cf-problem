@@ -2,6 +2,13 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 
 import {
+    NEWEST_COUNT,
+    SETTLE_SECONDS,
+    advance,
+    emptyDigest,
+    emptyState,
+    foldSubmissions,
+    isUsableDigest,
     makeSkip,
     matchingProblems,
     packContestStarts,
@@ -14,7 +21,9 @@ import {
     isTimeout,
     pickOne,
     rankClass,
+    reachesDigest,
     staleSummaries,
+    summarizeState,
     summarizeSubmissions,
     unpackContestDivisions,
     unpackContestStarts,
@@ -446,4 +455,78 @@ test("a call answered with the rate limit or a busy server is made once more, wh
     const alone = answers(limited(), ok())
     assert.equal((await fetchApi("x", { fetchFn: alone.fetchFn })).response.status, 503)
     assert.equal(alone.calls.length, 1)
+})
+
+const DAY = 24 * 60 * 60
+const NOW = 1_700_000_000
+// A submission made `ageDays` before NOW, newest first as user.status lists them.
+const aged = (id, ageDays, contestId, index, verdict, extra = {}) => ({
+    id,
+    verdict,
+    creationTimeSeconds: NOW - Math.round(ageDays * DAY),
+    problem: { contestId, index, name: extra.name ?? `${contestId}${index}`, rating: 1500 },
+    author: extra.author,
+})
+
+test("newer submissions fold into a saved state the same as a whole history reads", () => {
+    const history = [
+        aged(9, 0, 1972, "D1", "WRONG_ANSWER", { name: "Shared", author: { participantType: "VIRTUAL", startTimeSeconds: 1720000000 } }),
+        aged(8, 0, 1950, "B1", "OK", { name: "Shared", author: { participantType: "PRACTICE", startTimeSeconds: 1714487700 } }),
+        aged(7, 0, 5, "A", "OK"),
+        aged(6, 0, 5, "A", "WRONG_ANSWER"),
+        aged(5, 0, 6, "B", "TIME_LIMIT_EXCEEDED"),
+        aged(4, 0, 100093, "E", "OK"),
+        aged(3, 0, 6, "B", "OK"),
+        aged(2, 0, 7, "C", "WRONG_ANSWER", { author: { participantType: "CONTESTANT", startTimeSeconds: 1000 } }),
+        aged(1, 0, 7, "C", "WRONG_ANSWER", { author: { participantType: "PRACTICE", startTimeSeconds: 1000 } }),
+    ]
+    // The order the keys are listed in does not matter, what is in them does.
+    const ordered = ({ solved, tried, names, triedNames }) => JSON.stringify({
+        solved: [...solved].sort(), tried: [...tried].sort(), names: names.map(String).sort(), triedNames: triedNames.map(String).sort(),
+    })
+    const whole = summarizeSubmissions(history)
+    for (let cut = 0; cut <= history.length; cut += 1) {
+        // The saved state goes through JSON, as it does in storage.
+        const saved = JSON.parse(JSON.stringify(foldSubmissions(emptyState(), history.slice(cut))))
+        assert.equal(ordered(summarizeState(foldSubmissions(saved, history.slice(0, cut)))), ordered(whole), `split after ${cut}`)
+    }
+})
+
+test("a refresh from the newest submissions gives the summary a full read gives", () => {
+    const first = advance(emptyDigest(NOW), [aged(3, 40, 10, "A", "WRONG_ANSWER"), aged(2, 41, 20, "B", "OK"), aged(1, 42, 30, "C", "OK")], NOW)
+    assert.deepEqual(first.summary.solved, ["20|B", "30|C"])
+    assert.deepEqual(first.summary.tried, ["10|A"])
+    const later = NOW + 2 * DAY
+    const newest = [
+        { ...aged(5, 0, 10, "A", "OK"), creationTimeSeconds: later - 100 },
+        { ...aged(4, 0, 40, "D", "WRONG_ANSWER"), creationTimeSeconds: later - 9000 },
+    ]
+    const second = advance(first.digest, newest, later)
+    assert.deepEqual(second.summary.solved.sort(), ["10|A", "20|B", "30|C"])
+    assert.deepEqual(second.summary.tried, ["40|D"], "a problem solved since is no longer tried")
+    assert.equal(second.digest.count, 3)
+    assert.equal(second.digest.cutoff, later - SETTLE_SECONDS)
+})
+
+test("a submission still inside the settling window is read again on the next refresh", () => {
+    const hour = 3600
+    const accepted = { ...aged(2, 0, 10, "A", "OK"), creationTimeSeconds: NOW - hour }
+    const first = advance(emptyDigest(NOW), [accepted], NOW)
+    assert.deepEqual(first.summary.solved, ["10|A"])
+    // The system tests failed it afterwards.
+    const second = advance(first.digest, [{ ...accepted, verdict: "WRONG_ANSWER" }], NOW + hour)
+    assert.deepEqual(second.summary.solved, [])
+    assert.deepEqual(second.summary.tried, ["10|A"])
+    assert.equal(second.digest.count, 0)
+})
+
+test("the newest submissions reach a saved history when they go back past its cutoff or are all there is", () => {
+    const digest = { ...emptyDigest(NOW), cutoff: NOW - 10 * DAY }
+    const at = (ageDays) => ({ creationTimeSeconds: NOW - ageDays * DAY })
+    assert.equal(reachesDigest(digest, [at(1), at(11)], 2), true)
+    assert.equal(reachesDigest(digest, [at(1), at(2)], 2), false)
+    assert.equal(reachesDigest(digest, [at(1), at(2)], NEWEST_COUNT), true)
+    assert.equal(isUsableDigest(digest, NOW + 2 * DAY), true)
+    assert.equal(isUsableDigest(digest, NOW + 4 * DAY), false)
+    assert.equal(isUsableDigest(null, NOW), false)
 })

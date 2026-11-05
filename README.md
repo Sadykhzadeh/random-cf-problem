@@ -60,7 +60,11 @@ language, and kept in the browser's Cache Storage for a day; an older
 copy is used straight away while a fresh one loads, and "Refresh" at the
 bottom fetches it on demand. For each handle to skip, `user.status`, in
 the same language, is boiled down to the problems it solved and tried,
-and kept for ten minutes. In a tab left open longer, either is fetched
+and kept for ten minutes. What the submissions older than a day add up to is
+kept with it, so a refresh asks for the 300 newest submissions only (about
+15 KB instead of 240 to 500 KB) and adds them; the whole history is read again
+when nothing is kept, when the newest 300 do not reach back to the part that
+was, and every three days. In a tab left open longer, either is fetched
 again behind the next draw. The start times and divisions from `contest.list`, which
 date the contests and tell parallel rounds apart, are fetched once a year,
 a division or a handle is given, and kept for a day.

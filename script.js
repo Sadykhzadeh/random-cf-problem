@@ -9,7 +9,11 @@ import {
     isOpenKey
 } from "./modules/ui.js"
 import {
+    NEWEST_COUNT,
+    advance,
+    emptyDigest,
     isStale,
+    isUsableDigest,
     makeSkip,
     matchingProblems,
     packContestStarts,
@@ -20,8 +24,8 @@ import {
     problemKey,
     fetchApi,
     rankClass,
+    reachesDigest,
     staleSummaries,
-    summarizeSubmissions,
     unpackContestStarts,
     unpackProblemset,
     yearStart
@@ -367,19 +371,48 @@ async function readSolved(handle) {
     try {
         const response = await cache.match(solvedCacheKey(handle))
         const entry = response && await response.json()
-        return entry && Number.isFinite(entry.savedAt) && Array.isArray(entry.summary?.solved) ? entry : null
+        if (!entry || !Number.isFinite(entry.savedAt) || !Array.isArray(entry.summary?.solved)) return null
+        // A digest that does not look like one is dropped, and everything is read next time.
+        const digest = entry.digest
+        const sound = Number.isFinite(digest?.cutoff) && Number.isFinite(digest.builtAt) && Number.isFinite(digest.count) &&
+            ["solved", "tried", "problems", "starts"].every((field) => Array.isArray(digest.state?.[field]))
+        return sound ? entry : { ...entry, digest: undefined }
     } catch {
         return null
     }
 }
 
-async function fetchSolved(handle) {
+// `newest` asks for that many of the latest submissions rather than all of
+// them: jiangly's 11000 come to 499 KB over the wire, the newest 300 to 16 KB.
+async function fetchSubmissions(handle, newest) {
     const { response, json } = await politeFetch(
-        `https://codeforces.com/api/user.status?handle=${encodeURIComponent(handle)}&lang=${lang}`)
+        `https://codeforces.com/api/user.status?handle=${encodeURIComponent(handle)}&lang=${lang}` +
+        (newest ? `&from=1&count=${newest}` : ""))
     if (!response.ok || !json || json.status !== "OK" || !Array.isArray(json.result)) {
         throw handleFailure(response.status, json, handle, text)
     }
-    const entry = { savedAt: Date.now(), summary: summarizeSubmissions(json.result) }
+    return json.result
+}
+
+// A summary replaced by a fresh one adds the newest submissions to what the
+// older ones came to (the digest kept with it, see advance() in problems.js)
+// rather than reading the whole history again. That is not possible with no
+// digest, when it is a few days old, or when the newest 300 do not reach back
+// to the part it has; then everything is read.
+async function fetchSolved(handle, previous) {
+    const now = () => Math.floor(Date.now() / 1000)
+    let digest = isUsableDigest(previous?.digest, now()) ? previous.digest : null
+    let submissions = null
+    if (digest) {
+        const newest = await fetchSubmissions(handle, NEWEST_COUNT)
+        if (reachesDigest(digest, newest, NEWEST_COUNT)) submissions = newest
+    }
+    if (!submissions) {
+        digest = emptyDigest(now())
+        submissions = await fetchSubmissions(handle)
+    }
+    const result = advance(digest, submissions, now())
+    const entry = { savedAt: Date.now(), summary: result.summary, digest: result.digest }
     solvedInMemory.set(handle.toLowerCase(), entry)
     const cache = await openCache()
     if (cache) {
@@ -397,7 +430,7 @@ async function loadSolved(handle) {
     solvedInMemory.set(key, saved)
     if (isStale(saved.savedAt, Date.now(), SOLVED_FRESH_FOR) && !refreshingSolved.has(key)) {
         refreshingSolved.add(key)
-        fetchSolved(handle).then(() => {
+        fetchSolved(handle, saved).then(() => {
             if (skipState.handles.some((h) => h.toLowerCase() === key)) loadSkips()
         }, (error) => console.error(error)).finally(() => refreshingSolved.delete(key))
     }
