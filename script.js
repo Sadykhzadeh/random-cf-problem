@@ -255,6 +255,7 @@ async function fetchProblemset() {
 function useProblemset(loaded) {
     problemset = loaded
     namesByKey = new Map(loaded.problems.map((problem) => [problemKey(problem), problem.name]))
+    tellDivisions()
     showLastDrawn(loaded.problems)
     showDataStatus()
     showRecent()
@@ -467,10 +468,17 @@ async function loadSolved(handle) {
 // contest.list is 410 KB of JSON, of which the start times are kept for a
 // day. An older copy is used for this visit and replaced for the next one.
 const CONTESTS_URL = "https://codeforces.com/api/contest.list"
-const STARTS_KEY = new URL("starts.v2.json", window.location.href).href
+const STARTS_KEY = new URL("starts.v3.json", window.location.href).href
 let startsLoading = null
 let contestStarts = null
+// Which divisions a contest counts for depends on the problem list as well
+// (see unpackContestDivisions), so they are told again when either arrives.
+let packedContests = null
 let divisionsOfContest = null
+
+function tellDivisions() {
+    divisionsOfContest = packedContests && unpackContestDivisions(packedContests, problemset?.problems)
+}
 // The last failed attempt. Edits to the form do not each ask again within a
 // minute of it; a draw always does.
 let startsFailure = null
@@ -487,7 +495,8 @@ async function fetchContestStarts() {
             headers: { "Content-Type": "application/json" },
         })).catch(() => {})
     }
-    divisionsOfContest = unpackContestDivisions(packed)
+    packedContests = packed
+    tellDivisions()
     return unpackContestStarts(packed)
 }
 
@@ -499,9 +508,9 @@ function loadContestStarts() {
             const response = cache && await cache.match(STARTS_KEY)
             const data = response && await response.json()
             const starts = data && unpackContestStarts(data.starts)
-            const divisions = data && unpackContestDivisions(data.starts)
-            if (starts && divisions && Number.isFinite(data.savedAt)) {
-                divisionsOfContest = divisions
+            if (starts && unpackContestDivisions(data.starts) && Number.isFinite(data.savedAt)) {
+                packedContests = data.starts
+                tellDivisions()
                 if (isStale(data.savedAt, Date.now(), FRESH_FOR)) fetchContestStarts().catch((error) => console.error(error))
                 return starts
             }

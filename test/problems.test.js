@@ -253,7 +253,11 @@ test("a contest name says which divisions it is for", () => {
     assert.deepEqual(contestDivisions(undefined), [])
 })
 
-test("a problem listed under one of two parallel rounds belongs to both divisions", () => {
+// The problems a contest lists, by their letters, as the problemset has them.
+const listed = (contestId, letters) => [...letters].map((index) =>
+    ({ contestId, index, name: `P${contestId}${index}`, rating: 800, tags: [] }))
+
+test("of two parallel rounds, the one that lists the shared problems counts for both divisions", () => {
     const contests = [
         { id: 1967, name: "Codeforces Round 942 (Div. 1)", startTimeSeconds: 1714487700 },
         { id: 1972, name: "Codeforces Round 942 (Div. 2)", startTimeSeconds: 1714487700 },
@@ -262,20 +266,48 @@ test("a problem listed under one of two parallel rounds belongs to both division
         { id: 1975, name: "Codeforces Global Round 1", startTimeSeconds: 1714487700 },
         { id: 2300, name: "Codeforces Round 9 (Div. 4)" },
     ]
-    const divisions = unpackContestDivisions(JSON.parse(JSON.stringify(packContestStarts(contests))))
+    // 1972 keeps the two problems only Div. 2 had; the rest of its round is under 1967.
+    const problems = [
+        ...listed(1967, "ABCDEF"), ...listed(1972, "AB"), ...listed(1973, "A"),
+        ...listed(1974, "A"), ...listed(1975, "A"), ...listed(2300, "A"),
+    ]
+    const packed = JSON.parse(JSON.stringify(packContestStarts(contests)))
+    const divisions = unpackContestDivisions(packed, problems)
     assert.deepEqual([...divisions], [
-        [1967, ["1", "2"]], [1972, ["1", "2"]], [1973, ["3"]], [1974, ["edu"]], [1975, []],
+        [1967, ["1", "2"]], [1972, ["2"]], [1973, ["3"]], [1974, ["edu"]], [1975, []],
     ])
-    assert.equal(unpackContestDivisions(null), null)
-    assert.equal(unpackContestDivisions([[1967, 1714487700]]), null, "a copy kept before divisions were")
+    assert.equal(unpackContestDivisions(null, problems), null)
+    assert.equal(unpackContestDivisions([[1967, 1714487700]], problems), null, "a copy kept before divisions were")
 
-    const problems = [1967, 1972, 1973, 1974, 1975, 2300].map((contestId) =>
-        ({ contestId, index: "A", name: `P${contestId}`, rating: 800, tags: [] }))
     const names = (filter) => matchingProblems(problems, { divisions: [], ...filter, contestDivisions: divisions }).map((p) => p.name)
-    assert.equal(names({}).length, 6, "no division chosen is no filter")
-    assert.deepEqual(names({ divisions: ["2"] }), ["P1967", "P1972"])
-    assert.deepEqual(names({ divisions: ["3", "edu"] }), ["P1973", "P1974"])
+    assert.equal(names({}).length, 12, "no division chosen is no filter")
+    assert.deepEqual(names({ divisions: ["1"] }), ["P1967A", "P1967B", "P1967C", "P1967D", "P1967E", "P1967F"])
+    assert.equal(names({ divisions: ["2"] }).length, 8)
+    assert.deepEqual(names({ divisions: ["3", "edu"] }), ["P1973A", "P1974A"])
     assert.deepEqual(names({ divisions: ["4"] }), [], "a contest missing from the list cannot be told")
+})
+
+test("older rounds list the shared problems under Div. 2, which then counts for both", () => {
+    const packed = packContestStarts([
+        { id: 536, name: "Codeforces Round 299 (Div. 1)", startTimeSeconds: 1429029300 },
+        { id: 535, name: "Codeforces Round 299 (Div. 2)", startTimeSeconds: 1429029300 },
+    ])
+    const divisions = unpackContestDivisions(packed, [...listed(536, "DE"), ...listed(535, "ABCDE")])
+    assert.deepEqual([...divisions], [[536, ["1"]], [535, ["1", "2"]]])
+})
+
+test("parallel rounds keep the divisions of their names when neither is known to list the shared problems", () => {
+    const packed = packContestStarts([
+        { id: 1314, name: "Codeforces Round 623 (Div. 1, based on VK Cup)", startTimeSeconds: 1582448700 },
+        { id: 1315, name: "Codeforces Round 623 (Div. 2, based on VK Cup)", startTimeSeconds: 1582448700 },
+        { id: 663, name: "Codeforces Round 347 (Div. 1)", startTimeSeconds: 1460824500 },
+        { id: 664, name: "Codeforces Round 347 (Div. 2)", startTimeSeconds: 1460824500 },
+    ])
+    const apart = [[1314, ["1"]], [1315, ["2"]], [663, ["1"]], [664, ["2"]]]
+    // The cup round holds what 1314 and 1315 share, so 1314 lists nothing; 663 and 664 list one each.
+    const problems = [...listed(1315, "ABC"), ...listed(663, "A"), ...listed(664, "A")]
+    assert.deepEqual([...unpackContestDivisions(packed, problems)], apart)
+    assert.deepEqual([...unpackContestDivisions(packed)], apart, "without the problem list")
 })
 
 test("ratings get the colour of the Codeforces rank they fall in", () => {

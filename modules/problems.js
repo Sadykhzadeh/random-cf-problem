@@ -248,31 +248,41 @@ export const contestDivisions = (name) => {
 }
 
 // contest.list boiled down to [contest, start time, divisions] triples, the
-// divisions as one string, and back to maps; anything that does not read back
-// cleanly is no data at all. The problemset lists the problems two parallel
-// rounds share under one of them, so a Div. 1 round holds problems of Div. 2
-// as well: each of the two takes the divisions of both.
-export const packContestStarts = (contests) => {
-    const started = contests.filter((contest) => Number.isFinite(contest.startTimeSeconds))
-    const together = new Map()
-    for (const contest of started) {
-        const own = contestDivisions(contest.name).filter((division) => division !== "edu")
-        if (!own.length) continue
-        together.set(contest.startTimeSeconds, [...(together.get(contest.startTimeSeconds) ?? []), ...own])
-    }
-    return started.map((contest) => {
-        const own = contestDivisions(contest.name)
-        const all = own.length && own[0] !== "edu" ? [...new Set(together.get(contest.startTimeSeconds))].sort() : own
-        return [contest.id, contest.startTimeSeconds, all.join(",")]
-    })
-}
+// divisions as its name gives them and as one string, and back to maps;
+// anything that does not read back cleanly is no data at all.
+export const packContestStarts = (contests) =>
+    contests.filter((contest) => Number.isFinite(contest.startTimeSeconds))
+        .map((contest) => [contest.id, contest.startTimeSeconds, contestDivisions(contest.name).join(",")])
 
-export const unpackContestDivisions = (packed) => {
+// The problemset lists the problems two parallel rounds share under one of
+// them only: mostly the Div. 1 round, in older rounds the Div. 2 one. That
+// one holds problems of both divisions, and the other only its own. Nothing
+// says which is which, but the one holding the shared problems has more of
+// `problems` listed under it, so of the rounds that started together it alone
+// takes the divisions of them all. When they list as many, or one lists none
+// (its problems are then under a cup round the two were based on), each keeps
+// the divisions of its name, as all do without `problems`.
+export const unpackContestDivisions = (packed, problems = []) => {
     if (!Array.isArray(packed)) return null
     const divisions = new Map()
+    const together = new Map()
     for (const item of packed) {
         if (!Array.isArray(item) || !Number.isFinite(item[0]) || typeof item[2] !== "string") return null
-        divisions.set(item[0], item[2] ? item[2].split(",") : [])
+        const own = item[2] ? item[2].split(",") : []
+        divisions.set(item[0], own)
+        if (!own.length || own[0] === "edu") continue
+        if (!together.has(item[1])) together.set(item[1], [])
+        together.get(item[1]).push(item[0])
+    }
+    const listed = new Map()
+    for (const problem of problems) listed.set(problem.contestId, (listed.get(problem.contestId) ?? 0) + 1)
+    for (const contests of together.values()) {
+        if (contests.length < 2) continue
+        const counts = contests.map((contest) => listed.get(contest) ?? 0)
+        const most = Math.max(...counts)
+        if (Math.min(...counts) === 0 || counts.indexOf(most) !== counts.lastIndexOf(most)) continue
+        const all = contests.flatMap((contest) => divisions.get(contest))
+        divisions.set(contests[counts.indexOf(most)], [...new Set(all)].sort())
     }
     return divisions
 }
