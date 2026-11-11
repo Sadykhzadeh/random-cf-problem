@@ -170,7 +170,9 @@ export const NEWEST_COUNT = 300
 // scratch.
 export const emptyDigest = (now) => ({ cutoff: 0, count: 0, builtAt: now, state: emptyState() })
 
-export const isUsableDigest = (digest, now) => Boolean(digest) && now - digest.builtAt < REBUILD_AFTER_SECONDS
+// The digest's times are in seconds, isStale() takes milliseconds.
+export const isUsableDigest = (digest, now) => Boolean(digest) &&
+    !isStale(digest.builtAt * 1000, now * 1000, REBUILD_AFTER_SECONDS * 1000)
 
 // Whether `newest`, the answer to a request for `asked` of the latest
 // submissions, reaches back to what the digest holds, so that nothing between

@@ -530,3 +530,8 @@ test("the newest submissions reach a saved history when they go back past its cu
     assert.equal(isUsableDigest(digest, NOW + 4 * DAY), false)
     assert.equal(isUsableDigest(null, NOW), false)
 })
+
+test("a digest stamped well ahead of the clock is read from scratch, one stamped a little ahead is kept", () => {
+    assert.equal(isUsableDigest(emptyDigest(NOW + 400 * DAY), NOW), false)
+    assert.equal(isUsableDigest(emptyDigest(NOW + 30), NOW), true)
+})
