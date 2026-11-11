@@ -266,18 +266,20 @@ function useProblemset(loaded) {
 
 function loadProblemset({ refresh = false } = {}) {
     if (loading && !refresh) return loading
-    loading = (async () => {
+    const attempt = (async () => {
         const saved = refresh ? null : await readSaved()
         if (!saved) return useProblemset(await fetchProblemset())
         useProblemset(saved)
         refreshIfStale()
         return saved
     })()
-    // A failed load is not remembered, so the next draw tries again.
-    loading.catch(() => {
-        loading = null
+    loading = attempt
+    // A failed load is not remembered, so the next draw tries again, unless a
+    // newer load has started since and is still in flight.
+    attempt.catch(() => {
+        if (loading === attempt) loading = null
     })
-    return loading
+    return attempt
 }
 
 // A list older than a day is replaced behind the scenes: one read from the
