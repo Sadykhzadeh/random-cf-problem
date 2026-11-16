@@ -23,6 +23,7 @@ import {
     pickOne,
     problemKey,
     fetchApi,
+    problemUrl,
     rankClass,
     reachesDigest,
     staleSummaries,
@@ -100,6 +101,7 @@ for (const [id, key] of [
     ["refreshData", "refresh"],
     ["sourceLink", "source"],
     ["recentHeading", "recent"],
+    ["copyLink", "copyLink"],
 ]) {
     byId(id).textContent = text[key]
 }
@@ -617,9 +619,6 @@ byId("skipTried").addEventListener("change", () => {
 })
 
 
-const problemUrl = (problem) =>
-    `https://codeforces.com/problemset/problem/${problem.contestId}/${problem.index}`
-
 function problemLink(problem) {
     // Built as nodes rather than markup: the name comes from the API and may
     // contain & or <.
@@ -657,6 +656,8 @@ byId("doNotShowTags").addEventListener("change", () => {
 
 function showProblem(problem) {
     shownProblem = problem
+    byId("copyLink").hidden = false
+    byId("copyStatus").textContent = ""
     const link = problemLink(problem)
     link.title = text.openHint
     link.setAttribute("aria-keyshortcuts", "o")
@@ -671,6 +672,37 @@ function showProblem(problem) {
 
     showTopics(problem)
 }
+
+// The link goes to the clipboard. Where the clipboard API is refused or missing,
+// the link is put in a hidden field, selected and copied with the copy command.
+async function copyText(value) {
+    try {
+        await navigator.clipboard.writeText(value)
+        return true
+    } catch {
+        // Not allowed here: the copy command below may still work.
+    }
+    const box = document.createElement("textarea")
+    box.value = value
+    box.readOnly = true
+    box.style.position = "fixed"
+    box.style.opacity = "0"
+    document.body.append(box)
+    box.select()
+    let copied = false
+    try {
+        copied = document.execCommand("copy")
+    } catch {
+        // Nothing was copied.
+    }
+    box.remove()
+    return copied
+}
+
+byId("copyLink").addEventListener("click", async () => {
+    if (!shownProblem) return
+    byId("copyStatus").textContent = await copyText(problemUrl(shownProblem)) ? text.copied : text.copyFailed
+})
 
 // The last few draws, newest first, so a problem rolled past by accident
 // can be found again. They are also passed over by the next draws while
@@ -726,6 +758,8 @@ showRecent()
 
 function showMessage(message) {
     shownProblem = null
+    byId("copyLink").hidden = true
+    byId("copyStatus").textContent = ""
     nameEl.textContent = message
     ratingEl.textContent = ""
     tagsEl.textContent = ""

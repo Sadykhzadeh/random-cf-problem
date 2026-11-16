@@ -315,6 +315,9 @@ export const staleSummaries = (entries, now, { maxAge, maxCount }) => {
     return [...stale, ...fresh.slice(maxCount)]
 }
 
+// The page of a problem in the problemset, as Codeforces addresses it.
+export const problemUrl = (problem) => `https://codeforces.com/problemset/problem/${problem.contestId}/${problem.index}`
+
 // Which Codeforces rank colour a rating is shown in.
 export const rankClass = (rating) => {
     if (typeof rating !== "number") return ""

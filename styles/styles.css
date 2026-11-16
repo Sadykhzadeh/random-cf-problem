@@ -352,7 +352,8 @@ footer a {
     color: var(--muted)
 }
 
-#refreshData {
+#refreshData,
+#copyLink {
     background: none;
     border: 0;
     padding: 0;
