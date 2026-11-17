@@ -336,13 +336,54 @@ export const rankClass = (rating) => {
     return "rank-gm"
 }
 
-// One problem at random. Problems whose keys are in `avoid` (the ones drawn
-// lately) are passed over while anything else is left to choose from.
-export const pickOne = (list, random = Math.random, avoid) => {
-    const fresh = avoid && avoid.size ? list.filter((problem) => !avoid.has(problemKey(problem))) : list
-    const pool = fresh.length ? fresh : list
-    return pool.length ? pool[Math.floor(random() * pool.length)] : undefined
+// One problem at random, or undefined from an empty list.
+export const pickOne = (list, random = Math.random) =>
+    list.length ? list[Math.floor(random() * list.length)] : undefined
+
+// A round of draws: every problem of the list comes up once before any comes
+// up again. `drawn` holds the keys drawn so far in the round, and the result
+// holds them with the problem just drawn added. Once the list is used up, a
+// new round starts with that problem alone.
+export const drawFromRound = (list, drawn, random = Math.random) => {
+    const fresh = list.filter((problem) => !drawn.has(problemKey(problem)))
+    const problem = pickOne(fresh.length ? fresh : list, random)
+    if (!problem) return { problem, drawn }
+    const next = fresh.length ? new Set(drawn) : new Set()
+    next.add(problemKey(problem))
+    return { problem, drawn: next }
 }
+
+// The draws kept for the history list, newest first, each with the time it
+// was drawn. A problem drawn again moves to the front rather than repeating.
+export const HISTORY_COUNT = 20
+
+export const addDraw = (history, problem, at) => [
+    { contestId: problem.contestId, index: problem.index, name: problem.name, rating: problem.rating, at },
+    ...history.filter((entry) => problemKey(entry) !== problemKey(problem)),
+].slice(0, HISTORY_COUNT)
+
+// A history read back from storage: anything that is not a draw is dropped,
+// and a time that does not read as one is forgotten rather than the draw.
+export const unpackHistory = (stored) => {
+    if (!Array.isArray(stored)) return []
+    return stored
+        .filter((p) => p && Number.isFinite(p.contestId) && typeof p.index === "string" && typeof p.name === "string")
+        .slice(0, HISTORY_COUNT)
+        .map((p) => {
+            const when = new Date(p.at).getTime()
+            return {
+                contestId: p.contestId,
+                index: p.index,
+                name: p.name,
+                rating: typeof p.rating === "number" ? p.rating : undefined,
+                at: Number.isFinite(when) ? when : undefined,
+            }
+        })
+}
+
+// The keys drawn in the current round, read back from storage.
+export const unpackRound = (stored) =>
+    new Set(Array.isArray(stored) ? stored.filter((key) => typeof key === "string") : [])
 
 // How long a Codeforces call may go without delivering anything. Without a
 // limit a connection that stalls leaves the page on "Loading..." for as long

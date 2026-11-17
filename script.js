@@ -21,7 +21,10 @@ import {
     packProblemset,
     unpackContestDivisions,
     parseHandles,
-    pickOne,
+    addDraw,
+    drawFromRound,
+    unpackHistory,
+    unpackRound,
     problemKey,
     fetchApi,
     problemUrl,
@@ -103,6 +106,7 @@ for (const [id, key] of [
     ["sourceLink", "source"],
     ["recentHeading", "recent"],
     ["copyLink", "copyLink"],
+    ["clearRecent", "clearRecent"],
 ]) {
     byId(id).textContent = text[key]
 }
@@ -705,25 +709,33 @@ byId("copyLink").addEventListener("click", async () => {
     byId("copyStatus").textContent = await copyText(problemUrl(shownProblem)) ? text.copied : text.copyFailed
 })
 
-// The last few draws, newest first, so a problem rolled past by accident
-// can be found again. They are also passed over by the next draws while
-// anything else matches, so a small pool does not keep repeating itself.
+// The last draws, newest first, so a problem rolled past by accident can be
+// found again. A round of draws (see drawFromRound) keeps the same problem
+// from coming up twice until every problem the settings leave has.
 const RECENT_KEY = "random-cf-problem:recent"
-const RECENT_COUNT = 10
+const ROUND_KEY = "random-cf-problem:round"
 
-function readRecent() {
+// Storage that is missing or unreadable is simply no history.
+function readStored(key) {
     try {
-        const stored = JSON.parse(localStorage.getItem(RECENT_KEY))
-        return Array.isArray(stored)
-            ? stored.filter((p) => p && Number.isFinite(p.contestId) && typeof p.index === "string" &&
-                typeof p.name === "string").slice(0, RECENT_COUNT)
-            : []
+        return JSON.parse(localStorage.getItem(key))
     } catch {
-        return []
+        return null
     }
 }
 
-let recent = readRecent()
+function saveStored(key, value) {
+    try {
+        localStorage.setItem(key, JSON.stringify(value))
+    } catch {
+        // See LANG_KEY.
+    }
+}
+
+let recent = unpackHistory(readStored(RECENT_KEY))
+let round = unpackRound(readStored(ROUND_KEY))
+
+const whenFormat = new Intl.DateTimeFormat(lang, { dateStyle: "short", timeStyle: "short" })
 
 // With handles to skip, the draws they have solved since are marked.
 function showRecent() {
@@ -733,6 +745,12 @@ function showRecent() {
         const problem = { ...drawn, name: namesByKey.get(problemKey(drawn)) ?? drawn.name }
         const item = document.createElement("li")
         item.append(problemLink(problem), " ", ratingBadge(problem))
+        if (drawn.at !== undefined) {
+            const when = document.createElement("time")
+            when.dateTime = new Date(drawn.at).toISOString()
+            when.textContent = ` · ${whenFormat.format(drawn.at)}`
+            item.append(when)
+        }
         if (solved?.(problem)) {
             const mark = document.createElement("span")
             mark.className = "solved"
@@ -743,15 +761,17 @@ function showRecent() {
     }))
 }
 
+byId("clearRecent").addEventListener("click", () => {
+    recent = []
+    round = new Set()
+    saveStored(RECENT_KEY, recent)
+    saveStored(ROUND_KEY, [])
+    showRecent()
+})
+
 function remember(problem) {
-    const { contestId, index, name, rating } = problem
-    recent = [{ contestId, index, name, rating },
-        ...recent.filter((p) => problemKey(p) !== problemKey(problem))].slice(0, RECENT_COUNT)
-    try {
-        localStorage.setItem(RECENT_KEY, JSON.stringify(recent))
-    } catch {
-        // See LANG_KEY.
-    }
+    recent = addDraw(recent, problem, Date.now())
+    saveStored(RECENT_KEY, recent)
     showRecent()
 }
 
@@ -973,9 +993,11 @@ byId("form").addEventListener("submit", async (event) => {
             return
         }
 
-        const problem = pickOne(problems, Math.random, new Set(recent.map(problemKey)))
-        showProblem(problem)
-        remember(problem)
+        const drawn = drawFromRound(problems, round)
+        round = drawn.drawn
+        saveStored(ROUND_KEY, [...round])
+        showProblem(drawn.problem)
+        remember(drawn.problem)
     } catch (error) {
         // fetch rejects outright on a network failure; the card says what
         // went wrong rather than staying on "Looking for a problem...".

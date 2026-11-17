@@ -29,8 +29,10 @@ skipping the ones you have already solved.
   people solved it; the topics can be hidden, and shown again for the
   problem on screen when you get stuck.
 - Shows the problem drawn last again when the page is opened or reloaded.
-- Lists the last ten draws, marking the ones the handles have solved, and
-  avoids repeating them while anything else matches.
+- Lists the last twenty draws with the time of each, marking the ones the
+  handles have solved, and "Clear history" empties the list. A draw does not
+  repeat a problem until every problem the settings leave has come up once;
+  the round then starts again.
 - Remembers the settings, and keeps them in the address so a link
   reproduces them.
 - `R` draws again and `O` opens the problem on screen, or the keys in their

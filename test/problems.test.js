@@ -2,9 +2,12 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 
 import {
+    HISTORY_COUNT,
     NEWEST_COUNT,
     SETTLE_SECONDS,
+    addDraw,
     advance,
+    drawFromRound,
     emptyDigest,
     emptyState,
     foldSubmissions,
@@ -21,6 +24,7 @@ import {
     isStale,
     isTimeout,
     pickOne,
+    problemKey,
     problemUrl,
     rankClass,
     reachesDigest,
@@ -29,7 +33,9 @@ import {
     summarizeSubmissions,
     unpackContestDivisions,
     unpackContestStarts,
+    unpackHistory,
     unpackProblemset,
+    unpackRound,
     yearStart,
 } from "../modules/problems.js"
 
@@ -325,12 +331,63 @@ test("ratings get the colour of the Codeforces rank they fall in", () => {
     assert.equal(rankClass(undefined), "")
 })
 
-test("recent draws are passed over while something else is left", () => {
-    const list = [{ contestId: 1, index: "A" }, { contestId: 1, index: "B" }, { contestId: 2, index: "A" }]
-    const avoid = new Set(["1|A", "2|A"])
-    for (const r of [0, 0.5, 0.99]) assert.deepEqual(pickOne(list, () => r, avoid), { contestId: 1, index: "B" })
-    const all = new Set(["1|A", "1|B", "2|A"])
-    assert.deepEqual(pickOne(list, () => 0, all), { contestId: 1, index: "A" }, "all recent: pick from everything")
+test("a round draws every problem once before any comes up again", () => {
+    const list = Array.from({ length: 7 }, (_, i) => ({ contestId: 100 + i, index: "A", name: `P${i}` }))
+    let seed = 3
+    const random = () => (seed = (seed * 48271) % 2147483647) / 2147483647
+    let drawn = new Set()
+    const first = []
+    for (let i = 0; i < 7; i++) {
+        const draw = drawFromRound(list, drawn, random)
+        first.push(problemKey(draw.problem))
+        drawn = draw.drawn
+    }
+    assert.equal(new Set(first).size, 7, "seven draws, seven different problems")
+    const next = drawFromRound(list, drawn, () => 0)
+    assert.deepEqual([...next.drawn], [problemKey(next.problem)], "the round starts again with this one")
+})
+
+test("a round ignores keys drawn outside the list, and an empty list draws nothing", () => {
+    const list = [{ contestId: 1, index: "A" }, { contestId: 1, index: "B" }]
+    const drawn = new Set(["9|Z", "1|A"])
+    assert.deepEqual(drawFromRound(list, drawn, () => 0).problem, { contestId: 1, index: "B" })
+    const none = drawFromRound([], drawn, () => 0)
+    assert.equal(none.problem, undefined)
+    assert.equal(none.drawn, drawn)
+})
+
+test("the history keeps the newest twenty draws, once each, newest first", () => {
+    let history = []
+    for (let i = 0; i < 25; i++) history = addDraw(history, { contestId: i, index: "A", name: `P${i}`, rating: 800 }, i)
+    assert.equal(history.length, HISTORY_COUNT)
+    assert.equal(history[0].contestId, 24)
+    assert.equal(history[19].contestId, 5)
+    history = addDraw(history, { contestId: 10, index: "A", name: "P10", rating: 800 }, 99)
+    assert.equal(history.length, HISTORY_COUNT)
+    assert.equal(history[0].at, 99)
+    assert.equal(history.filter((entry) => entry.contestId === 10).length, 1)
+})
+
+test("a history read back from storage keeps the draws and forgets what is not one", () => {
+    const stored = [
+        { contestId: 4, index: "A", name: "Watermelon", rating: 800, at: 1700000000000 },
+        { contestId: "4", index: "A", name: "bad id" },
+        { contestId: 5, index: 7, name: "bad index" },
+        null,
+        { contestId: 6, index: "B", name: "No time", rating: "high", at: "not a time" },
+    ]
+    assert.deepEqual(unpackHistory(stored), [
+        { contestId: 4, index: "A", name: "Watermelon", rating: 800, at: 1700000000000 },
+        { contestId: 6, index: "B", name: "No time", rating: undefined, at: undefined },
+    ])
+    assert.deepEqual(unpackHistory({ not: "a list" }), [])
+    assert.equal(unpackHistory(Array.from({ length: 30 }, (_, i) => ({ contestId: i, index: "A", name: "x" }))).length, HISTORY_COUNT)
+})
+
+test("a round read back from storage holds only keys", () => {
+    assert.deepEqual([...unpackRound(["1|A", 7, "2|B"])], ["1|A", "2|B"])
+    assert.deepEqual([...unpackRound("1|A")], [])
+    assert.deepEqual([...unpackRound(null)], [])
 })
 
 test("a pick is uniform over the list and never out of range", () => {

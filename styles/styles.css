@@ -336,8 +336,14 @@ select {
     margin: 3px 0
 }
 
-#recentList .solved {
+#recentList .solved,
+#recentList time {
     color: var(--muted)
+}
+
+#recent p {
+    margin: 8px 0 0;
+    font-size: 0.85em
 }
 
 footer {
@@ -353,7 +359,8 @@ footer a {
 }
 
 #refreshData,
-#copyLink {
+#copyLink,
+#clearRecent {
     background: none;
     border: 0;
     padding: 0;
