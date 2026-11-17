@@ -651,6 +651,11 @@ function problemLink(problem) {
     // to this one.
     link.rel = "noopener noreferrer"
     link.textContent = `${problem.contestId}${problem.index}. ${problem.name}`
+    // Sighted users see the new tab; a screen reader is told as well.
+    const newTab = document.createElement("span")
+    newTab.className = "visually-hidden"
+    newTab.textContent = text.newTab
+    link.append(newTab)
     return link
 }
 
@@ -1073,6 +1078,8 @@ byId("setForm").addEventListener("submit", async (event) => {
         byId("setStatus").textContent = text.minAboveMax
         return
     }
+    // Disabling the button drops the focus to the page, so it is put back.
+    const focused = document.activeElement
     const button = byId("buildSet")
     button.disabled = true
     try {
@@ -1094,6 +1101,7 @@ byId("setForm").addEventListener("submit", async (event) => {
         byId("setStatus").textContent = errorText(error)
     } finally {
         button.disabled = false
+        if (document.activeElement === document.body) focused?.focus()
     }
 })
 
