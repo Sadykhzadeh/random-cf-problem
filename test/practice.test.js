@@ -17,6 +17,7 @@ import {
     setMarkdown,
     ticksOf,
     unpackTicks,
+    unseenOf,
     withTicks,
     clockText,
     followSession,
@@ -234,4 +235,13 @@ test("a flat set takes problems at random from the whole range, one per contest,
     assert.equal(buildFlat(pool, 4, seeded(2)).length, 4)
     assert.equal(buildFlat([problem(1, "A", 1000), problem(1, "B", 1100)], 5, seeded(3)).length, 1, "one contest gives one")
     assert.equal(buildFlat([], 3, seeded(3)).length, 0)
+})
+
+test("a practice set can leave out what was drawn lately and what was ticked done before", () => {
+    const pool = [problem(1, "A", 1200), problem(1, "B", 1300), problem(2, "A", 1400), problem(3, "C", 1500)]
+    const drawn = [problem(2, "A", 1400)]
+    assert.deepEqual(unseenOf(pool, { drawn, done: ["1B"] }).map((p) => `${p.contestId}${p.index}`), ["1A", "3C"])
+    assert.deepEqual(unseenOf(pool, {}), pool, "nothing seen, nothing left out")
+    assert.deepEqual(unseenOf(pool, { drawn: [problem(9, "Z", 1)] }), pool, "a draw outside the pool leaves it alone")
+    assert.equal(unseenOf(pool, { drawn: pool, done: [] }).length, 0, "all seen leaves none")
 })

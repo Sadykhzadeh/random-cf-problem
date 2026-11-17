@@ -67,6 +67,7 @@ export default {
     generateHint: "Сгенерировать (R или пробел)",
     openHint: "Открыть на Codeforces (O)",
     copyHint: "Скопировать ссылку (C)",
+    skipSeen: "Без задач из моей истории",
     dailyButton: "Задача дня",
     dailyMark: "Задача дня, {date}",
     useRating: "Взять мой рейтинг",

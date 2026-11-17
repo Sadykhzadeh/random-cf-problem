@@ -44,6 +44,8 @@ skipping the ones you have already solved.
   the same contest. The topics, divisions and skipped handles of the form
   apply too. The set is in the address as the problem ids, so the link
   brings back exactly the same problems; it copies as a Markdown list.
+- "Skip problems from my history" (on by default) leaves out the problems drawn
+  lately and the ones ticked done in any set when a set is built.
 - Ticks the problems of a set as done, kept per set in the browser; "Check
   my submissions" ticks the ones the typed handles have solved.
 - The set is rising (one problem per rung, the default) or flat (all problems

@@ -192,3 +192,12 @@ export const buildFlat = (pool, count, random = Math.random) => {
     }
     return picked.sort((a, b) => a.rating - b.rating)
 }
+
+// The pool without the problems the visitor has seen: those drawn lately, and
+// those ticked done in any set. `drawn` is a list of problems, `done` the ids
+// ticked (in their address form).
+export const unseenOf = (pool, { drawn = [], done = [] }) => {
+    const seenInDraws = new Set(drawn.map(solvedKey))
+    const ticked = new Set(done)
+    return pool.filter((problem) => !seenInDraws.has(solvedKey(problem)) && !ticked.has(idKey(problem)))
+}

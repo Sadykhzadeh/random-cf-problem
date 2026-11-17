@@ -67,6 +67,7 @@ export default {
     generateHint: "Generate (R or Space)",
     openHint: "Open on Codeforces (O)",
     copyHint: "Copy the link (C)",
+    skipSeen: "Skip problems from my history",
     dailyButton: "Today's problem",
     dailyMark: "Today's problem, {date}",
     useRating: "Use my rating",

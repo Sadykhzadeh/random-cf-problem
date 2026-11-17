@@ -145,6 +145,7 @@ for (const [id, key] of [
     ["useRating", "useRating"],
     ["dailyButton", "dailyButton"],
     ["dailyMark", "dailyMark"],
+    ["skipSeen_label", "skipSeen"],
     ["shareLink", "share"],
     ["shareSet", "share"],
     ["setLimit_label", "setLimit"],
@@ -1203,6 +1204,7 @@ const practiceHost = {
     copyText,
     errorText,
     setLink: setLinkFor,
+    recent: () => recent,
     setChanged(ids) {
         practiceSet = ids
         saveSettings()

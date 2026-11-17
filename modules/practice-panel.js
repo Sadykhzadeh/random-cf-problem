@@ -23,6 +23,7 @@ import {
     setMarkdown,
     ticksOf,
     unpackTicks,
+    unseenOf,
     withTicks,
 } from "./practice.js"
 import { matchingProblems } from "./problems.js"
@@ -43,6 +44,8 @@ function readTicks() {
         return []
     }
 }
+
+const everyTick = () => readTicks().flatMap((entry) => entry.done)
 
 function writeTicks(entries) {
     try {
@@ -194,7 +197,9 @@ export const mountPractice = (host) => {
             // rounds and the handles' skips. Only the ends of the ladder are its own.
             const filter = { ...host.filter(), min: from, max: to }
             const flat = byId("setShape").value === "flat"
-            const pool = matchingProblems(all, filter)
+            const matching = matchingProblems(all, filter)
+            const skipping = byId("skipSeen").checked
+            const pool = skipping ? unseenOf(matching, { drawn: host.recent(), done: everyTick() }) : matching
             const picked = flat ? buildFlat(pool, count) : buildLadder(pool, count, from, to)
             if (picked.length) {
                 setIds = picked
@@ -204,7 +209,7 @@ export const mountPractice = (host) => {
                 render(short)
             } else {
                 setIds = []
-                render(host.noneText(filter))
+                render(skipping && matching.length ? messages.allSeen : host.noneText(filter))
             }
             host.setChanged(encodeSet(setIds))
         } catch (error) {
