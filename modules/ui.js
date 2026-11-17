@@ -49,3 +49,27 @@ export const shortcutFor = (event) => {
 }
 
 export { disableAll, enableAll }
+// Announces a value once it has settled. `update` waits `delay` ms after the
+// last change before publishing; `commit` publishes at once, for a change or
+// a blur, and drops the wait. The timers are injectable so the timing can be
+// checked without waiting.
+export const createSettle = (publish, { delay = 600, setTimer = setTimeout, clearTimer = clearTimeout } = {}) => {
+    let timer = 0
+    let latest = ""
+    const flush = () => {
+        clearTimer(timer)
+        timer = 0
+        publish(latest)
+    }
+    return {
+        update(value) {
+            latest = value
+            clearTimer(timer)
+            timer = setTimer(flush, delay)
+        },
+        commit(value) {
+            latest = value
+            flush()
+        },
+    }
+}

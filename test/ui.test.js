@@ -1,7 +1,7 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 
-import { shortcutFor } from "../modules/ui.js"
+import { createSettle, shortcutFor } from "../modules/ui.js"
 
 // Plain descriptions of where a key press lands: the page's body, a button,
 // and fields of each kind.
@@ -77,4 +77,41 @@ test("shortcuts with Control, Command, Alt or a held key do nothing", () => {
     assert.equal(press("r", "KeyR", body, { metaKey: true }), null)
     assert.equal(press("o", "KeyO", body, { altKey: true }), null)
     assert.equal(press("r", "KeyR", body, { repeat: true }), null, "a held key draws once")
+})
+
+// Timers that run only when the test says so.
+const fakeTimers = () => {
+    const pending = new Map()
+    let next = 1
+    return {
+        setTimer: (fn) => { pending.set(next, fn); return next++ },
+        clearTimer: (id) => { pending.delete(id) },
+        fire: () => { for (const [id, fn] of [...pending]) { pending.delete(id); fn() } },
+        count: () => pending.size,
+    }
+}
+
+test("a value is announced once it settles, not on every keystroke", () => {
+    const timers = fakeTimers()
+    const said = []
+    const settle = createSettle((text) => said.push(text), { delay: 600, setTimer: timers.setTimer, clearTimer: timers.clearTimer })
+    settle.update("1 problem")
+    settle.update("12 problems")
+    settle.update("123 problems")
+    assert.deepEqual(said, [], "nothing is said while the value keeps changing")
+    assert.equal(timers.count(), 1, "one timer waits, however many updates there were")
+    timers.fire()
+    assert.deepEqual(said, ["123 problems"], "the latest value, once")
+})
+
+test("a change or a blur announces at once and drops the wait", () => {
+    const timers = fakeTimers()
+    const said = []
+    const settle = createSettle((text) => said.push(text), { setTimer: timers.setTimer, clearTimer: timers.clearTimer })
+    settle.update("5 problems")
+    settle.commit("7 problems")
+    assert.deepEqual(said, ["7 problems"])
+    assert.equal(timers.count(), 0, "the pending announcement is gone")
+    timers.fire()
+    assert.deepEqual(said, ["7 problems"], "not said twice")
 })

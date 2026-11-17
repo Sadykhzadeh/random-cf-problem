@@ -3,6 +3,7 @@ import {
     localize_tags
 } from "./modules/tags.js"
 import {
+    createSettle,
     disableAll,
     enableAll,
     shortcutFor
@@ -838,6 +839,12 @@ function noneText(filter) {
 
 // How many problems the current settings leave, kept up to date as they
 // change, so an empty combination shows before anything is drawn.
+// The count is shown at once but read out only once the settings settle, so
+// typing a rating does not read out every digit (see createSettle).
+const matchingAnnounce = createSettle((message) => {
+    byId("matchingAnnounce").textContent = message
+})
+
 function showMatching() {
     const filter = readFilter()
     const matching = byId("matching")
@@ -858,6 +865,7 @@ function showMatching() {
         matching.textContent = !count ? noneText(filter)
             : fill(count === 1 ? text.matchingOne : text.matching, { count: countFormat.format(count) })
     }
+    matchingAnnounce.update(matching.textContent)
 }
 
 byId("form").addEventListener("input", () => {
@@ -865,7 +873,11 @@ byId("form").addEventListener("input", () => {
     showMatching()
     saveSettings()
 })
-byId("form").addEventListener("change", () => saveSettings())
+byId("form").addEventListener("change", () => {
+    matchingAnnounce.commit(byId("matching").textContent)
+    saveSettings()
+})
+byId("form").addEventListener("focusout", () => matchingAnnounce.commit(byId("matching").textContent))
 
 // The settings live in the address, so a link reproduces them, and in
 // localStorage, so the next visit starts where this one stopped. A link's
