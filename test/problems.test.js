@@ -250,6 +250,52 @@ test("contest start times survive a round trip, and anything else is refused", (
     assert.equal(unpackContestStarts([[1967, "1714487700"]]), null)
 })
 
+// A fixed generator, so the draws are the same on every run.
+const seeded = (seed) => () => {
+    seed = (seed + 0x6d2b79f5) | 0
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed)
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+}
+
+test("a draw from the filtered pool is uniform over it, chi-square over 100000 draws", () => {
+    const tagsOf = ["dp", "graphs", "math", "greedy"]
+    const list = Array.from({ length: 400 }, (_, i) => ({
+        contestId: 1000 + Math.floor(i / 4), index: "ABCD"[i % 4], name: `P${i}`,
+        rating: 800 + 100 * (i % 30), tags: [tagsOf[i % 4], tagsOf[(i * 7) % 4]],
+    }))
+    const filter = { min: 1200, max: 2400, tags: ["dp"], mode: "any", skip: (p) => p.contestId === 1000 }
+    const pool = matchingProblems(list, filter)
+    const random = seeded(20260417)
+    const counts = new Map(pool.map((problem) => [problemKey(problem), 0]))
+    const draws = 100000
+    for (let i = 0; i < draws; i++) {
+        const problem = pickOne(pool, random)
+        counts.set(problemKey(problem), counts.get(problemKey(problem)) + 1)
+    }
+    const expected = draws / pool.length
+    const statistic = [...counts.values()].reduce((sum, observed) => sum + (observed - expected) ** 2 / expected, 0)
+    // The 0.1% point of chi-square, by the Wilson-Hilferty approximation.
+    const df = pool.length - 1
+    const z = 3.090
+    const critical = df * (1 - 2 / (9 * df) + z * Math.sqrt(2 / (9 * df))) ** 3
+    assert.ok(statistic < critical, `chi-square ${statistic.toFixed(2)}, limit ${critical.toFixed(2)} over ${df} degrees of freedom`)
+})
+
+test("a draw only ever sees problems the filter lets through, skipped ones never", () => {
+    const list = [
+        { contestId: 1, index: "A", name: "in", rating: 1500, tags: ["dp"] },
+        { contestId: 1, index: "B", name: "solved", rating: 1500, tags: ["dp"] },
+        { contestId: 2, index: "A", name: "too hard", rating: 3000, tags: ["dp"] },
+        { contestId: 2, index: "B", name: "wrong tag", rating: 1500, tags: ["math"] },
+        { contestId: 3, index: "A", name: "unrated", tags: ["dp"] },
+    ]
+    const pool = matchingProblems(list, { min: 1000, max: 2000, tags: ["dp"], skip: (p) => p.name === "solved" })
+    assert.deepEqual(pool.map((p) => p.name), ["in"])
+    const random = seeded(1)
+    for (let i = 0; i < 1000; i++) assert.equal(pickOne(pool, random).name, "in")
+})
+
 test("a contest name says which divisions it is for", () => {
     assert.deepEqual(contestDivisions("Codeforces Round 942 (Div. 1)"), ["1"])
     assert.deepEqual(contestDivisions("Codeforces Round 1131 (Div. 3)"), ["3"])
