@@ -7,10 +7,8 @@ import {
     addDraw,
     drawFromRound,
     matchingProblems,
-    packContestStarts,
     packProblemset,
     parseHandles,
-    contestDivisions,
     emptiedBySkips,
     fetchApi,
     fetchJson,
@@ -20,14 +18,19 @@ import {
     problemKey,
     problemUrl,
     rankClass,
-    unpackContestDivisions,
-    unpackContestStarts,
     unpackHistory,
     unpackProblemset,
     unpackRound,
     unpackSaved,
     yearStart,
 } from "../modules/problems.js"
+
+import {
+    packContestStarts,
+    contestDivisions,
+    unpackContestDivisions,
+    unpackContestStarts,
+} from "../modules/contests.js"
 
 import {
     NEWEST_COUNT,

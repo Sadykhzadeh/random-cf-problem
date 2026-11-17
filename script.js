@@ -15,9 +15,7 @@ import {
     emptiedBySkips,
     isStale,
     matchingProblems,
-    packContestStarts,
     packProblemset,
-    unpackContestDivisions,
     parseHandles,
     addDraw,
     drawFromRound,
@@ -27,7 +25,6 @@ import {
     fetchApi,
     problemUrl,
     rankClass,
-    unpackContestStarts,
     unpackProblemset,
     unpackSaved,
     yearStart
@@ -513,8 +510,20 @@ let contestStarts = null
 let packedContests = null
 let divisionsOfContest = null
 
+// The contest code is in its own module, loaded with the first contest read.
+// Nothing reads it before loadContestStarts() has awaited it.
+let contestsLib = null
+let contestsModule = null
+const loadContestsModule = () => {
+    contestsModule ??= import("./modules/contests.js").then((lib) => {
+        contestsLib = lib
+        return lib
+    })
+    return contestsModule
+}
+
 function tellDivisions() {
-    divisionsOfContest = packedContests && unpackContestDivisions(packedContests, problemset?.problems)
+    divisionsOfContest = packedContests && contestsLib.unpackContestDivisions(packedContests, problemset?.problems)
 }
 // The last failed attempt. Edits to the form do not each ask again within a
 // minute of it; a draw always does.
@@ -525,7 +534,7 @@ async function fetchContestStarts() {
     if (!response.ok || !json || json.status !== "OK" || !Array.isArray(json.result)) {
         throw apiFailure(response.status, json, text)
     }
-    const packed = packContestStarts(json.result)
+    const packed = contestsLib.packContestStarts(json.result)
     const cache = await openCache()
     if (cache) {
         cache.put(STARTS_KEY, new Response(JSON.stringify({ savedAt: Date.now(), starts: packed }), {
@@ -534,18 +543,19 @@ async function fetchContestStarts() {
     }
     packedContests = packed
     tellDivisions()
-    return unpackContestStarts(packed)
+    return contestsLib.unpackContestStarts(packed)
 }
 
 function loadContestStarts() {
     if (startsLoading) return startsLoading
     startsLoading = (async () => {
+        await loadContestsModule()
         const cache = await openCache()
         try {
             const response = cache && await cache.match(STARTS_KEY)
             const data = response && await response.json()
-            const starts = data && unpackContestStarts(data.starts)
-            if (starts && unpackContestDivisions(data.starts) && Number.isFinite(data.savedAt)) {
+            const starts = data && contestsLib.unpackContestStarts(data.starts)
+            if (starts && contestsLib.unpackContestDivisions(data.starts) && Number.isFinite(data.savedAt)) {
                 packedContests = data.starts
                 tellDivisions()
                 if (isStale(data.savedAt, Date.now(), FRESH_FOR)) fetchContestStarts().catch((error) => console.error(error))
