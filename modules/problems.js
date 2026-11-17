@@ -41,6 +41,14 @@ export const unpackProblemset = (packed) => {
     return problems
 }
 
+// A saved copy of the problemset as read back from the cache: its problems and
+// the time it was saved. A copy that does not read back, or that holds no
+// problems at all, is no copy, so the list is fetched again.
+export const unpackSaved = (data) => {
+    const problems = unpackProblemset(data?.problems)
+    return problems?.length && Number.isFinite(data.savedAt) ? { savedAt: data.savedAt, problems } : null
+}
+
 // Rated problems within [min, max] that carry all of the tags, any of them
 // when mode is "any", or none of them when it is "none"; no tags means any
 // problem. Unrated problems are

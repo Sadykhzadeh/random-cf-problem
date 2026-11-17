@@ -63,7 +63,8 @@ Everything runs in the browser against the public Codeforces API. The
 whole problemset (`problemset.problems`) is fetched once, in the page's
 language, and kept in the browser's Cache Storage for a day; an older
 copy is used straight away while a fresh one loads, and "Refresh" at the
-bottom fetches it on demand. For each handle to skip, `user.status`, in
+bottom fetches it on demand. A copy that does not read back, or holds no
+problems, is fetched again. For each handle to skip, `user.status`, in
 the same language, is boiled down to the problems it solved and tried,
 and kept for ten minutes. What the submissions older than a day add up to is
 kept with it, so a refresh asks for the 300 newest submissions only (about

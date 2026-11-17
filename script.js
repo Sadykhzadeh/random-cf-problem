@@ -33,6 +33,7 @@ import {
     staleSummaries,
     unpackContestStarts,
     unpackProblemset,
+    unpackSaved,
     yearStart
 } from "./modules/problems.js"
 import {
@@ -212,10 +213,7 @@ async function readSaved() {
     if (!cache) return null
     try {
         const response = await cache.match(CACHE_KEY)
-        if (!response) return null
-        const data = await response.json()
-        const problems = unpackProblemset(data.problems)
-        return problems && Number.isFinite(data.savedAt) ? { savedAt: data.savedAt, problems } : null
+        return response ? unpackSaved(await response.json()) : null
     } catch {
         return null
     }

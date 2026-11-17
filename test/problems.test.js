@@ -36,6 +36,7 @@ import {
     unpackHistory,
     unpackProblemset,
     unpackRound,
+    unpackSaved,
     yearStart,
 } from "../modules/problems.js"
 
@@ -69,6 +70,21 @@ test("anything that is not a packed problemset is refused", () => {
     assert.equal(unpackProblemset([[1, "A", "x"]]), null)
     assert.equal(unpackProblemset([["1", "A", "x", 800, [], 1]]), null)
     assert.deepEqual(unpackProblemset([]), [])
+})
+
+test("a saved copy is read back only when it is whole: a corrupt or empty one is no copy", () => {
+    const packed = packProblemset(result)
+    const whole = JSON.parse(JSON.stringify({ savedAt: 1700000000000, problems: packed }))
+    assert.equal(unpackSaved(whole).problems.length, 4)
+    assert.equal(unpackSaved(whole).savedAt, 1700000000000)
+    assert.equal(unpackSaved(null), null, "JSON null")
+    assert.equal(unpackSaved("text"), null)
+    assert.equal(unpackSaved({ savedAt: 1, problems: "list" }), null)
+    assert.equal(unpackSaved({ problems: packed }), null, "no time it was saved")
+    assert.equal(unpackSaved({ savedAt: "1700000000000", problems: packed }), null, "a time as text")
+    assert.equal(unpackSaved({ savedAt: 1, problems: [] }), null, "an empty list")
+    assert.equal(unpackSaved({ savedAt: 1, problems: [[1, "A", "x", 800, []]] }), null, "an item cut short")
+    assert.equal(unpackSaved({ savedAt: 1, problems: [[1, "A", "x", 800, [], null, 9]] }), null, "an item with an extra field")
 })
 
 test("only rated problems inside the range, with the tag, match", () => {
