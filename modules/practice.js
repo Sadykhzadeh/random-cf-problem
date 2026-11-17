@@ -114,3 +114,62 @@ export const withTicks = (entries, key, done, at) =>
         .slice(0, KEPT_SETS)
 
 export const ticksOf = (entries, key) => entries.find((entry) => entry.key === key)?.done ?? []
+
+// A timed session on a set: the deadline is kept, not a running count, so the
+// time left is worked out from the clock whenever it is shown.
+export const SESSION_MAX_MINUTES = 600
+
+// The limit the form's field gives, in whole minutes, or null when there is none.
+export const sessionLength = (raw) => {
+    const minutes = Number(raw)
+    return Number.isInteger(minutes) && minutes >= 1 && minutes <= SESSION_MAX_MINUTES ? minutes : null
+}
+
+// The session started at `now` (ms) for the set `key`. `notified` says the end
+// has been announced, so it is announced once however often the page opens.
+export const newSession = (key, now, minutes) => ({ key, deadline: now + minutes * 60000, notified: false })
+
+// A session read back from storage, or null when what is stored is not one.
+export const unpackSession = (stored) => stored && typeof stored.key === "string" &&
+    Number.isFinite(stored.deadline) && typeof stored.notified === "boolean"
+    ? { key: stored.key, deadline: stored.deadline, notified: stored.notified }
+    : null
+
+// The session stored for this set, or null: a session belongs to one set.
+export const pickSession = (stored, key) => {
+    const session = unpackSession(stored)
+    return session && session.key === key ? session : null
+}
+
+export const timeLeft = (session, now) => Math.max(0, session.deadline - now)
+
+// mm:ss, rounding a part second up so the display reads 00:01 until it is over.
+export const clockText = (ms) => {
+    const seconds = Math.ceil(ms / 1000)
+    return `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`
+}
+
+// Shows the time left of a session while it runs, once a second, and nothing
+// is scheduled once it is over or when there is no session at all. `end` is
+// called once, when the time runs out, and the session is marked notified.
+// Returns a function that stops the display.
+export const followSession = (session, { now, every = 1000, schedule, unschedule, show, end }) => {
+    let timer = null
+    const stop = () => {
+        if (timer !== null) unschedule(timer)
+        timer = null
+    }
+    const tick = () => {
+        const left = timeLeft(session, now())
+        show(left)
+        if (left > 0) return
+        stop()
+        if (!session.notified) {
+            session.notified = true
+            end(session)
+        }
+    }
+    tick()
+    if (timeLeft(session, now()) > 0) timer = schedule(tick, every)
+    return stop
+}

@@ -38,6 +38,10 @@ skipping the ones you have already solved.
   the same contest. The topics, divisions and skipped handles of the form
   apply too. The set is in the address as the problem ids, so the link
   brings back exactly the same problems; it copies as a Markdown list.
+- Ticks the problems of a set as done, kept per set in the browser; "Check
+  my submissions" ticks the ones the typed handles have solved.
+- A time limit in minutes starts a timer on the set: the deadline is kept, so
+  the countdown survives a reload, and "Time is up" is read out once.
 - Remembers the settings, and keeps them in the address so a link
   reproduces them.
 - `R`, Space or Enter draws again (outside a field and outside buttons and

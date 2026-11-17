@@ -119,6 +119,8 @@ for (const [id, key] of [
     ["copySetMarkdown", "copyMarkdown"],
     ["copySetLink", "copyLink"],
     ["checkSubmissions", "checkSubmissions"],
+    ["setLimit_label", "setLimit"],
+    ["startSession", "startTimer"],
 ]) {
     byId(id).textContent = text[key]
 }
@@ -630,7 +632,8 @@ function showSkipStatus() {
 }
 
 byId("handles").addEventListener("change", () => loadSkips())
-byId("handles").addEventListener("input", () => practice?.then((panel) => panel.showChecks()))
+byId("handles").addEventListener("input", () => practice?.then((panel) => panel.showControls()))
+byId("setLimit").addEventListener("input", () => practice?.then((panel) => panel.showControls()))
 byId("skipTried").addEventListener("change", () => {
     showSkipStatus()
 })
