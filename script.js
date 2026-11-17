@@ -12,13 +12,8 @@ import {
     shortcutFor
 } from "./modules/ui.js"
 import {
-    NEWEST_COUNT,
-    advance,
     emptiedBySkips,
-    emptyDigest,
     isStale,
-    isUsableDigest,
-    makeSkip,
     matchingProblems,
     packContestStarts,
     packProblemset,
@@ -32,8 +27,6 @@ import {
     fetchApi,
     problemUrl,
     rankClass,
-    reachesDigest,
-    staleSummaries,
     unpackContestStarts,
     unpackProblemset,
     unpackSaved,
@@ -370,6 +363,20 @@ byId("refreshData").addEventListener("click", async () => {
 
 loadProblemset().catch(showListFailure)
 
+// The handle-skip code is in its own module, loaded with the first handle
+// that is skipped; a visit without one never downloads it. Nothing reads
+// skipLib before loadSkips has awaited it.
+let skipLib = null
+let skipModule = null
+const loadSkipModule = () => {
+    skipModule ??= import("./modules/skip.js").then((lib) => {
+        skipLib = lib
+        pruneSolved().catch(() => {})
+        return lib
+    })
+    return skipModule
+}
+
 // What the handles in "Skip solved by" have solved. user.status returns
 // every submission a handle ever made - 3.2 MB for tourist - so only a
 // summary is kept, in the Cache API next to the problemset, for ten
@@ -412,12 +419,11 @@ async function pruneSolved() {
         if (/\/solved\.v[12]\//.test(request.url)) cache.delete(request).catch(() => {})
         else if (request.url.startsWith(prefix)) entries.push({ request, savedAt: await savedAtOf(cache, request) })
     }
-    for (const { request } of staleSummaries(entries, Date.now(), { maxAge: SOLVED_KEPT_FOR, maxCount: SOLVED_KEPT_MAX })) {
+    for (const { request } of skipLib.staleSummaries(entries, Date.now(), { maxAge: SOLVED_KEPT_FOR, maxCount: SOLVED_KEPT_MAX })) {
         cache.delete(request).catch(() => {})
     }
 }
 
-pruneSolved().catch(() => {})
 
 async function readSolved(handle) {
     const remembered = solvedInMemory.get(handle.toLowerCase())
@@ -451,23 +457,23 @@ async function fetchSubmissions(handle, newest) {
 }
 
 // A summary replaced by a fresh one adds the newest submissions to what the
-// older ones came to (the digest kept with it, see advance() in problems.js)
+// older ones came to (the digest kept with it, see advance() in skip.js)
 // rather than reading the whole history again. That is not possible with no
 // digest, when it is a few days old, or when the newest 300 do not reach back
 // to the part it has; then everything is read.
 async function fetchSolved(handle, previous) {
     const now = () => Math.floor(Date.now() / 1000)
-    let digest = isUsableDigest(previous?.digest, now()) ? previous.digest : null
+    let digest = skipLib.isUsableDigest(previous?.digest, now()) ? previous.digest : null
     let submissions = null
     if (digest) {
-        const newest = await fetchSubmissions(handle, NEWEST_COUNT)
-        if (reachesDigest(digest, newest, NEWEST_COUNT)) submissions = newest
+        const newest = await fetchSubmissions(handle, skipLib.NEWEST_COUNT)
+        if (skipLib.reachesDigest(digest, newest, skipLib.NEWEST_COUNT)) submissions = newest
     }
     if (!submissions) {
-        digest = emptyDigest(now())
+        digest = skipLib.emptyDigest(now())
         submissions = await fetchSubmissions(handle)
     }
-    const result = advance(digest, submissions, now())
+    const result = skipLib.advance(digest, submissions, now())
     const entry = { savedAt: Date.now(), summary: result.summary, digest: result.digest }
     solvedInMemory.set(handle.toLowerCase(), entry)
     const cache = await openCache()
@@ -574,6 +580,7 @@ function loadSkips() {
     const status = byId("handlesStatus")
     if (handles.length) status.textContent = fill(text.loadingHandles, { handles: handles.join(", ") })
     const loadingNow = (async () => {
+        if (handles.length) await loadSkipModule()
         const summaries = []
         const loaded = []
         const errors = dropped ? [text.tooManyHandles] : []
@@ -618,7 +625,7 @@ function currentSkip() {
     if (!skipState.summaries.length) return undefined
     const includeTried = byId("skipTried").checked
     if (!skipPredicate || skipPredicate.includeTried !== includeTried) {
-        skipPredicate = { includeTried, skip: makeSkip(skipState.summaries, { includeTried, starts: skipState.starts }) }
+        skipPredicate = { includeTried, skip: skipLib.makeSkip(skipState.summaries, { includeTried, starts: skipState.starts }) }
     }
     return skipPredicate.skip
 }
@@ -778,7 +785,7 @@ const whenFormat = new Intl.DateTimeFormat(lang, { dateStyle: "short", timeStyle
 
 // With handles to skip, the draws they have solved since are marked.
 function showRecent() {
-    const solved = skipState.summaries.length ? makeSkip(skipState.summaries, { starts: skipState.starts }) : null
+    const solved = skipState.summaries.length ? skipLib.makeSkip(skipState.summaries, { starts: skipState.starts }) : null
     byId("recent").hidden = !recent.length
     byId("recentList").replaceChildren(...recent.map((drawn) => {
         const problem = { ...drawn, name: namesByKey.get(problemKey(drawn)) ?? drawn.name }

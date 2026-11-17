@@ -1,18 +1,11 @@
-import { test } from "node:test"
+import {
+    test } from "node:test"
 import assert from "node:assert/strict"
 
 import {
     HISTORY_COUNT,
-    NEWEST_COUNT,
-    SETTLE_SECONDS,
     addDraw,
-    advance,
     drawFromRound,
-    emptyDigest,
-    emptyState,
-    foldSubmissions,
-    isUsableDigest,
-    makeSkip,
     matchingProblems,
     packContestStarts,
     packProblemset,
@@ -27,10 +20,6 @@ import {
     problemKey,
     problemUrl,
     rankClass,
-    reachesDigest,
-    staleSummaries,
-    summarizeState,
-    summarizeSubmissions,
     unpackContestDivisions,
     unpackContestStarts,
     unpackHistory,
@@ -39,6 +28,21 @@ import {
     unpackSaved,
     yearStart,
 } from "../modules/problems.js"
+
+import {
+    NEWEST_COUNT,
+    SETTLE_SECONDS,
+    advance,
+    emptyDigest,
+    emptyState,
+    foldSubmissions,
+    isUsableDigest,
+    makeSkip,
+    reachesDigest,
+    staleSummaries,
+    summarizeState,
+    summarizeSubmissions,
+} from "../modules/skip.js"
 
 const result = {
     problems: [
