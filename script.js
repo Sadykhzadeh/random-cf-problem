@@ -96,9 +96,7 @@ const RETRY_AFTER = 60 * 1000
 const API_GAP = 2000
 let nextCallAt = 0
 
-// The problem list starts loading now, alongside the language file, rather
-// than after it: the saved copy is read at once, and a request goes out when
-// there is no copy or the copy is a day old. Neither needs the text yet.
+// The list starts with the page, beside the language file (see startList).
 let earlyList = null
 
 const started = startTogether({ text: () => loadStrings(lang), list: startList })
@@ -143,6 +141,7 @@ for (const [id, key] of [
     ["copySetMarkdown", "copyMarkdown"],
     ["copySetLink", "copyLink"],
     ["checkSubmissions", "checkSubmissions"],
+    ["useRating", "useRating"],
     ["shareLink", "share"],
     ["shareSet", "share"],
     ["setLimit_label", "setLimit"],
@@ -264,9 +263,7 @@ async function politeFetch(url) {
     return fetchApi(url, { again: waitForTurn })
 }
 
-// The saved copy, read at once, and the request for the list when there is no
-// copy or it is a day old, started as the page starts. Nothing here uses the
-// text: a request that fails is reported when the list is taken up.
+// The saved copy, and the request when there is none or it is a day old.
 async function startList() {
     const saved = await readSaved()
     const pending = !saved || isStale(saved.savedAt, Date.now(), FRESH_FOR) ? politeFetch(PROBLEMSET_URL) : null
@@ -315,7 +312,6 @@ function loadProblemset({ refresh = false } = {}) {
         if (!saved) return useProblemset(await fetchProblemset(pending))
         useProblemset(saved)
         if (pending) {
-            // A copy a day old: the request started with the page is the refresh.
             listRefreshedAt = Date.now()
             fetchProblemset(pending).then(useProblemset, showListFailure)
         } else {
@@ -689,6 +685,41 @@ function showSkipStatus() {
 
 byId("handles").addEventListener("change", () => loadSkips())
 byId("handles").addEventListener("input", () => practice?.then((panel) => panel.showControls()))
+
+byId("handles").addEventListener("input", () => {
+    byId("useRating").hidden = !parseHandles(byId("handles").value).handles.length
+})
+
+const ratingKey = (handle) =>
+    new URL(`${inLanguage("rating.v1")}/${encodeURIComponent(handle.toLowerCase())}.json`, window.location.href).href
+
+byId("useRating").addEventListener("click", async () => {
+    const handle = parseHandles(byId("handles").value).handles[0]
+    if (!handle) return
+    const button = byId("useRating")
+    button.disabled = true
+    const lib = await loadSkipModule()
+    await lib.applyRating({
+        handle,
+        request: politeFetch,
+        cache: await openCache(),
+        key: ratingKey(handle),
+        failure: (response, json) => handleFailure(response.status, json, handle, text),
+        text,
+        setRange: (min, max) => {
+            byId("min_num").value = String(min)
+            byId("max_num").value = String(max)
+            saveSettings()
+            showMatching()
+        },
+        say: (message) => { byId("handlesStatus").textContent = message },
+        fail: (error) => {
+            console.error(error)
+            byId("handlesStatus").textContent = errorText(error)
+        },
+    })
+    button.disabled = false
+})
 byId("setLimit").addEventListener("input", () => practice?.then((panel) => panel.showControls()))
 byId("setShape").value = readShape(window.location.search)
 byId("skipTried").addEventListener("change", () => {

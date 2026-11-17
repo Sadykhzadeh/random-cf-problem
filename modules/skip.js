@@ -5,6 +5,7 @@
 // script.js).
 
 import { isStale, problemKey } from "./problems.js"
+import { fill } from "./i18n.js"
 
 // Gym contests are numbered from 100001.
 const isGym = (contestId) => contestId > 100000
@@ -165,3 +166,58 @@ export const staleSummaries = (entries, now, { maxAge, maxCount }) => {
     return [...stale, ...fresh.slice(maxCount)]
 }
 
+
+// The rating range a handle's rating suggests: from a hundred below it to
+// three hundred above, rounded to hundreds and kept within the ratings the
+// draws use. A handle with no rating gets the range of a newcomer.
+export const RATING_LIMITS = { min: 800, max: 3500 }
+export const ratingRange = (rating) => {
+    if (!Number.isFinite(rating)) return { min: 800, max: 1200 }
+    const hundreds = (value) => Math.round(value / 100) * 100
+    const within = (value) => Math.min(RATING_LIMITS.max, Math.max(RATING_LIMITS.min, value))
+    return { min: within(hundreds(rating - 100)), max: within(hundreds(rating + 300)) }
+}
+
+// How long a handle's rating is kept, as its other data is.
+export const RATING_FRESH_FOR = 10 * 60 * 1000
+
+// The rating a handle has, or null when it has none, read from the cache when
+// the copy is fresh and otherwise from user.info. `io` gives the page's own
+// request (spaced and retried as its other calls are), its cache and the key
+// the copy is kept under, and the error a failed answer makes.
+export const readRating = async (handle, { request, cache, key, failure, now = Date.now }) => {
+    try {
+        const response = cache && await cache.match(key)
+        const entry = response && await response.json()
+        if (entry && Number.isFinite(entry.savedAt) && !isStale(entry.savedAt, now(), RATING_FRESH_FOR)) {
+            return entry.rating ?? null
+        }
+    } catch {
+        // Unreadable: asked for again below.
+    }
+    const { response, json } = await request(`https://codeforces.com/api/user.info?handles=${encodeURIComponent(handle)}`)
+    if (!response.ok || !json || json.status !== "OK" || !Array.isArray(json.result)) throw failure(response, json)
+    const rating = json.result[0]?.rating ?? null
+    if (cache) {
+        cache.put(key, new Response(JSON.stringify({ savedAt: now(), rating }), {
+            headers: { "Content-Type": "application/json" },
+        })).catch(() => {})
+    }
+    return rating
+}
+
+// Sets the range from the handle's rating. The page gives what it needs: the
+// request and cache, the key of the copy, the failure an answer makes, the
+// range setter, and where a message or an error goes.
+export const applyRating = async ({ handle, request, cache, key, failure, text, setRange, say, fail }) => {
+    try {
+        const rating = await readRating(handle, { request, cache, key, failure })
+        const { min, max } = ratingRange(rating)
+        setRange(min, max)
+        say(rating === null
+            ? fill(text.ratingUnrated, { handle, min, max })
+            : fill(text.ratingUsed, { handle, rating, min, max }))
+    } catch (error) {
+        fail(error)
+    }
+}
