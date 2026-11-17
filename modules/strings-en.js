@@ -67,6 +67,8 @@ export default {
     generateHint: "Generate (R or Space)",
     openHint: "Open on Codeforces (O)",
     copyHint: "Copy the link (C)",
+    dailyButton: "Today's problem",
+    dailyMark: "Today's problem, {date}",
     useRating: "Use my rating",
     ratingUsed: "{handle} is rated {rating}: the range is now {min} to {max}.",
     ratingUnrated: "{handle} is unrated: the range is now {min} to {max}.",

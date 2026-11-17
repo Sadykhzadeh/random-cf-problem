@@ -28,6 +28,9 @@ skipping the ones you have already solved.
 - Shows the problem's rating in its Codeforces rank colour and how many
   people solved it; the topics can be hidden, and shown again for the
   problem on screen when you get stuck.
+- "Today's problem" draws one problem for the UTC day from the settings'
+  pool, so everyone gets the same one that day; `?daily=1` in the address
+  opens it. It does not change the draws, which keep their own rounds.
 - "Use my rating" appears once a handle is typed: it sets the rating range to
   from 100 below the handle's rating to 300 above, rounded to hundreds and kept
   between 800 and 3500; a handle with no rating gets 800 to 1200.

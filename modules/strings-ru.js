@@ -67,6 +67,8 @@ export default {
     generateHint: "Сгенерировать (R или пробел)",
     openHint: "Открыть на Codeforces (O)",
     copyHint: "Скопировать ссылку (C)",
+    dailyButton: "Задача дня",
+    dailyMark: "Задача дня, {date}",
     useRating: "Взять мой рейтинг",
     ratingUsed: "Рейтинг {handle}: {rating}. Диапазон теперь от {min} до {max}.",
     ratingUnrated: "У {handle} нет рейтинга. Диапазон теперь от {min} до {max}.",

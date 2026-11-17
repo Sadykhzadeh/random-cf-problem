@@ -386,7 +386,8 @@ footer a {
 #copyLink,
 #clearRecent,
 #copySetMarkdown,
-#copySetLink {
+#copySetLink,
+#dailyButton {
     background: none;
     border: 0;
     padding: 0;

@@ -98,6 +98,7 @@ let nextCallAt = 0
 
 // The list starts with the page, beside the language file (see startList).
 let earlyList = null
+let dailyOn = new URLSearchParams(window.location.search).get("daily") === "1"
 
 const started = startTogether({ text: () => loadStrings(lang), list: startList })
 earlyList = started.list
@@ -142,6 +143,8 @@ for (const [id, key] of [
     ["copySetLink", "copyLink"],
     ["checkSubmissions", "checkSubmissions"],
     ["useRating", "useRating"],
+    ["dailyButton", "dailyButton"],
+    ["dailyMark", "dailyMark"],
     ["shareLink", "share"],
     ["shareSet", "share"],
     ["setLimit_label", "setLimit"],
@@ -218,7 +221,7 @@ let loading = null
 let drawStarted = false
 
 function showLastDrawn(problems) {
-    if (drawStarted || shownProblem || !recent.length) return
+    if (dailyOn || drawStarted || shownProblem || !recent.length) return
     const key = problemKey(recent[0])
     const last = problems.find((problem) => problemKey(problem) === key)
     if (last) showProblem(last)
@@ -385,6 +388,28 @@ byId("refreshData").addEventListener("click", async () => {
 })
 
 loadProblemset().catch(showListFailure)
+
+async function showDaily() {
+    dailyOn = true
+    drawStarted = true
+    showMessage(text.searching)
+    try {
+        const { todaysProblem } = await import("./modules/daily.js")
+        await todaysProblem({
+            prepare: () => readyProblems(showMessage),
+            filter: readFilter,
+            none: (settings) => showMessage(noneText(settings)),
+            show: (problem, day) => showProblem(problem, day),
+        })
+    } catch (error) {
+        console.error(error)
+        showMessage(errorText(error))
+    } finally {
+        saveSettings()
+    }
+}
+
+byId("dailyButton").addEventListener("click", showDaily)
 
 // The handle-skip code is in its own module, loaded with the first handle
 // that is skipped; a visit without one never downloads it. Nothing reads
@@ -767,8 +792,10 @@ byId("doNotShowTags").addEventListener("change", () => {
     if (shownProblem) showTopics(shownProblem)
 })
 
-function showProblem(problem) {
+function showProblem(problem, day = "") {
     shownProblem = problem
+    byId("dailyMark").textContent = day ? fill(text.dailyMark, { date: day }) : ""
+    byId("dailyMark").hidden = !day
     byId("copyLink").hidden = false
     byId("shareLink").hidden = !canShare(navigator)
     byId("copyStatus").textContent = ""
@@ -896,6 +923,7 @@ showRecent()
 
 function showMessage(message) {
     shownProblem = null
+    byId("dailyMark").hidden = true
     byId("copyLink").hidden = true
     byId("shareLink").hidden = true
     byId("copyStatus").textContent = ""
@@ -1047,7 +1075,7 @@ function saveSettings() {
         } catch {
             // See LANG_KEY.
         }
-        const practice = { set: practiceSet, shape: shapeValue() }
+        const practice = { set: practiceSet, shape: shapeValue(), daily: dailyOn }
         const search = writeParams(settings, lang, practice)
         history.replaceState(history.state, "", `${window.location.pathname}${search ? `?${search}` : ""}`)
         for (const link of document.querySelectorAll("#langs a[data-lang]")) {
@@ -1135,6 +1163,8 @@ byId("form").addEventListener("submit", async (event) => {
         saveStored(ROUND_KEY, [...round])
         showProblem(drawn.problem)
         remember(drawn.problem)
+        dailyOn = false
+        saveSettings()
     } catch (error) {
         // fetch rejects outright on a network failure; the card says what
         // went wrong rather than staying on "Looking for a problem...".
@@ -1192,6 +1222,9 @@ byId("setForm").addEventListener("submit", (event) => {
     openPractice().then((panel) => panel.build())
 })
 if (practiceSet) openPractice()
+
+// Last, so that every binding the page can reach from here is declared.
+if (dailyOn) showDaily()
 
 // R, Space or Enter draws another problem, O opens the one on screen and C
 // copies its link, from anywhere but a field being typed in (see shortcutFor).
