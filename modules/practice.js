@@ -70,3 +70,47 @@ export const setMarkdown = (problems) => problems.map((problem) => {
     const name = problem.name.replace(/[\\[\]*_`]/g, "\\$&")
     return `- [${problem.contestId}${problem.index}. ${name}](${problemUrl(problem)}) (${problem.rating ?? "unrated"})`
 }).join("\n")
+
+// The ticks kept for at most this many sets, the most recently ticked first.
+export const KEPT_SETS = 20
+
+// A problem's id as the set's address writes it, and the same key as the
+// problemset keeps it under (contest and index, as problemKey writes them).
+export const idKey = (id) => `${id.contestId}${id.index}`
+export const solvedKey = (id) => `${id.contestId}|${id.index}`
+
+// The problems of a set that are ticked, in the set's order.
+export const doneOf = (ids, done) => ids.filter((id) => done.includes(idKey(id)))
+
+// The ticks already there with the ones the handles have solved added, each
+// once.
+export const mergeTicks = (done, accepted) => [...new Set([...done, ...accepted])]
+
+// The problems of a set the handles have solved, given the solved keys of the
+// submissions read (each "contestId|index", as the summaries hold them).
+export const acceptedOf = (ids, solved) => {
+    const keys = new Set(solved)
+    return ids.filter((id) => keys.has(solvedKey(id))).map(idKey)
+}
+
+// The ticks of every set, read back from storage: anything that is not a
+// set's ticks is dropped, and only the most recent KEPT_SETS are kept.
+export const unpackTicks = (stored) => {
+    if (!Array.isArray(stored)) return []
+    return stored
+        .filter((entry) => entry && typeof entry.key === "string" && Array.isArray(entry.done) &&
+            Number.isFinite(entry.at))
+        .map((entry) => ({ key: entry.key, done: entry.done.filter((id) => typeof id === "string"), at: entry.at }))
+        .sort((a, b) => b.at - a.at)
+        .slice(0, KEPT_SETS)
+}
+
+// The entries with the set `key` holding `done`, as of `at`; any older entry
+// for the same set is replaced, and all but the KEPT_SETS most recent are
+// dropped.
+export const withTicks = (entries, key, done, at) =>
+    [{ key, done: [...new Set(done)], at }, ...entries.filter((entry) => entry.key !== key)]
+        .sort((a, b) => b.at - a.at)
+        .slice(0, KEPT_SETS)
+
+export const ticksOf = (entries, key) => entries.find((entry) => entry.key === key)?.done ?? []

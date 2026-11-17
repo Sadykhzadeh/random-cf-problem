@@ -98,6 +98,10 @@ export const strings = {
         setCountText: "{count} problems.",
         setShort: "Only {count} of the {wanted} rungs had a problem to take.",
         setMissing: "{count} problems of this set are no longer in the list.",
+        progress: "{done} of {total} done",
+        doneBox: "Done: {name}",
+        checkSubmissions: "Check my submissions",
+        checkedAccepted: "Ticked {count} the handles have solved.",
     },
     ru: {
         documentTitle: "Случайная задача Codeforces",
@@ -178,5 +182,9 @@ export const strings = {
         setCountText: "Задач в наборе: {count}.",
         setShort: "Нашлось задач: {count} из {wanted}.",
         setMissing: "Задач из набора уже нет в списке: {count}.",
+        progress: "Сделано: {done} из {total}",
+        doneBox: "Решена: {name}",
+        checkSubmissions: "Проверить мои посылки",
+        checkedAccepted: "Отмечено решённых хендлами: {count}.",
     },
 }

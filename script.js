@@ -118,6 +118,7 @@ for (const [id, key] of [
     ["buildSet", "buildSet"],
     ["copySetMarkdown", "copyMarkdown"],
     ["copySetLink", "copyLink"],
+    ["checkSubmissions", "checkSubmissions"],
 ]) {
     byId(id).textContent = text[key]
 }
@@ -629,6 +630,7 @@ function showSkipStatus() {
 }
 
 byId("handles").addEventListener("change", () => loadSkips())
+byId("handles").addEventListener("input", () => practice?.then((panel) => panel.showChecks()))
 byId("skipTried").addEventListener("change", () => {
     showSkipStatus()
 })
@@ -1060,6 +1062,8 @@ const practiceHost = {
     problems: () => problemset?.problems ?? null,
     prepare: (report) => readyProblems(report),
     filter: () => readFilter(),
+    handles: () => byId("handles").value,
+    solvedByHandles: async () => (await loadSkips()).summaries.flatMap((summary) => summary.solved),
     noneText,
     problemLink,
     ratingBadge,
