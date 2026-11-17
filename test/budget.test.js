@@ -19,10 +19,12 @@ import { firstLoad, root } from "./support/walk.js"
 // fetch of them succeeds adds about 270 bytes raw and 40 gzip on top, and the
 // practice set's check of submissions reads the same skip adds about 20 more
 // raw. The draw's retry of those dates, at most once a minute while they fail,
-// adds about 70 more. Raise these only with a reason of the same kind.
+// adds about 70 more. The skip module's failed download, which is tried again
+// by the next call, and the status and button that say so add about 510 raw and
+// 90 gzip. Raise these only with a reason of the same kind.
 const LIMITS = {
-    en: { raw: 98940, gzip: 31015 },
-    ru: { raw: 100735, gzip: 31611 },
+    en: { raw: 99454, gzip: 31099 },
+    ru: { raw: 101249, gzip: 31695 },
 }
 
 const firstVisit = (language) => {

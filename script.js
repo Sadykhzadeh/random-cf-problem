@@ -422,6 +422,10 @@ const loadSkipModule = () => {
         skipLib = lib
         pruneSolved().catch(() => {})
         return lib
+    }, (error) => {
+        // A download that failed is tried again by the next call.
+        skipModule = null
+        throw error
     })
     return skipModule
 }
@@ -679,6 +683,11 @@ function loadSkips() {
         showSkipStatus()
         showMatching()
         showRecent()
+    }, (error) => {
+        if (skipLoading !== loadingNow) return
+        skipLoading = null
+        skipLoadingKey = ""
+        status.textContent = errorText(error)
     })
     return loadingNow
 }
@@ -724,26 +733,31 @@ byId("useRating").addEventListener("click", async () => {
     if (!handle) return
     const button = byId("useRating")
     button.disabled = true
-    const lib = await loadSkipModule()
-    await lib.applyRating({
-        handle,
-        request: politeFetch,
-        cache: await openCache(),
-        key: ratingKey(handle),
-        failure: (response, json) => handleFailure(response.status, json, handle, text),
-        text,
-        setRange: (min, max) => {
-            byId("min_num").value = String(min)
-            byId("max_num").value = String(max)
-            saveSettings()
-            showMatching()
-        },
-        say: (message) => { byId("handlesStatus").textContent = message },
-        fail: (error) => {
-            console.error(error)
-            byId("handlesStatus").textContent = errorText(error)
-        },
+    const lib = await loadSkipModule().catch((error) => {
+        console.error(error)
+        byId("handlesStatus").textContent = errorText(error)
     })
+    if (lib) {
+        await lib.applyRating({
+            handle,
+            request: politeFetch,
+            cache: await openCache(),
+            key: ratingKey(handle),
+            failure: (response, json) => handleFailure(response.status, json, handle, text),
+            text,
+            setRange: (min, max) => {
+                byId("min_num").value = String(min)
+                byId("max_num").value = String(max)
+                saveSettings()
+                showMatching()
+            },
+            say: (message) => { byId("handlesStatus").textContent = message },
+            fail: (error) => {
+                console.error(error)
+                byId("handlesStatus").textContent = errorText(error)
+            },
+        })
+    }
     button.disabled = false
 })
 byId("setLimit").addEventListener("input", () => practice?.then((panel) => panel.showControls()))
