@@ -1200,7 +1200,7 @@ const practiceHost = {
     prepare: (report) => readyProblems(report),
     filter: () => readFilter(),
     handles: () => byId("handles").value,
-    solvedByHandles: async () => (await loadSkips()).summaries.flatMap((summary) => summary.solved),
+    solvedByHandles: async () => skipLib.makeSkip((await loadSkips()).summaries, { starts: contestStarts ?? undefined }),
     noneText,
     problemLink,
     ratingBadge,

@@ -26,6 +26,7 @@ import {
     passedMarks,
     pickSession,
     sessionLength,
+    solvedKey,
 } from "../modules/practice.js"
 import { fill } from "../modules/i18n.js"
 import { practiceMessages } from "../modules/practice-strings.js"
@@ -110,8 +111,9 @@ const ids = [{ contestId: 1520, index: "F2" }, { contestId: 4, index: "A" }, { c
 test("ticks are kept per set, merged with what the handles solved, and only for ids in the set", () => {
     assert.deepEqual(doneOf(ids, ["4A", "9999Z", "2000H"]).map(idKey), ["4A", "2000H"])
     assert.deepEqual(mergeTicks(["4A"], ["4A", "1520F2"]), ["4A", "1520F2"], "each once")
-    assert.deepEqual(acceptedOf(ids, ["1520|F2", "7|A", "4|A"]), ["1520F2", "4A"], "in the set's order")
-    assert.deepEqual(acceptedOf(ids, []), [])
+    const solved = new Set(["1520|F2", "7|A", "4|A"])
+    assert.deepEqual(acceptedOf(ids, (id) => solved.has(solvedKey(id))), ["1520F2", "4A"], "in the set's order")
+    assert.deepEqual(acceptedOf(ids, () => false), [])
 })
 
 test("the progress line says how many are done, in English and in Russian", () => {

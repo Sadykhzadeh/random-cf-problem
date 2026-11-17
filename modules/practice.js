@@ -86,12 +86,9 @@ export const doneOf = (ids, done) => ids.filter((id) => done.includes(idKey(id))
 // once.
 export const mergeTicks = (done, accepted) => [...new Set([...done, ...accepted])]
 
-// The problems of a set the handles have solved, given the solved keys of the
-// submissions read (each "contestId|index", as the summaries hold them).
-export const acceptedOf = (ids, solved) => {
-    const keys = new Set(solved)
-    return ids.filter((id) => keys.has(solvedKey(id))).map(idKey)
-}
+// The problems of a set the handles have solved, given as a test of a problem
+// (the page's skip test, which counts a parallel round's twin as solved too).
+export const acceptedOf = (problems, isSolved) => problems.filter(isSolved).map((problem) => idKey(problem))
 
 // The ticks of every set, read back from storage: anything that is not a
 // set's ticks is dropped, and only the most recent KEPT_SETS are kept.
