@@ -53,14 +53,6 @@ import {
     readParams,
     writeParams
 } from "./modules/params.js"
-import {
-    MAX_SET,
-    buildLadder,
-    decodeSet,
-    encodeSet,
-    resolveSet,
-    setMarkdown
-} from "./modules/practice.js"
 
 const byId = (id) => document.getElementById(id)
 
@@ -282,7 +274,7 @@ function useProblemset(loaded) {
     showLastDrawn(loaded.problems)
     showDataStatus()
     showRecent()
-    renderSet()
+    practice?.then((panel) => panel.render())
     // The handles can finish loading first; their count waits for the list.
     if (skipState.summaries.length) showSkipStatus()
     showMatching()
@@ -940,7 +932,7 @@ function saveSettings() {
         } catch {
             // See LANG_KEY.
         }
-        const set = encodeSet(setIds)
+        const set = practiceSet
         const search = writeParams(settings, lang, set)
         history.replaceState(history.state, "", `${window.location.pathname}${search ? `?${search}` : ""}`)
         for (const link of document.querySelectorAll("#langs a[data-lang]")) {
@@ -1041,81 +1033,46 @@ byId("form").addEventListener("submit", async (event) => {
     }
 })
 
-// A practice set is a ladder of problems, one per rung, shared as the ids of
-// its problems in the address, so the link brings back the same set (see
-// practice.js). The ids are kept whether or not the list still has them.
-let setIds = decodeSet(new URLSearchParams(window.location.search).get("set"))
-let setFound = []
+// The practice set is built and shown by modules/practice-panel.js, which is
+// loaded the first time the section is touched or the address names a set.
+// Until then the set's ids are only kept, as the address has them.
+let practiceSet = new URLSearchParams(window.location.search).get("set") ?? ""
+let practice = null
 
-// The set on screen, with what it says about itself: its size, unless a note
-// replaces that, and how many of its problems the list no longer has.
-function renderSet(note) {
-    const { found, missing } = problemset ? resolveSet(problemset.problems, setIds) : { found: [], missing: [] }
-    setFound = found
-    byId("setList").replaceChildren(...found.map((problem) => {
-        const item = document.createElement("li")
-        item.append(problemLink(problem), " ", ratingBadge(problem))
-        return item
-    }))
-    byId("setActions").hidden = !found.length
-    const headline = note ?? (found.length ? fill(text.setCountText, { count: found.length }) : "")
-    const lost = missing.length ? fill(text.setMissing, { count: missing.length }) : ""
-    byId("setStatus").textContent = [headline, lost].filter(Boolean).join(" ")
-}
+const setLinkFor = (ids) => `${window.location.origin}${window.location.pathname}?${writeParams(DEFAULTS, lang, ids)}`
 
-const ratingField = (id, fallback) => {
-    const raw = byId(id).value
-    const value = raw === "" ? fallback : Number(raw)
-    return Number.isFinite(value) ? Math.min(3800, Math.max(0, value)) : fallback
-}
-
-byId("setForm").addEventListener("submit", async (event) => {
-    event.preventDefault()
-    const count = Math.min(MAX_SET, Math.max(1, Math.floor(Number(byId("setCount").value)) || 5))
-    const from = ratingField("setFrom", 800)
-    const to = ratingField("setTo", 2000)
-    if (from > to) {
-        byId("setStatus").textContent = text.minAboveMax
-        return
-    }
-    // Disabling the button drops the focus to the page, so it is put back.
-    const focused = document.activeElement
-    const button = byId("buildSet")
-    button.disabled = true
-    try {
-        const all = await readyProblems((message) => { byId("setStatus").textContent = message })
-        // The other settings of the form apply: topics, divisions, special
-        // rounds and the handles' skips. Only the ends of the ladder are its own.
-        const filter = { ...readFilter(), min: from, max: to }
-        const picked = buildLadder(matchingProblems(all, filter), count, from, to)
-        if (picked.length) {
-            setIds = picked
-            renderSet(picked.length < count ? fill(text.setShort, { count: picked.length, wanted: count }) : undefined)
-        } else {
-            setIds = []
-            renderSet(noneText(filter))
-        }
+const practiceHost = {
+    text,
+    lang,
+    initialSet: practiceSet,
+    problems: () => problemset?.problems ?? null,
+    prepare: (report) => readyProblems(report),
+    filter: () => readFilter(),
+    noneText,
+    problemLink,
+    ratingBadge,
+    copyText,
+    errorText,
+    setLink: setLinkFor,
+    setChanged(ids) {
+        practiceSet = ids
         saveSettings()
-    } catch (error) {
-        console.error(error)
-        byId("setStatus").textContent = errorText(error)
-    } finally {
-        button.disabled = false
-        if (document.activeElement === document.body) focused?.focus()
-    }
-})
+    },
+}
 
-// The set as a Markdown list, and a link that brings back the same set.
-const setLink = () => `${window.location.origin}${window.location.pathname}?${writeParams(DEFAULTS, lang, encodeSet(setIds))}`
+function openPractice() {
+    practice ??= import("./modules/practice-panel.js").then((panel) => panel.mountPractice(practiceHost))
+    return practice
+}
 
-byId("copySetMarkdown").addEventListener("click", async () => {
-    if (!setFound.length) return
-    byId("setStatus").textContent = await copyText(setMarkdown(setFound)) ? text.copied : text.copyFailed
+for (const type of ["pointerdown", "focusin"]) {
+    byId("practice").addEventListener(type, openPractice, { once: true })
+}
+byId("setForm").addEventListener("submit", (event) => {
+    event.preventDefault()
+    openPractice().then((panel) => panel.build())
 })
-
-byId("copySetLink").addEventListener("click", async () => {
-    byId("setStatus").textContent = await copyText(setLink()) ? text.copied : text.copyFailed
-})
+if (practiceSet) openPractice()
 
 // R, Space or Enter draws another problem, O opens the one on screen and C
 // copies its link, from anywhere but a field being typed in (see shortcutFor).
