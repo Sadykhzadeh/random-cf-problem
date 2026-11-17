@@ -51,6 +51,8 @@ skipping the ones you have already solved.
   boxes, which Space and Enter already work), `O` opens the problem on screen
   and `C` copies its link; the keys in their place on a Russian layout. Enter
   in any field draws too. The hint under the button lists them.
+- On a device with its own share sheet, a Share button beside Copy link sends
+  the drawn problem or the practice set through it; elsewhere it is not shown.
 - English and Russian, problem names included where Codeforces has them
   translated; follows the system's light or dark theme; fits a phone.
 

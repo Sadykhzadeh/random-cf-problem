@@ -73,3 +73,20 @@ export const createSettle = (publish, { delay = 600, setTimer = setTimeout, clea
         },
     }
 }
+
+// Whether the device has its own share sheet, given the navigator (none in
+// a test, and none on a desktop browser without the feature).
+export const canShare = (nav) => typeof nav?.share === "function"
+
+// What a share sends: a title and the link. Nothing is shared without a link.
+export const sharePayload = (title, url) => url ? { title: String(title ?? "").trim(), url } : null
+
+// Hands the payload to the device's share sheet. Dismissing the sheet is not
+// an error; anything else is logged.
+export const share = async (nav, payload) => {
+    try {
+        await nav.share(payload)
+    } catch (error) {
+        if (error?.name !== "AbortError") console.error(error)
+    }
+}

@@ -27,6 +27,7 @@ import {
 } from "./practice.js"
 import { matchingProblems } from "./problems.js"
 import { fill } from "./i18n.js"
+import { canShare, share, sharePayload } from "./ui.js"
 
 const byId = (id) => document.getElementById(id)
 
@@ -99,6 +100,7 @@ export const mountPractice = (host) => {
     function showControls() {
         byId("checkSubmissions").hidden = !setFound.length || !host.handles().trim()
         byId("startSession").hidden = sessionLength(byId("setLimit").value) === null
+        byId("shareSet").hidden = !setFound.length || !canShare(navigator)
         byId("sessionLine").hidden = !setFound.length
     }
 
@@ -227,6 +229,10 @@ export const mountPractice = (host) => {
         } finally {
             button.disabled = false
         }
+    })
+
+    byId("shareSet").addEventListener("click", () => {
+        share(navigator, sharePayload(text.practiceHeading, host.setLink(encodeSet(setIds))))
     })
 
     byId("copySetMarkdown").addEventListener("click", async () => {

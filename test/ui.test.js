@@ -1,7 +1,7 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 
-import { createSettle, shortcutFor } from "../modules/ui.js"
+import { canShare, createSettle, share, sharePayload, shortcutFor } from "../modules/ui.js"
 
 // Plain descriptions of where a key press lands: the page's body, a button,
 // and fields of each kind.
@@ -114,4 +114,25 @@ test("a change or a blur announces at once and drops the wait", () => {
     assert.equal(timers.count(), 0, "the pending announcement is gone")
     timers.fire()
     assert.deepEqual(said, ["7 problems"], "not said twice")
+})
+
+test("a share button is offered only where the device can share", () => {
+    assert.equal(canShare({ share: () => {} }), true)
+    assert.equal(canShare({}), false, "no share sheet")
+    assert.equal(canShare(undefined), false, "no navigator")
+})
+
+test("a share sends the title and the link, and nothing without a link", () => {
+    assert.deepEqual(sharePayload("  2274A. Name ", "https://codeforces.com/problemset/problem/2274/A"), {
+        title: "2274A. Name", url: "https://codeforces.com/problemset/problem/2274/A",
+    })
+    assert.deepEqual(sharePayload(undefined, "https://example.org/x"), { title: "", url: "https://example.org/x" })
+    assert.equal(sharePayload("title", ""), null)
+})
+
+test("a share goes to the device's sheet, and dismissing the sheet is not an error", async () => {
+    const sent = []
+    await share({ share: async (payload) => { sent.push(payload) } }, { title: "t", url: "u" })
+    assert.deepEqual(sent, [{ title: "t", url: "u" }])
+    await share({ share: async () => { throw Object.assign(new Error("closed"), { name: "AbortError" }) } }, { title: "t", url: "u" })
 })

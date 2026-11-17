@@ -3,9 +3,12 @@ import {
     localize_tags
 } from "./modules/tags.js"
 import {
+    canShare,
     createSettle,
     disableAll,
     enableAll,
+    share,
+    sharePayload,
     shortcutFor
 } from "./modules/ui.js"
 import {
@@ -120,6 +123,8 @@ for (const [id, key] of [
     ["copySetMarkdown", "copyMarkdown"],
     ["copySetLink", "copyLink"],
     ["checkSubmissions", "checkSubmissions"],
+    ["shareLink", "share"],
+    ["shareSet", "share"],
     ["setLimit_label", "setLimit"],
     ["setShape_label", "setShape"],
     ["shapeRising", "shapeRising"],
@@ -687,6 +692,7 @@ byId("doNotShowTags").addEventListener("change", () => {
 function showProblem(problem) {
     shownProblem = problem
     byId("copyLink").hidden = false
+    byId("shareLink").hidden = !canShare(navigator)
     byId("copyStatus").textContent = ""
     const link = problemLink(problem)
     link.title = text.openHint
@@ -727,6 +733,14 @@ async function copyText(value) {
     }
     box.remove()
     return copied
+}
+
+byId("shareLink").addEventListener("click", () => {
+    if (shownProblem) share(navigator, sharePayload(problemTitle(shownProblem), problemUrl(shownProblem)))
+})
+
+function problemTitle(problem) {
+    return `${problem.contestId}${problem.index}. ${problem.name}`
 }
 
 byId("copyLink").addEventListener("click", async () => {
@@ -805,6 +819,7 @@ showRecent()
 function showMessage(message) {
     shownProblem = null
     byId("copyLink").hidden = true
+    byId("shareLink").hidden = true
     byId("copyStatus").textContent = ""
     nameEl.textContent = message
     ratingEl.textContent = ""
