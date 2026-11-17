@@ -1,4 +1,7 @@
 import {
+    startTogether
+} from "./modules/startup.js"
+import {
     tags,
     localize_tags
 } from "./modules/tags.js"
@@ -67,13 +70,40 @@ function storedLanguage() {
 }
 
 const lang = pickLanguage(window.location.search, storedLanguage(), navigator.languages ?? [])
-const text = await loadStrings(lang)
-
 try {
     localStorage.setItem(LANG_KEY, lang)
 } catch {
     // Remembering the language is a convenience, not a requirement.
 }
+
+// The whole archive is fetched once, without a tag, and filtered here, so a
+// new tag costs no request. It is kept in the Cache API (a localStorage-sized
+// copy would not fit) for a day; an older copy is still used at once while a
+// fresh one loads for next time. Loading starts with the page, so the first
+// draw rarely waits. Codeforces names the problems in the language asked
+// for, where it has a translation, so each language keeps its own copy.
+const PROBLEMSET_URL = `https://codeforces.com/api/problemset.problems?lang=${lang}`
+const CACHE_NAME = "random-cf-problem"
+// English keeps the names its copies have always had.
+const inLanguage = (name) => lang === "en" ? name : name.replace(/\.v/, `.${lang}.v`)
+const CACHE_KEY = new URL(inLanguage("problemset.v1.json"), window.location.href).href
+const FRESH_FOR = 24 * 60 * 60 * 1000
+const RETRY_AFTER = 60 * 1000
+
+// Codeforces asks for no more than one API call every two seconds, and
+// answers "Call limit exceeded" past that. Calls from this page queue up
+// to keep to it.
+const API_GAP = 2000
+let nextCallAt = 0
+
+// The problem list starts loading now, alongside the language file, rather
+// than after it: the saved copy is read at once, and a request goes out when
+// there is no copy or the copy is a day old. Neither needs the text yet.
+let earlyList = null
+
+const started = startTogether({ text: () => loadStrings(lang), list: startList })
+earlyList = started.list
+const text = await started.text
 
 // The page is written in English; Russian is swapped in here.
 document.documentElement.lang = lang
@@ -181,19 +211,6 @@ byId("clearTopics").addEventListener("click", () => {
     saveSettings()
 })
 
-// The whole archive is fetched once, without a tag, and filtered here, so a
-// new tag costs no request. It is kept in the Cache API (a localStorage-sized
-// copy would not fit) for a day; an older copy is still used at once while a
-// fresh one loads for next time. Loading starts with the page, so the first
-// draw rarely waits. Codeforces names the problems in the language asked
-// for, where it has a translation, so each language keeps its own copy.
-const PROBLEMSET_URL = `https://codeforces.com/api/problemset.problems?lang=${lang}`
-const CACHE_NAME = "random-cf-problem"
-// English keeps the names its copies have always had.
-const inLanguage = (name) => lang === "en" ? name : name.replace(/\.v/, `.${lang}.v`)
-const CACHE_KEY = new URL(inLanguage("problemset.v1.json"), window.location.href).href
-const FRESH_FOR = 24 * 60 * 60 * 1000
-const RETRY_AFTER = 60 * 1000
 
 let problemset = null
 let loading = null
@@ -232,11 +249,6 @@ async function readSaved() {
     }
 }
 
-// Codeforces asks for no more than one API call every two seconds, and
-// answers "Call limit exceeded" past that. Calls from this page queue up
-// to keep to it.
-const API_GAP = 2000
-let nextCallAt = 0
 
 async function waitForTurn() {
     const now = Date.now()
@@ -252,8 +264,18 @@ async function politeFetch(url) {
     return fetchApi(url, { again: waitForTurn })
 }
 
-async function fetchProblemset() {
-    const { response, json } = await politeFetch(PROBLEMSET_URL)
+// The saved copy, read at once, and the request for the list when there is no
+// copy or it is a day old, started as the page starts. Nothing here uses the
+// text: a request that fails is reported when the list is taken up.
+async function startList() {
+    const saved = await readSaved()
+    const pending = !saved || isStale(saved.savedAt, Date.now(), FRESH_FOR) ? politeFetch(PROBLEMSET_URL) : null
+    pending?.catch(() => {})
+    return { saved, pending }
+}
+
+async function fetchProblemset(pending = politeFetch(PROBLEMSET_URL)) {
+    const { response, json } = await pending
     // A failure comes as {status: "FAILED", comment: ...}, and not always
     // with an error status, so the body is checked as well.
     if (!response.ok || !json || json.status !== "OK" || !json.result || !json.result.problems) {
@@ -287,10 +309,18 @@ function useProblemset(loaded) {
 function loadProblemset({ refresh = false } = {}) {
     if (loading && !refresh) return loading
     const attempt = (async () => {
-        const saved = refresh ? null : await readSaved()
-        if (!saved) return useProblemset(await fetchProblemset())
+        const started = earlyList
+        earlyList = null
+        const { saved, pending } = !refresh && started ? await started : { saved: null, pending: undefined }
+        if (!saved) return useProblemset(await fetchProblemset(pending))
         useProblemset(saved)
-        refreshIfStale()
+        if (pending) {
+            // A copy a day old: the request started with the page is the refresh.
+            listRefreshedAt = Date.now()
+            fetchProblemset(pending).then(useProblemset, showListFailure)
+        } else {
+            refreshIfStale()
+        }
         return saved
     })()
     loading = attempt
