@@ -173,3 +173,22 @@ export const followSession = (session, { now, every = 1000, schedule, unschedule
     if (timeLeft(session, now()) > 0) timer = schedule(tick, every)
     return stop
 }
+
+// The flat set: `count` problems from the pool at random, no two from one
+// contest, listed by rating. The pool is the rating range itself.
+export const buildFlat = (pool, count, random = Math.random) => {
+    const shuffled = [...pool]
+    for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(random() * (i + 1))
+        ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+    }
+    const contests = new Set()
+    const picked = []
+    for (const problem of shuffled) {
+        if (picked.length >= count) break
+        if (contests.has(problem.contestId)) continue
+        contests.add(problem.contestId)
+        picked.push(problem)
+    }
+    return picked.sort((a, b) => a.rating - b.rating)
+}

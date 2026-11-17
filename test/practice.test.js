@@ -5,6 +5,7 @@ import {
     KEPT_SETS,
     MAX_SET,
     acceptedOf,
+    buildFlat,
     buildLadder,
     decodeSet,
     doneOf,
@@ -219,4 +220,16 @@ test("the stop returned for a session unschedules its timer", () => {
     assert.equal(clock.scheduled(), 1)
     stop()
     assert.equal(clock.scheduled(), 0)
+})
+
+test("a flat set takes problems at random from the whole range, one per contest, in rating order", () => {
+    const pool = Array.from({ length: 30 }, (_, i) => problem(100 + (i % 10), "A", 1200 + 25 * i))
+    const picked = buildFlat(pool, 6, seeded(5))
+    assert.equal(picked.length, 6)
+    assert.equal(new Set(picked.map((p) => p.contestId)).size, 6)
+    assert.deepEqual(picked.map((p) => p.rating), [...picked.map((p) => p.rating)].sort((a, b) => a - b))
+    assert.deepEqual(buildFlat(pool, 6, seeded(5)), picked, "reproducible")
+    assert.equal(buildFlat(pool, 4, seeded(2)).length, 4)
+    assert.equal(buildFlat([problem(1, "A", 1000), problem(1, "B", 1100)], 5, seeded(3)).length, 1, "one contest gives one")
+    assert.equal(buildFlat([], 3, seeded(3)).length, 0)
 })

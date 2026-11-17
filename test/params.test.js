@@ -1,7 +1,7 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 
-import { DEFAULTS, readParams, writeParams } from "../modules/params.js"
+import { DEFAULTS, readParams, readShape, writeParams } from "../modules/params.js"
 
 test("settings survive a round trip through the address", () => {
     const settings = {
@@ -40,7 +40,12 @@ test("an address without settings says so, and bad values are dropped", () => {
 })
 
 test("a practice set rides along in the address without counting as a setting", () => {
-    assert.equal(writeParams(DEFAULTS, "en", "1520F2,4A"), "lang=en&set=1520F2,4A")
+    assert.equal(writeParams(DEFAULTS, "en", { set: "1520F2,4A" }), "lang=en&set=1520F2,4A")
+    assert.equal(writeParams(DEFAULTS, "en", { set: "1520F2", shape: "flat" }), "lang=en&set=1520F2&shape=flat")
+    assert.equal(writeParams(DEFAULTS, "en", { set: "1520F2", shape: "rising" }), "lang=en&set=1520F2", "rising is the default")
+    assert.equal(readShape("?shape=flat"), "flat")
+    assert.equal(readShape("?set=1520F2"), "rising")
+    assert.equal(readParams("?shape=flat"), null, "the shape alone leaves the remembered settings in place")
     assert.equal(readParams("?set=1520F2,4A"), null, "the set alone leaves the remembered settings in place")
     assert.deepEqual(readParams("?set=1520F2&tags=dp").tags, ["dp"])
 })

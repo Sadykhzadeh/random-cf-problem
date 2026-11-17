@@ -40,6 +40,9 @@ skipping the ones you have already solved.
   brings back exactly the same problems; it copies as a Markdown list.
 - Ticks the problems of a set as done, kept per set in the browser; "Check
   my submissions" ticks the ones the typed handles have solved.
+- The set is rising (one problem per rung, the default) or flat (all problems
+  from the range at random, one per contest); flat is in the address as
+  shape=flat, and nothing else of the form is.
 - A time limit in minutes starts a timer on the set: the deadline is kept, so
   the countdown survives a reload, and "Time is up" is read out once.
 - Remembers the settings, and keeps them in the address so a link

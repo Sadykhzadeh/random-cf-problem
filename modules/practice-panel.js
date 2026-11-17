@@ -7,6 +7,7 @@
 import {
     MAX_SET,
     acceptedOf,
+    buildFlat,
     buildLadder,
     clockText,
     decodeSet,
@@ -188,10 +189,15 @@ export const mountPractice = (host) => {
             // The other settings of the form apply: topics, divisions, special
             // rounds and the handles' skips. Only the ends of the ladder are its own.
             const filter = { ...host.filter(), min: from, max: to }
-            const picked = buildLadder(matchingProblems(all, filter), count, from, to)
+            const flat = byId("setShape").value === "flat"
+            const pool = matchingProblems(all, filter)
+            const picked = flat ? buildFlat(pool, count) : buildLadder(pool, count, from, to)
             if (picked.length) {
                 setIds = picked
-                render(picked.length < count ? fill(text.setShort, { count: picked.length, wanted: count }) : undefined)
+                const short = picked.length < count
+                    ? fill(flat ? text.setShortFlat : text.setShort, { count: picked.length, wanted: count })
+                    : undefined
+                render(short)
             } else {
                 setIds = []
                 render(host.noneText(filter))

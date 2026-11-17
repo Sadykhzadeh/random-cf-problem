@@ -52,6 +52,7 @@ import {
     DEFAULTS,
     DIVISIONS,
     readParams,
+    readShape,
     writeParams
 } from "./modules/params.js"
 
@@ -120,6 +121,9 @@ for (const [id, key] of [
     ["copySetLink", "copyLink"],
     ["checkSubmissions", "checkSubmissions"],
     ["setLimit_label", "setLimit"],
+    ["setShape_label", "setShape"],
+    ["shapeRising", "shapeRising"],
+    ["shapeFlat", "shapeFlat"],
     ["startSession", "startTimer"],
 ]) {
     byId(id).textContent = text[key]
@@ -634,6 +638,7 @@ function showSkipStatus() {
 byId("handles").addEventListener("change", () => loadSkips())
 byId("handles").addEventListener("input", () => practice?.then((panel) => panel.showControls()))
 byId("setLimit").addEventListener("input", () => practice?.then((panel) => panel.showControls()))
+byId("setShape").value = readShape(window.location.search)
 byId("skipTried").addEventListener("change", () => {
     showSkipStatus()
 })
@@ -949,11 +954,11 @@ function saveSettings() {
         } catch {
             // See LANG_KEY.
         }
-        const set = practiceSet
-        const search = writeParams(settings, lang, set)
+        const practice = { set: practiceSet, shape: shapeValue() }
+        const search = writeParams(settings, lang, practice)
         history.replaceState(history.state, "", `${window.location.pathname}${search ? `?${search}` : ""}`)
         for (const link of document.querySelectorAll("#langs a[data-lang]")) {
-            link.href = `?${writeParams(settings, link.dataset.lang, set)}`
+            link.href = `?${writeParams(settings, link.dataset.lang, practice)}`
         }
     }, 250)
 }
@@ -1056,7 +1061,9 @@ byId("form").addEventListener("submit", async (event) => {
 let practiceSet = new URLSearchParams(window.location.search).get("set") ?? ""
 let practice = null
 
-const setLinkFor = (ids) => `${window.location.origin}${window.location.pathname}?${writeParams(DEFAULTS, lang, ids)}`
+const setLinkFor = (ids) => `${window.location.origin}${window.location.pathname}?${writeParams(DEFAULTS, lang, { set: ids, shape: shapeValue() })}`
+
+const shapeValue = () => byId("setShape").value === "flat" ? "flat" : "rising"
 
 const practiceHost = {
     text,
