@@ -138,10 +138,6 @@
                     </span>
                 </div>
                 <div class="field">
-                    <label class="label" id="setLimit_label" for="setLimit">Time limit, minutes</label>
-                    <input type="number" id="setLimit" placeholder="none" min="1" max="600" step="1" inputmode="numeric">
-                </div>
-                <div class="field">
                     <label class="label" id="setShape_label" for="setShape">Shape</label>
                     <select id="setShape"><option value="rising" id="shapeRising">Rising ladder</option><option value="flat" id="shapeFlat">Flat, all in the range</option></select>
                 </div>
@@ -152,6 +148,10 @@
                 <p id="setNote" class="hint"></p>
                 <button type="submit" id="buildSet">Build the set</button>
             </form>
+            <div class="field">
+                <label class="label" id="setLimit_label" for="setLimit">Time limit, minutes</label>
+                <input type="number" id="setLimit" placeholder="none" min="1" max="600" step="1" inputmode="numeric">
+            </div>
             <p id="setStatus" aria-live="polite"></p>
             <ol id="setList"></ol>
             <p id="setProgress" class="hint" aria-live="polite"></p>
