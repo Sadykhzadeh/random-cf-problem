@@ -24,5 +24,28 @@ const isLetterKey = (letter) => (key, code) =>
 
 const isDrawKey = isLetterKey("r")
 const isOpenKey = isLetterKey("o")
+const isCopyKey = isLetterKey("c")
 
-export { disableAll, enableAll, isDrawKey, isOpenKey }
+// Fields take typing. A checkbox or a radio button does not.
+const isTyping = (target) => target.tagName === "TEXTAREA" || target.tagName === "SELECT" ||
+    target.isContentEditable === true ||
+    (target.tagName === "INPUT" && target.type !== "checkbox" && target.type !== "radio")
+
+// Space and Enter already do something on these, such as press a button or
+// tick a box, so they draw only where nothing else takes them.
+const TAKES_SPACE_AND_ENTER = new Set(["BUTTON", "A", "INPUT", "SELECT", "TEXTAREA", "SUMMARY", "OPTION"])
+
+// What a key press does as a shortcut: "draw", "open", "copy", or null for
+// nothing. `event` is a keydown event, or a plain description of one.
+export const shortcutFor = (event) => {
+    if (event.ctrlKey || event.metaKey || event.altKey || event.repeat) return null
+    const target = event.target ?? {}
+    if (isTyping(target)) return null
+    if (isDrawKey(event.key, event.code)) return "draw"
+    if (isOpenKey(event.key, event.code)) return "open"
+    if (isCopyKey(event.key, event.code)) return "copy"
+    const spaceOrEnter = event.key === " " || event.key === "Spacebar" || event.key === "Enter"
+    return spaceOrEnter && !TAKES_SPACE_AND_ENTER.has(target.tagName) ? "draw" : null
+}
+
+export { disableAll, enableAll }

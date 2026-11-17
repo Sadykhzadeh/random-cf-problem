@@ -1,24 +1,80 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 
-import { isDrawKey, isOpenKey } from "../modules/ui.js"
+import { shortcutFor } from "../modules/ui.js"
+
+// Plain descriptions of where a key press lands: the page's body, a button,
+// and fields of each kind.
+const body = { tagName: "BODY" }
+const button = { tagName: "BUTTON" }
+const link = { tagName: "A" }
+const checkbox = { tagName: "INPUT", type: "checkbox" }
+const radio = { tagName: "INPUT", type: "radio" }
+const textField = { tagName: "INPUT", type: "text" }
+const numberField = { tagName: "INPUT", type: "number" }
+const select = { tagName: "SELECT" }
+const textarea = { tagName: "TEXTAREA" }
+const editable = { tagName: "DIV", isContentEditable: true }
+
+const press = (key, code, target = body, extra = {}) => shortcutFor({ key, code, target, ...extra })
 
 test("R draws again whatever the keyboard layout", () => {
-    assert.equal(isDrawKey("r", "KeyR"), true)
-    assert.equal(isDrawKey("R", "KeyR"), true, "with Shift or Caps Lock")
-    assert.equal(isDrawKey("к", "KeyR"), true, "the same key on a Russian layout")
-    assert.equal(isDrawKey("К", "KeyR"), true)
-    assert.equal(isDrawKey("r", "KeyO"), true, "R on Dvorak")
-    assert.equal(isDrawKey("p", "KeyR"), false, "the key that types P on Dvorak")
-    assert.equal(isDrawKey("к", "KeyK"), false)
-    assert.equal(isDrawKey("Enter", "Enter"), false)
+    assert.equal(press("r", "KeyR"), "draw")
+    assert.equal(press("R", "KeyR"), "draw", "with Shift or Caps Lock")
+    assert.equal(press("к", "KeyR"), "draw", "the same key on a Russian layout")
+    assert.equal(press("К", "KeyR"), "draw")
+    assert.equal(press("r", "KeyO"), "draw", "R on Dvorak")
+    assert.equal(press("p", "KeyR"), null, "the key that types P on Dvorak")
+    assert.equal(press("к", "KeyK"), null)
 })
 
 test("O opens the problem whatever the keyboard layout", () => {
-    assert.equal(isOpenKey("o", "KeyO"), true)
-    assert.equal(isOpenKey("O", "KeyO"), true)
-    assert.equal(isOpenKey("щ", "KeyO"), true, "the same key on a Russian layout")
-    assert.equal(isOpenKey("o", "KeyS"), true, "O on Dvorak")
-    assert.equal(isOpenKey("r", "KeyO"), false, "the key that types R on Dvorak")
-    assert.equal(isOpenKey("щ", "KeyK"), false)
+    assert.equal(press("o", "KeyO"), "open")
+    assert.equal(press("O", "KeyO"), "open")
+    assert.equal(press("щ", "KeyO"), "open", "the same key on a Russian layout")
+    assert.equal(press("o", "KeyS"), "open", "O on Dvorak")
+    assert.equal(press("r", "KeyO"), "draw", "the key that types R on Dvorak draws")
+    assert.equal(press("щ", "KeyK"), null)
+})
+
+test("C copies the link whatever the keyboard layout", () => {
+    assert.equal(press("c", "KeyC"), "copy")
+    assert.equal(press("с", "KeyC"), "copy", "the same key on a Russian layout")
+    assert.equal(press("c", "KeyI"), "copy", "C on Dvorak")
+    assert.equal(press("c", "KeyC", button), "copy", "a focused button does not take C")
+})
+
+test("Space and Enter draw where nothing else would take them", () => {
+    assert.equal(press(" ", "Space"), "draw")
+    assert.equal(press("Enter", "Enter"), "draw")
+    assert.equal(press(" ", "Space", checkbox), null, "ticking the box is what Space does there")
+    assert.equal(press(" ", "Space", radio), null)
+    assert.equal(press(" ", "Space", button), null, "pressing the button is what Space does")
+    assert.equal(press("Enter", "Enter", button), null)
+    assert.equal(press("Enter", "Enter", link), null, "Enter follows the link")
+    assert.equal(press(" ", "Space", { tagName: "SUMMARY" }), null, "Space opens the topics")
+    assert.equal(press("Enter", "Enter", { tagName: "DIV" }), "draw", "a plain part of the page")
+})
+
+test("nothing is a shortcut while a field is being typed in", () => {
+    for (const field of [textField, numberField, select, textarea, editable]) {
+        assert.equal(press("r", "KeyR", field), null)
+        assert.equal(press("o", "KeyO", field), null)
+        assert.equal(press("c", "KeyC", field), null)
+        assert.equal(press(" ", "Space", field), null)
+        assert.equal(press("Enter", "Enter", field), null, "Enter in a field is left to the form")
+    }
+})
+
+test("a checkbox or radio button is not a field, so the letters still work there", () => {
+    assert.equal(press("r", "KeyR", checkbox), "draw")
+    assert.equal(press("o", "KeyO", radio), "open")
+    assert.equal(press("c", "KeyC", checkbox), "copy")
+})
+
+test("shortcuts with Control, Command, Alt or a held key do nothing", () => {
+    assert.equal(press("c", "KeyC", body, { ctrlKey: true }), null, "Ctrl+C copies text")
+    assert.equal(press("r", "KeyR", body, { metaKey: true }), null)
+    assert.equal(press("o", "KeyO", body, { altKey: true }), null)
+    assert.equal(press("r", "KeyR", body, { repeat: true }), null, "a held key draws once")
 })

@@ -54,7 +54,7 @@
             <p id="name">Pick a rating range and a topic, or just press "Generate!"</p>
             <p id="rating"></p>
             <p id="tags"></p>
-            <p><button type="button" id="copyLink" hidden></button> <span id="copyStatus"></span></p>
+            <p><button type="button" id="copyLink" hidden aria-keyshortcuts="c"></button> <span id="copyStatus"></span></p>
         </section>
         <form id="form" novalidate>
             <div class="field">
@@ -112,7 +112,8 @@
                 <input type="checkbox" id="doNotShowTags">
                 <label id="doNotShowTags-label" for="doNotShowTags">Hide the problem's topics</label>
             </div>
-            <button type="submit" id="start" title="Generate (R)" aria-keyshortcuts="r">Generate!</button>
+            <button type="submit" id="start" title="Generate (R or Space)" aria-keyshortcuts="r Space">Generate!</button>
+            <p id="keyHints" class="hint"></p>
         </form>
         <section id="recent" hidden>
             <h2 id="recentHeading">Drawn lately</h2>

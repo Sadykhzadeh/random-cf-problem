@@ -5,8 +5,7 @@ import {
 import {
     disableAll,
     enableAll,
-    isDrawKey,
-    isOpenKey
+    shortcutFor
 } from "./modules/ui.js"
 import {
     NEWEST_COUNT,
@@ -108,9 +107,11 @@ for (const [id, key] of [
     ["recentHeading", "recent"],
     ["copyLink", "copyLink"],
     ["clearRecent", "clearRecent"],
+    ["keyHints", "keyHints"],
 ]) {
     byId(id).textContent = text[key]
 }
+byId("copyLink").title = text.copyHint
 if (!nameEl.querySelector("a")) nameEl.textContent = text.intro
 byId("handles").placeholder = text.handlesPlaceholder
 byId("start").title = text.generateHint
@@ -1009,22 +1010,19 @@ byId("form").addEventListener("submit", async (event) => {
     }
 })
 
-// R draws another problem, and O opens the one on screen, from anywhere but
-// a field being typed in.
+// R, Space or Enter draws another problem, O opens the one on screen and C
+// copies its link, from anywhere but a field being typed in (see shortcutFor).
 document.addEventListener("keydown", (event) => {
-    const draws = isDrawKey(event.key, event.code)
-    if (!draws && !isOpenKey(event.key, event.code)) return
-    if (event.ctrlKey || event.metaKey || event.altKey || event.repeat) return
-    const target = event.target
-    if (target instanceof HTMLInputElement && target.type !== "checkbox" && target.type !== "radio") return
-    if (target instanceof HTMLSelectElement || target instanceof HTMLTextAreaElement || target.isContentEditable) return
-    if (!draws) {
-        if (!shownProblem) return
+    const action = shortcutFor(event)
+    if (!action) return
+    if (action === "draw") {
+        if (byId("start").disabled) return
         event.preventDefault()
-        window.open(problemUrl(shownProblem), "_blank", "noopener,noreferrer")
+        byId("form").requestSubmit()
         return
     }
-    if (byId("start").disabled) return
+    if (!shownProblem) return
     event.preventDefault()
-    byId("form").requestSubmit()
+    if (action === "open") window.open(problemUrl(shownProblem), "_blank", "noopener,noreferrer")
+    else byId("copyLink").click()
 })

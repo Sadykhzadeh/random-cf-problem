@@ -82,8 +82,10 @@ export const strings = {
         copyLink: "Copy link",
         copied: "Copied",
         copyFailed: "Could not copy the link.",
-        generateHint: "Generate (R)",
+        generateHint: "Generate (R or Space)",
         openHint: "Open on Codeforces (O)",
+        copyHint: "Copy the link (C)",
+        keyHints: "Keys: R or Space draws again, O opens the problem, C copies its link.",
     },
     ru: {
         documentTitle: "Случайная задача Codeforces",
@@ -148,7 +150,9 @@ export const strings = {
         copyLink: "Скопировать ссылку",
         copied: "Скопировано",
         copyFailed: "Не удалось скопировать ссылку.",
-        generateHint: "Сгенерировать (R)",
+        generateHint: "Сгенерировать (R или пробел)",
         openHint: "Открыть на Codeforces (O)",
+        copyHint: "Скопировать ссылку (C)",
+        keyHints: "Клавиши: R или пробел — другая задача, O — открыть задачу, C — скопировать ссылку.",
     },
 }

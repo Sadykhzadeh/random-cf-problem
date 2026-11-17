@@ -35,8 +35,10 @@ skipping the ones you have already solved.
   the round then starts again.
 - Remembers the settings, and keeps them in the address so a link
   reproduces them.
-- `R` draws again and `O` opens the problem on screen, or the keys in their
-  place on a Russian layout; Enter in any field draws too.
+- `R`, Space or Enter draws again (outside a field and outside buttons and
+  boxes, which Space and Enter already work), `O` opens the problem on screen
+  and `C` copies its link; the keys in their place on a Russian layout. Enter
+  in any field draws too. The hint under the button lists them.
 - English and Russian, problem names included where Codeforces has them
   translated; follows the system's light or dark theme; fits a phone.
 
