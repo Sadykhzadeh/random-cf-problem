@@ -40,6 +40,7 @@ const makeElement = (id) => {
             if (key in target || typeof key === "symbol" || key === "then") return target[key]
             if (key === "querySelector") return () => null
             if (key === "replaceChildren") return (...nodes) => { target.children = nodes }
+            if (key === "append") return (...nodes) => { target.children = [...(target.children ?? []), ...nodes] }
             if (key === "querySelectorAll") return () => []
             return () => undefined
         },
@@ -112,7 +113,7 @@ const loadPage = async (search, remembered = {}) => {
 
 const isScriptError = (text) => /before initialization|is not defined|is not a function|Cannot read/.test(text)
 
-for (const search of ["", "?daily=1", "?lang=en&daily=1", "?set=1520F2,4A", "?skip=tourist"]) {
+for (const search of ["", "?daily=1", "?lang=en&daily=1", "?daily=1&min=1200&max=1400", "?lang=ru&daily=1", "?set=1520F2,4A", "?shape=flat&set=1520F2,4A", "?skip=tourist"]) {
     test(`the page starts without an error at "${search || "/"}"`, async () => {
         const { raised, logged } = await loadPage(search)
         assert.deepEqual(raised.map(String), [], "no unhandled rejection")
@@ -158,4 +159,22 @@ test("a set opened from an address says why it is not shown when the list cannot
     } finally {
         listUnreachable = false
     }
+})
+
+test("a visit with a timed session that has already run out opens its set and says so once", async () => {
+    const session = JSON.stringify({ key: "1520F2,4A", deadline: 1, said: [] })
+    const { raised, logged } = await loadPage("?set=1520F2,4A", { "random-cf-problem:session": session })
+    assert.deepEqual(raised.map(String), [])
+    assert.deepEqual(logged.filter(isScriptError), [])
+    assert.equal(byId("sessionStatus").textContent, "Time is up.")
+})
+
+test("a visit with saved ticks for its set shows the set with them ticked", async () => {
+    const ticks = JSON.stringify([{ key: "1520F2,4A", done: ["1520F2"], at: 1 }])
+    const { raised, logged } = await loadPage("?set=1520F2,4A", { "random-cf-problem:ticks": ticks })
+    assert.deepEqual(raised.map(String), [])
+    assert.deepEqual(logged.filter(isScriptError), [])
+    const [first, second] = byId("setList").children
+    assert.equal(first.children[0].checked, true, "1520F2 is ticked")
+    assert.equal(second.children[0].checked, false, "4A is not")
 })
