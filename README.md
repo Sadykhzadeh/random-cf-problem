@@ -56,7 +56,8 @@ skipping the ones you have already solved.
 - Remembers the settings, and keeps them in the address so a link
   reproduces them.
 - `R`, Space or Enter draws again (outside a field and outside buttons and
-  boxes, which Space and Enter already work), `O` opens the problem on screen
+  boxes, which Space and Enter already work; while a box or radio button has the
+  focus the letters do nothing), `O` opens the problem on screen
   and `C` copies its link; the keys in their place on a Russian layout. Enter
   in any field draws too. The hint under the button lists them.
 - On a device with its own share sheet, a Share button beside Copy link sends

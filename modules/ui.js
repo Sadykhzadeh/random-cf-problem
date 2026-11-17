@@ -26,10 +26,14 @@ const isDrawKey = isLetterKey("r")
 const isOpenKey = isLetterKey("o")
 const isCopyKey = isLetterKey("c")
 
-// Fields take typing. A checkbox or a radio button does not.
+// Fields take typing.
 const isTyping = (target) => target.tagName === "TEXTAREA" || target.tagName === "SELECT" ||
     target.isContentEditable === true ||
     (target.tagName === "INPUT" && target.type !== "checkbox" && target.type !== "radio")
+
+// A checkbox or a radio button keeps the keys for itself: Space ticks it, and
+// a letter pressed while it has the focus does nothing.
+const isChoice = (target) => target.tagName === "INPUT" && (target.type === "checkbox" || target.type === "radio")
 
 // Space and Enter already do something on these, such as press a button or
 // tick a box, so they draw only where nothing else takes them.
@@ -40,7 +44,7 @@ const TAKES_SPACE_AND_ENTER = new Set(["BUTTON", "A", "INPUT", "SELECT", "TEXTAR
 export const shortcutFor = (event) => {
     if (event.ctrlKey || event.metaKey || event.altKey || event.repeat) return null
     const target = event.target ?? {}
-    if (isTyping(target)) return null
+    if (isTyping(target) || isChoice(target)) return null
     if (isDrawKey(event.key, event.code)) return "draw"
     if (isOpenKey(event.key, event.code)) return "open"
     if (isCopyKey(event.key, event.code)) return "copy"

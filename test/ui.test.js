@@ -66,10 +66,14 @@ test("nothing is a shortcut while a field is being typed in", () => {
     }
 })
 
-test("a checkbox or radio button is not a field, so the letters still work there", () => {
-    assert.equal(press("r", "KeyR", checkbox), "draw")
-    assert.equal(press("o", "KeyO", radio), "open")
-    assert.equal(press("c", "KeyC", checkbox), "copy")
+test("while a checkbox or radio button has the focus, the letters do nothing and Space is left to tick it", () => {
+    assert.equal(press("r", "KeyR", checkbox), null)
+    assert.equal(press("o", "KeyO", radio), null)
+    assert.equal(press("c", "KeyC", checkbox), null)
+    assert.equal(press("к", "KeyR", checkbox), null, "the same key on a Russian layout")
+    assert.equal(press(" ", "Space", checkbox), null, "Space ticks the box itself")
+    assert.equal(press("Enter", "Enter", radio), null)
+    assert.equal(press("r", "KeyR", body), "draw", "the page itself still takes the letters")
 })
 
 test("shortcuts with Control, Command, Alt or a held key do nothing", () => {
