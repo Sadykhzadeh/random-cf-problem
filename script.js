@@ -621,6 +621,8 @@ function loadContestStarts() {
     // A failed load is not remembered, so the next one tries again.
     startsLoading.then((starts) => {
         contestStarts = starts
+        skipPredicate = null
+        if (skipState.summaries.length) showSkipStatus(), showRecent()
         showMatching()
     }, (error) => {
         startsLoading = null
@@ -661,13 +663,11 @@ function loadSkips() {
         }
         // Without the start times only the numbering tells parallel rounds
         // apart, which is still most of them.
-        const starts = summaries.length
-            ? await loadContestStarts().catch((error) => console.error(error))
-            : undefined
+        if (summaries.length) await loadContestStarts().catch((error) => console.error(error))
         // How many loads of these handles in a row have failed, so draws
         // stop waiting on a Codeforces that keeps failing.
         const failures = retry ? (skipState.key === key ? skipState.failures : 0) + 1 : 0
-        return { key, handles, loaded, summaries, errors, retry, starts, failures, loadedAt: Date.now() }
+        return { key, handles, loaded, summaries, errors, retry, failures, loadedAt: Date.now() }
     })()
     skipLoading = loadingNow
     skipLoadingKey = key
@@ -687,7 +687,7 @@ function currentSkip() {
     if (!skipState.summaries.length) return undefined
     const includeTried = byId("skipTried").checked
     if (!skipPredicate || skipPredicate.includeTried !== includeTried) {
-        skipPredicate = { includeTried, skip: skipLib.makeSkip(skipState.summaries, { includeTried, starts: skipState.starts }) }
+        skipPredicate = { includeTried, skip: skipLib.makeSkip(skipState.summaries, { includeTried, starts: contestStarts ?? undefined }) }
     }
     return skipPredicate.skip
 }
@@ -884,7 +884,7 @@ const whenFormat = new Intl.DateTimeFormat(lang, { dateStyle: "short", timeStyle
 
 // With handles to skip, the draws they have solved since are marked.
 function showRecent() {
-    const solved = skipState.summaries.length ? skipLib.makeSkip(skipState.summaries, { starts: skipState.starts }) : null
+    const solved = skipState.summaries.length ? skipLib.makeSkip(skipState.summaries, { starts: contestStarts ?? undefined }) : null
     byId("recent").hidden = !recent.length
     byId("recentList").replaceChildren(...recent.map((drawn) => {
         const problem = { ...drawn, name: namesByKey.get(problemKey(drawn)) ?? drawn.name }
@@ -1125,10 +1125,13 @@ async function readyProblems(report) {
         // fetched behind this draw, in time for the next one.
         loadSkips()
     }
-    // Contest dates are only fetched once a year or a division is asked for.
+    // Contest dates are only fetched once a year or a division is asked for. A
+    // skip that went without them retries them, and a failure does not stop the draw.
     if (needsContests(readFilter()) && !contestStarts) {
         report(text.loadingContests)
         await loadContestStarts()
+    } else if (skipState.summaries.length && !contestStarts) {
+        await loadContestStarts().catch(() => {})
     }
     return all
 }

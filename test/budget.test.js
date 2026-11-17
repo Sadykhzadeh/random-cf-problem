@@ -14,11 +14,13 @@ import { firstLoad, root } from "./support/walk.js"
 // on the first load the parallel startup (startup.js and its wiring), the
 // "Use my rating" button, the problem-of-the-day link and the history
 // checkbox, with their markup and strings: about 4.7 KB raw and 1.2 KB gzip
-// over the round-3 first visit, mostly the rating and daily wiring. Raise
+// over the round-3 first visit, mostly the rating and daily wiring. The
+// parallel-round skip that picks up the contest start times once a failed
+// fetch of them succeeds adds about 270 bytes raw and 40 gzip on top. Raise
 // these only with a reason of the same kind.
 const LIMITS = {
-    en: { raw: 98586, gzip: 30975 },
-    ru: { raw: 100381, gzip: 31571 },
+    en: { raw: 98852, gzip: 31015 },
+    ru: { raw: 100647, gzip: 31611 },
 }
 
 const firstVisit = (language) => {
