@@ -2,9 +2,9 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 
 import { BadHandleError, HandleError, apiFailure, errorMessage, handleFailure } from "../modules/errors.js"
-import { strings } from "../modules/i18n.js"
+import strings from "../modules/strings-en.js"
 
-const text = strings.en
+const text = strings
 
 test("a call that fails says why, with the wording for a timeout or a lost connection", () => {
     assert.equal(errorMessage(new TypeError("Failed to fetch"), text), text.networkError)

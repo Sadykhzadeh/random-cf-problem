@@ -41,8 +41,8 @@ import {
 } from "./modules/problems.js"
 import {
     fill,
-    pickLanguage,
-    strings
+    loadStrings,
+    pickLanguage
 } from "./modules/i18n.js"
 import {
     BadHandleError,
@@ -77,7 +77,7 @@ function storedLanguage() {
 }
 
 const lang = pickLanguage(window.location.search, storedLanguage(), navigator.languages ?? [])
-const text = strings[lang]
+const text = await loadStrings(lang)
 
 try {
     localStorage.setItem(LANG_KEY, lang)
