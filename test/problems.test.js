@@ -15,6 +15,7 @@ import {
     packProblemset,
     parseHandles,
     contestDivisions,
+    emptiedBySkips,
     fetchApi,
     fetchJson,
     isStale,
@@ -562,6 +563,18 @@ test("the newest submissions reach a saved history when they go back past its cu
     assert.equal(isUsableDigest(digest, NOW + 2 * DAY), true)
     assert.equal(isUsableDigest(digest, NOW + 4 * DAY), false)
     assert.equal(isUsableDigest(null, NOW), false)
+})
+
+test("a draw emptied only by the handles' skips is told apart from one the settings leave empty", () => {
+    const problems = [
+        { contestId: 1, index: "A", name: "A", rating: 800, tags: [] },
+        { contestId: 2, index: "A", name: "B", rating: 900, tags: [] },
+    ]
+    const skip = () => true
+    assert.equal(emptiedBySkips(problems, { min: 800, max: 900, skip }), true)
+    assert.equal(emptiedBySkips(problems, { min: 1000, max: 1200, skip }), false, "the settings match nothing")
+    assert.equal(emptiedBySkips(problems, { min: 800, max: 900 }), false, "nothing is skipped")
+    assert.equal(emptiedBySkips(problems, { min: 800, max: 900, skip: () => false }), false)
 })
 
 test("a problem's link is its page in the problemset", () => {

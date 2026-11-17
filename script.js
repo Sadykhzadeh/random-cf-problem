@@ -11,6 +11,7 @@ import {
 import {
     NEWEST_COUNT,
     advance,
+    emptiedBySkips,
     emptyDigest,
     isStale,
     isUsableDigest,
@@ -793,6 +794,14 @@ function readFilter() {
 // their divisions.
 const needsContests = (filter) => filter.since !== undefined || filter.divisions.length > 0
 
+// What to say when the settings leave no problem. When the handles' skips are
+// what empties them, it says so, rather than blaming the settings.
+function noneText(filter) {
+    if (!emptiedBySkips(problemset.problems, filter)) return text.noMatch
+    const handles = skipState.loaded.join(", ")
+    return fill(byId("skipTried").checked ? text.allSolvedOrTried : text.allSolved, { handles })
+}
+
 // How many problems the current settings leave, kept up to date as they
 // change, so an empty combination shows before anything is drawn.
 function showMatching() {
@@ -812,7 +821,7 @@ function showMatching() {
         }
     } else {
         const count = matchingProblems(problemset.problems, filter).length
-        matching.textContent = !count ? text.noMatch
+        matching.textContent = !count ? noneText(filter)
             : fill(count === 1 ? text.matchingOne : text.matching, { count: countFormat.format(count) })
     }
 }
@@ -956,10 +965,11 @@ byId("form").addEventListener("submit", async (event) => {
             showMessage(text.loadingContests)
             await loadContestStarts()
         }
-        const problems = matchingProblems(all, readFilter())
+        const filter = readFilter()
+        const problems = matchingProblems(all, filter)
 
         if (!problems.length) {
-            showMessage(text.noMatch)
+            showMessage(noneText(filter))
             return
         }
 

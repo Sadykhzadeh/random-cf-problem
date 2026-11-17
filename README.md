@@ -22,7 +22,9 @@ skipping the ones you have already solved.
 - Skips problems solved by one or more handles (up to five, separated by
   commas or spaces; a link to a profile or submissions page will do), and
   optionally the ones they tried too. A problem solved or tried in the
-  parallel Div. 1 or Div. 2 round counts as solved or tried.
+  parallel Div. 1 or Div. 2 round counts as solved or tried. When the
+  skips leave nothing to draw, the line says that rather than "No problem
+  matches".
 - Shows the problem's rating in its Codeforces rank colour and how many
   people solved it; the topics can be hidden, and shown again for the
   problem on screen when you get stuck.

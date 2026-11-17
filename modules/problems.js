@@ -67,6 +67,12 @@ export const matchingProblems = (problems, { min = 0, max = Infinity, minSolved 
         !(skip && skip(problem)))
 }
 
+// Whether the skips, and nothing else, leave the filter with no problem: the
+// settings match problems, all of which the handles have solved or tried.
+export const emptiedBySkips = (problems, filter) =>
+    !matchingProblems(problems, filter).length &&
+    matchingProblems(problems, { ...filter, skip: undefined }).length > 0
+
 // The first second of a year, in the seconds contest.list counts in.
 export const yearStart = (year) => Date.UTC(year, 0, 1) / 1000
 
