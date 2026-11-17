@@ -109,6 +109,8 @@ export const mountPractice = (host) => {
         byId("sessionLine").hidden = !setFound.length
     }
 
+    const notice = { five: "fiveLeft", one: "oneLeft", end: "timeUp" }
+
     function follow(session) {
         stopTimer?.()
         timedKey = session.key
@@ -116,12 +118,15 @@ export const mountPractice = (host) => {
             now: Date.now,
             schedule: (fn, ms) => setInterval(fn, ms),
             unschedule: clearInterval,
-            show: (left) => { byId("sessionClock").textContent = clockText(left) },
-            end: (ended) => {
-                writeSession(ended)
-                byId("sessionStatus").textContent = messages.timeUp
+            // The clock is not a live region: it changes every second. Only the
+            // moments that are reached are read out, once each.
+            show: (left) => { byId("sessionClock").textContent = fill(messages.timeLeft, { clock: clockText(left) }) },
+            announce: (mark) => {
+                byId("sessionStatus").textContent = messages[notice[mark]]
+                writeSession(session)
             },
         })
+        writeSession(session)
     }
 
     // The session of the set on screen goes on where it was, if it has not
@@ -259,7 +264,7 @@ export const mountPractice = (host) => {
         }
         const session = newSession(encodeSet(setIds), Date.now(), minutes)
         writeSession(session)
-        byId("sessionStatus").textContent = ""
+        byId("sessionStatus").textContent = fill(messages.timerStarted, { minutes })
         follow(session)
     })
 

@@ -3,6 +3,10 @@
 
 export const practiceMessages = {
     en: {
+        timeLeft: "Time left {clock}",
+        fiveLeft: "Five minutes left.",
+        oneLeft: "One minute left.",
+        timerStarted: "Timer started: {minutes} minutes.",
         allSeen: "Every problem in the range was drawn or ticked before. Untick the option above to include them.",
         setCountText: "{count} problems.",
         setShort: "Only {count} of the {wanted} rungs had a problem to take.",
@@ -15,6 +19,10 @@ export const practiceMessages = {
         badLimit: "The time limit is from 1 to 600 minutes.",
     },
     ru: {
+        timeLeft: "Осталось {clock}",
+        fiveLeft: "Осталось пять минут.",
+        oneLeft: "Осталась одна минута.",
+        timerStarted: "Таймер запущен: {minutes} мин.",
         allSeen: "Все задачи диапазона уже выпадали или отмечены. Снимите галочку выше, чтобы включить их.",
         setCountText: "Задач в наборе: {count}.",
         setShort: "Нашлось задач: {count} из {wanted}.",

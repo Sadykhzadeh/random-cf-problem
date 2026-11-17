@@ -21,7 +21,9 @@ import {
     withTicks,
     clockText,
     followSession,
+    dueMarks,
     newSession,
+    passedMarks,
     pickSession,
     sessionLength,
 } from "../modules/practice.js"
@@ -161,10 +163,11 @@ test("the clock reads mm:ss and rounds a part second up", () => {
 
 test("a session belongs to one set, and what is stored is read back only when it is one", () => {
     const session = newSession("1520F2,4A", 1000, 2)
-    assert.deepEqual(session, { key: "1520F2,4A", deadline: 1000 + 120000, notified: false })
+    assert.deepEqual(session, { key: "1520F2,4A", deadline: 1000 + 120000, said: [] })
     assert.deepEqual(pickSession(JSON.parse(JSON.stringify(session)), "1520F2,4A"), session)
     assert.equal(pickSession(JSON.parse(JSON.stringify(session)), "4A"), null, "another set")
-    assert.equal(pickSession({ key: "x", deadline: "soon", notified: false }, "x"), null)
+    assert.equal(pickSession({ key: "x", deadline: "soon", said: [] }, "x"), null)
+    assert.equal(pickSession({ key: "x", deadline: 1, said: "five" }, "x"), null)
     assert.equal(pickSession(null, "x"), null)
 })
 
@@ -181,45 +184,59 @@ const clockAndTimers = () => {
     }
 }
 
-test("a running session shows the time left each second, and schedules nothing once it is over", () => {
-    const clock = clockAndTimers()
-    const shown = []
-    let ended = 0
-    const session = newSession("k", 0, 1)
-    followSession(session, {
-        now: clock.now, schedule: clock.schedule, unschedule: clock.unschedule,
-        show: (left) => shown.push(clockText(left)), end: () => { ended++ },
-    })
-    assert.deepEqual(shown, ["01:00"])
-    assert.equal(clock.scheduled(), 1)
-    clock.state.now = 30000
-    clock.fire()
-    assert.deepEqual(shown, ["01:00", "00:30"])
-    clock.state.now = 60000
-    clock.fire()
-    assert.deepEqual(shown, ["01:00", "00:30", "00:00"])
-    assert.equal(clock.scheduled(), 0, "no timer once the time is up")
-    assert.equal(ended, 1)
-    assert.equal(session.notified, true)
+test("the moments of a session are reached once each, at five minutes, one minute and the end", () => {
+    assert.deepEqual(dueMarks(25 * 60000, []), [])
+    assert.deepEqual(dueMarks(5 * 60000, []), ["five"], "reached at exactly five minutes")
+    assert.deepEqual(dueMarks(59000, ["five"]), ["one"])
+    assert.deepEqual(dueMarks(0, ["five", "one"]), ["end"])
+    assert.deepEqual(dueMarks(0, ["five", "one", "end"]), [], "none twice")
 })
 
-test("time up is announced once, even when the page is opened again after it", () => {
+test("a moment passed before the page watches is marked read and not announced", () => {
+    assert.deepEqual(passedMarks(4 * 60000, []), ["five"], "a four-minute session has no five-minute notice")
+    assert.deepEqual(passedMarks(10 * 60000, []), [])
+    assert.deepEqual(passedMarks(0, []), ["five", "one"])
+})
+
+test("a running session shows the time left each second and announces each moment once", () => {
+    const clock = clockAndTimers()
+    const shown = []
+    const announced = []
+    const session = newSession("k", 0, 6)
+    followSession(session, {
+        now: clock.now, schedule: clock.schedule, unschedule: clock.unschedule,
+        show: (left) => shown.push(clockText(left)), announce: (mark) => announced.push(mark),
+    })
+    assert.deepEqual(shown, ["06:00"])
+    assert.deepEqual(announced, [])
+    assert.equal(clock.scheduled(), 1)
+    for (const at of [60000, 61000, 240000, 300000, 301000, 330000]) {
+        clock.state.now = at
+        clock.fire()
+    }
+    assert.deepEqual(announced, ["five", "one"], "five at five minutes, one at one minute")
+    clock.state.now = 360000
+    clock.fire()
+    assert.deepEqual(announced, ["five", "one", "end"])
+    assert.equal(clock.scheduled(), 0, "no timer once the time is up")
+    assert.equal(session.said.length, 3)
+})
+
+test("a session opened after it has run out announces only its end, once", () => {
     const clock = clockAndTimers()
     clock.state.now = 10 * 60000
-    let ended = 0
-    const late = { key: "k", deadline: 60000, notified: false }
-    followSession(late, { now: clock.now, schedule: clock.schedule, unschedule: clock.unschedule, show: () => {}, end: () => { ended++ } })
-    assert.equal(ended, 1, "over before the page opened: said at once")
+    const announced = []
+    const late = { key: "k", deadline: 60000, said: [] }
+    followSession(late, { now: clock.now, schedule: clock.schedule, unschedule: clock.unschedule, show: () => {}, announce: (mark) => announced.push(mark) })
+    assert.deepEqual(announced, ["end"])
     assert.equal(clock.scheduled(), 0)
-    const again = { key: "k", deadline: 60000, notified: true }
-    followSession(again, { now: clock.now, schedule: clock.schedule, unschedule: clock.unschedule, show: () => {}, end: () => { ended++ } })
-    assert.equal(ended, 1, "not said again")
-    assert.equal(clock.scheduled(), 0)
+    followSession(late, { now: clock.now, schedule: clock.schedule, unschedule: clock.unschedule, show: () => {}, announce: (mark) => announced.push(mark) })
+    assert.deepEqual(announced, ["end"], "not said again")
 })
 
 test("the stop returned for a session unschedules its timer", () => {
     const clock = clockAndTimers()
-    const stop = followSession(newSession("k", 0, 5), { now: clock.now, schedule: clock.schedule, unschedule: clock.unschedule, show: () => {}, end: () => {} })
+    const stop = followSession(newSession("k", 0, 5), { now: clock.now, schedule: clock.schedule, unschedule: clock.unschedule, show: () => {}, announce: () => {} })
     assert.equal(clock.scheduled(), 1)
     stop()
     assert.equal(clock.scheduled(), 0)

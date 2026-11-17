@@ -125,14 +125,15 @@ export const sessionLength = (raw) => {
     return Number.isInteger(minutes) && minutes >= 1 && minutes <= SESSION_MAX_MINUTES ? minutes : null
 }
 
-// The session started at `now` (ms) for the set `key`. `notified` says the end
-// has been announced, so it is announced once however often the page opens.
-export const newSession = (key, now, minutes) => ({ key, deadline: now + minutes * 60000, notified: false })
+// The session started at `now` (ms) for the set `key`. `said` lists the
+// moments of it that have been read out, so each is read once however often
+// the page opens.
+export const newSession = (key, now, minutes) => ({ key, deadline: now + minutes * 60000, said: [] })
 
 // A session read back from storage, or null when what is stored is not one.
 export const unpackSession = (stored) => stored && typeof stored.key === "string" &&
-    Number.isFinite(stored.deadline) && typeof stored.notified === "boolean"
-    ? { key: stored.key, deadline: stored.deadline, notified: stored.notified }
+    Number.isFinite(stored.deadline) && Array.isArray(stored.said)
+    ? { key: stored.key, deadline: stored.deadline, said: stored.said.filter((mark) => typeof mark === "string") }
     : null
 
 // The session stored for this set, or null: a session belongs to one set.
@@ -149,11 +150,29 @@ export const clockText = (ms) => {
     return `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`
 }
 
+// The moments of a session that are read out, by the time left at which each
+// is reached: five minutes, one minute, and the end.
+export const TIMER_MARKS = [
+    { mark: "five", left: 5 * 60000 },
+    { mark: "one", left: 60000 },
+    { mark: "end", left: 0 },
+]
+
+// The moments reached at `left` that have not been read out yet.
+export const dueMarks = (left, said) =>
+    TIMER_MARKS.filter((moment) => left <= moment.left && !said.includes(moment.mark)).map((moment) => moment.mark)
+
+// Moments already passed when the page starts watching a session are not read
+// out (a session set for four minutes has no five-minute notice); they are
+// marked as read instead.
+export const passedMarks = (left, said) =>
+    TIMER_MARKS.filter((moment) => moment.left > left && !said.includes(moment.mark)).map((moment) => moment.mark)
+
 // Shows the time left of a session while it runs, once a second, and nothing
-// is scheduled once it is over or when there is no session at all. `end` is
-// called once, when the time runs out, and the session is marked notified.
+// is scheduled once it is over or when there is no session at all. `announce`
+// is called once for each moment reached, and the session records it in `said`.
 // Returns a function that stops the display.
-export const followSession = (session, { now, every = 1000, schedule, unschedule, show, end }) => {
+export const followSession = (session, { now, every = 1000, schedule, unschedule, show, announce }) => {
     let timer = null
     const stop = () => {
         if (timer !== null) unschedule(timer)
@@ -162,13 +181,13 @@ export const followSession = (session, { now, every = 1000, schedule, unschedule
     const tick = () => {
         const left = timeLeft(session, now())
         show(left)
-        if (left > 0) return
-        stop()
-        if (!session.notified) {
-            session.notified = true
-            end(session)
+        for (const mark of dueMarks(left, session.said)) {
+            session.said.push(mark)
+            announce(mark)
         }
+        if (left === 0) stop()
     }
+    session.said.push(...passedMarks(timeLeft(session, now()), session.said))
     tick()
     if (timeLeft(session, now()) > 0) timer = schedule(tick, every)
     return stop
