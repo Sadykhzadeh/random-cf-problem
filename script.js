@@ -1130,7 +1130,7 @@ async function readyProblems(report) {
     if (needsContests(readFilter()) && !contestStarts) {
         report(text.loadingContests)
         await loadContestStarts()
-    } else if (skipState.summaries.length && !contestStarts) {
+    } else if (skipState.summaries.length && !contestStarts && !(startsFailure && Date.now() - startsFailure.at < RETRY_AFTER)) {
         await loadContestStarts().catch(() => {})
     }
     return all
