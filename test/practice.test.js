@@ -24,7 +24,8 @@ import {
     pickSession,
     sessionLength,
 } from "../modules/practice.js"
-import { fill, strings } from "../modules/i18n.js"
+import { fill } from "../modules/i18n.js"
+import { practiceMessages } from "../modules/practice-strings.js"
 
 // A fixed generator, so the picks are the same on every run.
 const seeded = (seed) => () => {
@@ -111,8 +112,9 @@ test("ticks are kept per set, merged with what the handles solved, and only for 
 })
 
 test("the progress line says how many are done, in English and in Russian", () => {
-    assert.equal(fill(strings.en.progress, { done: 2, total: 5 }), "2 of 5 done")
-    assert.equal(fill(strings.ru.progress, { done: 2, total: 5 }), "Сделано: 2 из 5")
+    assert.equal(fill(practiceMessages.en.progress, { done: 2, total: 5 }), "2 of 5 done")
+    assert.equal(fill(practiceMessages.ru.progress, { done: 2, total: 5 }), "Сделано: 2 из 5")
+    assert.deepEqual(Object.keys(practiceMessages.ru).sort(), Object.keys(practiceMessages.en).sort(), "both languages have every message")
 })
 
 test("only the most recent sets keep their ticks, and a set touched again moves to the front", () => {

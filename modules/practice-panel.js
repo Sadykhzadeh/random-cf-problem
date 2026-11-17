@@ -28,6 +28,7 @@ import {
 import { matchingProblems } from "./problems.js"
 import { fill } from "./i18n.js"
 import { canShare, share, sharePayload } from "./ui.js"
+import { practiceMessages } from "./practice-strings.js"
 
 const byId = (id) => document.getElementById(id)
 
@@ -80,6 +81,7 @@ const ratingField = (id, fallback) => {
 
 export const mountPractice = (host) => {
     const { text } = host
+    const messages = practiceMessages[host.lang] ?? practiceMessages.en
     let setIds = decodeSet(host.initialSet)
     let setFound = []
     let done = []
@@ -114,7 +116,7 @@ export const mountPractice = (host) => {
             show: (left) => { byId("sessionClock").textContent = clockText(left) },
             end: (ended) => {
                 writeSession(ended)
-                byId("sessionStatus").textContent = text.timeUp
+                byId("sessionStatus").textContent = messages.timeUp
             },
         })
     }
@@ -139,7 +141,7 @@ export const mountPractice = (host) => {
     function showProgress() {
         const ticked = doneOf(setFound, done).length
         byId("setProgress").textContent = setFound.length
-            ? fill(text.progress, { done: ticked, total: setFound.length })
+            ? fill(messages.progress, { done: ticked, total: setFound.length })
             : ""
     }
 
@@ -155,7 +157,7 @@ export const mountPractice = (host) => {
             const box = document.createElement("input")
             box.type = "checkbox"
             box.checked = done.includes(idKey(problem))
-            box.setAttribute("aria-label", fill(text.doneBox, { name: `${problem.contestId}${problem.index}. ${problem.name}` }))
+            box.setAttribute("aria-label", fill(messages.doneBox, { name: `${problem.contestId}${problem.index}. ${problem.name}` }))
             box.addEventListener("change", () => {
                 remember(box.checked
                     ? mergeTicks(done, [idKey(problem)])
@@ -168,8 +170,8 @@ export const mountPractice = (host) => {
         byId("setActions").hidden = !found.length
         showControls()
         resumeSession()
-        const headline = note ?? (found.length ? fill(text.setCountText, { count: found.length }) : "")
-        const lost = missing.length ? fill(text.setMissing, { count: missing.length }) : ""
+        const headline = note ?? (found.length ? fill(messages.setCountText, { count: found.length }) : "")
+        const lost = missing.length ? fill(messages.setMissing, { count: missing.length }) : ""
         byId("setStatus").textContent = [headline, lost].filter(Boolean).join(" ")
         showProgress()
     }
@@ -197,7 +199,7 @@ export const mountPractice = (host) => {
             if (picked.length) {
                 setIds = picked
                 const short = picked.length < count
-                    ? fill(flat ? text.setShortFlat : text.setShort, { count: picked.length, wanted: count })
+                    ? fill(flat ? messages.setShortFlat : messages.setShort, { count: picked.length, wanted: count })
                     : undefined
                 render(short)
             } else {
@@ -222,7 +224,7 @@ export const mountPractice = (host) => {
         try {
             const accepted = acceptedOf(setFound, await host.solvedByHandles())
             remember(mergeTicks(done, accepted))
-            render(fill(text.checkedAccepted, { count: accepted.length }))
+            render(fill(messages.checkedAccepted, { count: accepted.length }))
         } catch (error) {
             console.error(error)
             byId("setStatus").textContent = host.errorText(error)
@@ -247,7 +249,7 @@ export const mountPractice = (host) => {
     byId("startSession").addEventListener("click", () => {
         const minutes = sessionLength(byId("setLimit").value)
         if (minutes === null) {
-            byId("setStatus").textContent = text.badLimit
+            byId("setStatus").textContent = messages.badLimit
             return
         }
         const session = newSession(encodeSet(setIds), Date.now(), minutes)
