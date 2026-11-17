@@ -196,6 +196,20 @@ test("a moment passed before the page watches is marked read and not announced",
     assert.deepEqual(passedMarks(4 * 60000, []), ["five"], "a four-minute session has no five-minute notice")
     assert.deepEqual(passedMarks(10 * 60000, []), [])
     assert.deepEqual(passedMarks(0, []), ["five", "one"])
+    assert.deepEqual(passedMarks(5 * 60000, []), ["five"], "a five-minute session starts on its notice")
+    assert.deepEqual(passedMarks(60000, []), ["five", "one"], "a one-minute session starts on its notice")
+})
+
+test("starting a one-minute or five-minute session announces nothing at once", () => {
+    for (const minutes of [1, 5]) {
+        const clock = clockAndTimers()
+        const announced = []
+        followSession(newSession("k", 0, minutes), {
+            now: clock.now, schedule: clock.schedule, unschedule: clock.unschedule,
+            show: () => {}, announce: (mark) => announced.push(mark),
+        })
+        assert.deepEqual(announced, [], `${minutes} minute${minutes > 1 ? "s" : ""}`)
+    }
 })
 
 test("a running session shows the time left each second and announces each moment once", () => {

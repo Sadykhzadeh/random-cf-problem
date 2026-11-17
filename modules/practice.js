@@ -162,11 +162,12 @@ export const TIMER_MARKS = [
 export const dueMarks = (left, said) =>
     TIMER_MARKS.filter((moment) => left <= moment.left && !said.includes(moment.mark)).map((moment) => moment.mark)
 
-// Moments already passed when the page starts watching a session are not read
-// out (a session set for four minutes has no five-minute notice); they are
-// marked as read instead.
+// Moments already reached when the page starts watching a session are not read
+// out: a session set for four minutes has no five-minute notice, and one set
+// for five or one minutes starts on its notice. They are marked as read instead.
+// The end is left out, so a session that is over is still announced once.
 export const passedMarks = (left, said) =>
-    TIMER_MARKS.filter((moment) => moment.left > left && !said.includes(moment.mark)).map((moment) => moment.mark)
+    TIMER_MARKS.filter((moment) => moment.left >= left && moment.left > 0 && !said.includes(moment.mark)).map((moment) => moment.mark)
 
 // Shows the time left of a session while it runs, once a second, and nothing
 // is scheduled once it is over or when there is no session at all. `announce`
