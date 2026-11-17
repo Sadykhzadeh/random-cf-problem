@@ -39,6 +39,7 @@
     <link rel="modulepreload" href="modules/i18n.js">
     <link rel="modulepreload" href="modules/params.js">
     <link rel="modulepreload" href="modules/errors.js">
+    <link rel="modulepreload" href="modules/practice.js">
 </head>
 
 <body>
@@ -115,6 +116,30 @@
             <button type="submit" id="start" title="Generate (R or Space)" aria-keyshortcuts="r Space">Generate!</button>
             <p id="keyHints" class="hint"></p>
         </form>
+        <section id="practice" aria-labelledby="practiceHeading">
+            <h2 id="practiceHeading"></h2>
+            <form id="setForm" novalidate>
+                <div class="field">
+                    <label class="label" id="setCount_label" for="setCount">Problems</label>
+                    <input type="number" id="setCount" value="5" min="1" max="20" step="1" inputmode="numeric">
+                </div>
+                <div class="field">
+                    <span class="label" id="setRange_label">Rating</span>
+                    <span class="range" role="group" aria-labelledby="setRange_label">
+                        <label class="visually-hidden" id="setFrom_text" for="setFrom">From rating</label>
+                        <input type="number" id="setFrom" placeholder="800" min="0" max="3800" step="100" inputmode="numeric">
+                        <span aria-hidden="true">-</span>
+                        <label class="visually-hidden" id="setTo_text" for="setTo">To rating</label>
+                        <input type="number" id="setTo" placeholder="2000" min="0" max="3800" step="100" inputmode="numeric">
+                    </span>
+                </div>
+                <p id="setNote" class="hint"></p>
+                <button type="submit" id="buildSet">Build the set</button>
+            </form>
+            <p id="setStatus" aria-live="polite"></p>
+            <ol id="setList"></ol>
+            <p id="setActions" hidden><button type="button" id="copySetMarkdown">Copy as Markdown</button> <button type="button" id="copySetLink">Copy link</button></p>
+        </section>
         <section id="recent" hidden>
             <h2 id="recentHeading">Drawn lately</h2>
             <ol id="recentList"></ol>

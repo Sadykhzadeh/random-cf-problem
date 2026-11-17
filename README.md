@@ -33,6 +33,11 @@ skipping the ones you have already solved.
   handles have solved, and "Clear history" empties the list. A draw does not
   repeat a problem until every problem the settings leave has come up once;
   the round then starts again.
+- Builds a practice set: a number of problems on a rating ladder from one
+  rating to another in equal steps, one problem per rung and no two from
+  the same contest. The topics, divisions and skipped handles of the form
+  apply too. The set is in the address as the problem ids, so the link
+  brings back exactly the same problems; it copies as a Markdown list.
 - Remembers the settings, and keeps them in the address so a link
   reproduces them.
 - `R`, Space or Enter draws again (outside a field and outside buttons and
@@ -58,6 +63,7 @@ skipping the ones you have already solved.
 | `tried` | `tried=1` | also skip what they tried |
 | `hide` | `hide=1` | hide the drawn problem's topics |
 | `lang` | `lang=ru` | `en` or `ru`; remembered |
+| `set` | `set=1520F2,4A` | the problems of a practice set, by contest and letter |
 
 ## How it works
 

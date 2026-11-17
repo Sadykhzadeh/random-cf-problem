@@ -39,6 +39,12 @@ test("an address without settings says so, and bad values are dropped", () => {
     for (const since of ["19", "20190", "2019.5", "abcd"]) assert.equal(readParams(`?since=${since}`).since, "")
 })
 
+test("a practice set rides along in the address without counting as a setting", () => {
+    assert.equal(writeParams(DEFAULTS, "en", "1520F2,4A"), "lang=en&set=1520F2,4A")
+    assert.equal(readParams("?set=1520F2,4A"), null, "the set alone leaves the remembered settings in place")
+    assert.deepEqual(readParams("?set=1520F2&tags=dp").tags, ["dp"])
+})
+
 test("the divisions are kept in the order of the page, and unknown ones are dropped", () => {
     assert.deepEqual(readParams("?div=edu,3,x,3,").divisions, ["3", "edu"])
     assert.deepEqual(readParams("?div=").divisions, [])

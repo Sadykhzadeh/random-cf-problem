@@ -53,6 +53,14 @@ import {
     readParams,
     writeParams
 } from "./modules/params.js"
+import {
+    MAX_SET,
+    buildLadder,
+    decodeSet,
+    encodeSet,
+    resolveSet,
+    setMarkdown
+} from "./modules/practice.js"
 
 const byId = (id) => document.getElementById(id)
 
@@ -108,6 +116,15 @@ for (const [id, key] of [
     ["copyLink", "copyLink"],
     ["clearRecent", "clearRecent"],
     ["keyHints", "keyHints"],
+    ["practiceHeading", "practiceHeading"],
+    ["setCount_label", "setCount"],
+    ["setRange_label", "setRange"],
+    ["setFrom_text", "setFrom"],
+    ["setTo_text", "setTo"],
+    ["setNote", "setNote"],
+    ["buildSet", "buildSet"],
+    ["copySetMarkdown", "copyMarkdown"],
+    ["copySetLink", "copyLink"],
 ]) {
     byId(id).textContent = text[key]
 }
@@ -265,6 +282,7 @@ function useProblemset(loaded) {
     showLastDrawn(loaded.problems)
     showDataStatus()
     showRecent()
+    renderSet()
     // The handles can finish loading first; their count waits for the list.
     if (skipState.summaries.length) showSkipStatus()
     showMatching()
@@ -917,10 +935,11 @@ function saveSettings() {
         } catch {
             // See LANG_KEY.
         }
-        const search = writeParams(settings, lang)
+        const set = encodeSet(setIds)
+        const search = writeParams(settings, lang, set)
         history.replaceState(history.state, "", `${window.location.pathname}${search ? `?${search}` : ""}`)
         for (const link of document.querySelectorAll("#langs a[data-lang]")) {
-            link.href = `?${writeParams(settings, link.dataset.lang)}`
+            link.href = `?${writeParams(settings, link.dataset.lang, set)}`
         }
     }, 250)
 }
@@ -941,6 +960,38 @@ function revealResult() {
     card.scrollIntoView({ block: "nearest", behavior: calm ? "auto" : "smooth" })
 }
 
+// The list, ready to draw from: loaded if need be, with the handles' skips
+// and the contest dates the settings need. `report` shows what is awaited.
+async function readyProblems(report) {
+    if (!problemset) report(text.loadingList)
+    const { problems: all } = problemset ?? await loadProblemset()
+    refreshIfStale()
+    showDataStatus()
+    // Handles typed but not yet loaded (Enter pressed straight from the
+    // field), or that failed to load last time, are loaded before
+    // drawing, so nobody gets a solved problem. When trying again fails
+    // too, draws go ahead without them and try once a minute, rather
+    // than each waiting up to 30 seconds for Codeforces.
+    const { handles } = parseHandles(byId("handles").value)
+    const key = handlesKey(handles)
+    const retry = skipState.retry &&
+        (skipState.failures < 2 || Date.now() - skipState.loadedAt > RETRY_AFTER)
+    if (key !== skipState.key || retry) {
+        report(fill(text.loadingHandles, { handles: handles.join(", ") }))
+        await (key !== skipState.key && skipLoadingKey === key ? skipLoading : loadSkips())
+    } else if (skipState.summaries.length && Date.now() - skipState.loadedAt > SOLVED_FRESH_FOR) {
+        // In a tab left open, what the handles have solved since is
+        // fetched behind this draw, in time for the next one.
+        loadSkips()
+    }
+    // Contest dates are only fetched once a year or a division is asked for.
+    if (needsContests(readFilter()) && !contestStarts) {
+        report(text.loadingContests)
+        await loadContestStarts()
+    }
+    return all
+}
+
 // A real form, so Enter in any field draws too.
 byId("form").addEventListener("submit", async (event) => {
     event.preventDefault()
@@ -958,32 +1009,7 @@ byId("form").addEventListener("submit", async (event) => {
     }
 
     try {
-        if (!problemset) showMessage(text.loadingList)
-        const { problems: all } = problemset ?? await loadProblemset()
-        refreshIfStale()
-        showDataStatus()
-        // Handles typed but not yet loaded (Enter pressed straight from the
-        // field), or that failed to load last time, are loaded before
-        // drawing, so nobody gets a solved problem. When trying again fails
-        // too, draws go ahead without them and try once a minute, rather
-        // than each waiting up to 30 seconds for Codeforces.
-        const { handles } = parseHandles(byId("handles").value)
-        const key = handlesKey(handles)
-        const retry = skipState.retry &&
-            (skipState.failures < 2 || Date.now() - skipState.loadedAt > RETRY_AFTER)
-        if (key !== skipState.key || retry) {
-            showMessage(fill(text.loadingHandles, { handles: handles.join(", ") }))
-            await (key !== skipState.key && skipLoadingKey === key ? skipLoading : loadSkips())
-        } else if (skipState.summaries.length && Date.now() - skipState.loadedAt > SOLVED_FRESH_FOR) {
-            // In a tab left open, what the handles have solved since is
-            // fetched behind this draw, in time for the next one.
-            loadSkips()
-        }
-        // Contest dates are only fetched once a year or a division is asked for.
-        if (needsContests(readFilter()) && !contestStarts) {
-            showMessage(text.loadingContests)
-            await loadContestStarts()
-        }
+        const all = await readyProblems(showMessage)
         const filter = readFilter()
         const problems = matchingProblems(all, filter)
 
@@ -1008,6 +1034,79 @@ byId("form").addEventListener("submit", async (event) => {
         enableAll()
         if (document.activeElement === document.body) focused?.focus()
     }
+})
+
+// A practice set is a ladder of problems, one per rung, shared as the ids of
+// its problems in the address, so the link brings back the same set (see
+// practice.js). The ids are kept whether or not the list still has them.
+let setIds = decodeSet(new URLSearchParams(window.location.search).get("set"))
+let setFound = []
+
+// The set on screen, with what it says about itself: its size, unless a note
+// replaces that, and how many of its problems the list no longer has.
+function renderSet(note) {
+    const { found, missing } = problemset ? resolveSet(problemset.problems, setIds) : { found: [], missing: [] }
+    setFound = found
+    byId("setList").replaceChildren(...found.map((problem) => {
+        const item = document.createElement("li")
+        item.append(problemLink(problem), " ", ratingBadge(problem))
+        return item
+    }))
+    byId("setActions").hidden = !found.length
+    const headline = note ?? (found.length ? fill(text.setCountText, { count: found.length }) : "")
+    const lost = missing.length ? fill(text.setMissing, { count: missing.length }) : ""
+    byId("setStatus").textContent = [headline, lost].filter(Boolean).join(" ")
+}
+
+const ratingField = (id, fallback) => {
+    const raw = byId(id).value
+    const value = raw === "" ? fallback : Number(raw)
+    return Number.isFinite(value) ? Math.min(3800, Math.max(0, value)) : fallback
+}
+
+byId("setForm").addEventListener("submit", async (event) => {
+    event.preventDefault()
+    const count = Math.min(MAX_SET, Math.max(1, Math.floor(Number(byId("setCount").value)) || 5))
+    const from = ratingField("setFrom", 800)
+    const to = ratingField("setTo", 2000)
+    if (from > to) {
+        byId("setStatus").textContent = text.minAboveMax
+        return
+    }
+    const button = byId("buildSet")
+    button.disabled = true
+    try {
+        const all = await readyProblems((message) => { byId("setStatus").textContent = message })
+        // The other settings of the form apply: topics, divisions, special
+        // rounds and the handles' skips. Only the ends of the ladder are its own.
+        const filter = { ...readFilter(), min: from, max: to }
+        const picked = buildLadder(matchingProblems(all, filter), count, from, to)
+        if (picked.length) {
+            setIds = picked
+            renderSet(picked.length < count ? fill(text.setShort, { count: picked.length, wanted: count }) : undefined)
+        } else {
+            setIds = []
+            renderSet(noneText(filter))
+        }
+        saveSettings()
+    } catch (error) {
+        console.error(error)
+        byId("setStatus").textContent = errorText(error)
+    } finally {
+        button.disabled = false
+    }
+})
+
+// The set as a Markdown list, and a link that brings back the same set.
+const setLink = () => `${window.location.origin}${window.location.pathname}?${writeParams(DEFAULTS, lang, encodeSet(setIds))}`
+
+byId("copySetMarkdown").addEventListener("click", async () => {
+    if (!setFound.length) return
+    byId("setStatus").textContent = await copyText(setMarkdown(setFound)) ? text.copied : text.copyFailed
+})
+
+byId("copySetLink").addEventListener("click", async () => {
+    byId("setStatus").textContent = await copyText(setLink()) ? text.copied : text.copyFailed
 })
 
 // R, Space or Enter draws another problem, O opens the one on screen and C

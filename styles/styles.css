@@ -271,7 +271,8 @@ select {
 
 /* A handle typed without a space has no place to wrap, so it breaks. */
 #handlesStatus,
-#matching {
+#matching,
+#setStatus {
     min-height: 1.4em;
     margin: 0 0 10px;
     font-size: 0.8em;
@@ -291,7 +292,8 @@ select {
     margin: 0
 }
 
-#start {
+#start,
+#buildSet {
     display: block;
     width: 100%;
     margin-top: 6px;
@@ -306,11 +308,13 @@ select {
     transition: background-color 0.3s
 }
 
-#start:hover {
+#start:hover,
+#buildSet:hover {
     background-color: var(--button-hover)
 }
 
-#start:disabled {
+#start:disabled,
+#buildSet:disabled {
     cursor: progress;
     opacity: 0.75
 }
@@ -322,25 +326,38 @@ select {
     text-align: center
 }
 
-#recent {
+#recent,
+#practice {
     margin-top: 24px
 }
 
-#recent h2 {
+#recent h2,
+#practice h2 {
     margin: 0 0 6px;
     font-size: 0.8em;
     font-weight: 600;
     color: var(--muted)
 }
 
-#recentList {
+#recentList,
+#setList {
     margin: 0;
     padding-left: 1.6em;
     font-size: 0.85em
 }
 
-#recentList li {
+#recentList li,
+#setList li {
     margin: 3px 0
+}
+
+#setForm {
+    margin-top: 12px
+}
+
+#setActions {
+    margin: 8px 0 0;
+    font-size: 0.85em
 }
 
 #recentList .solved,
@@ -367,7 +384,9 @@ footer a {
 
 #refreshData,
 #copyLink,
-#clearRecent {
+#clearRecent,
+#copySetMarkdown,
+#copySetLink {
     background: none;
     border: 0;
     padding: 0;

@@ -62,9 +62,12 @@ export const readParams = (search) => {
     }
 }
 
-export const writeParams = (settings, lang) => {
+// `set` is the ids of a practice set (see encodeSet). It is not a setting, so
+// readParams does not count it as one.
+export const writeParams = (settings, lang, set = "") => {
     const params = new URLSearchParams()
     if (lang) params.set("lang", lang)
+    if (set) params.set("set", set)
     if (rating(settings.min)) params.set("min", rating(settings.min))
     if (rating(settings.max)) params.set("max", rating(settings.max))
     if (year(settings.since)) params.set("since", year(settings.since))
