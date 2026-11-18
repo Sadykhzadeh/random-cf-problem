@@ -29,6 +29,18 @@ export const generator = (seed) => () => {
 export const dailyProblem = (pool, day) =>
     pool.length ? pool[Math.floor(generator(seedOf(day))() * pool.length)] : undefined
 
+// The streak after opening the day's problem on `day`: the number of UTC days
+// in a row the visitor has opened it, ending on `day`. Opening it again on the
+// same day changes nothing, and a day missed starts the count again at one.
+// `stored` is what was kept last time, or anything else.
+export const streakAfter = (stored, day) => {
+    const last = typeof stored?.last === "string" ? stored.last : ""
+    const count = Number.isInteger(stored?.count) && stored.count > 0 ? stored.count : 0
+    if (last === day) return { last, count: count || 1 }
+    const yesterday = dayKey(Date.parse(`${day}T00:00:00Z`) - 86400000)
+    return { last: day, count: last === yesterday && count ? count + 1 : 1 }
+}
+
 // Shows the problem of the day through the page's own functions: `prepare`
 // resolves the list, `filter` gives the settings, `none` says when the
 // settings leave nothing, and `show` puts the problem and its day on screen.

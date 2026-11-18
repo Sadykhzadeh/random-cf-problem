@@ -125,5 +125,5 @@ test("a visit with saved draws shows the last one again, once the list is in", a
 test("a link with daily=1 shows the problem of the day, marked with its date", async () => {
     await loadPage("?daily=1")
     assert.equal(byId("dailyMark").hidden, false)
-    assert.match(byId("dailyMark").textContent, /^Today's problem, \d{4}-\d{2}-\d{2}$/)
+    assert.match(byId("dailyMark").textContent, /^Today's problem, \d{4}-\d{2}-\d{2} · Streak: 1 day in a row\.$/)
 })

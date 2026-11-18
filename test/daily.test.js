@@ -1,7 +1,7 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 
-import { dailyProblem, dayKey, generator } from "../modules/daily.js"
+import { dailyProblem, dayKey, generator, streakAfter } from "../modules/daily.js"
 
 test("the day is the UTC date, so it changes at midnight UTC wherever the visitor is", () => {
     assert.equal(dayKey(Date.UTC(2026, 10, 18, 23, 59, 59)), "2026-11-18")
@@ -32,4 +32,23 @@ test("an empty pool has no problem of the day, and the pool itself is not change
     const pool = [{ contestId: 1, index: "A" }, { contestId: 2, index: "A" }]
     dailyProblem(pool, "2026-11-18")
     assert.deepEqual(pool, [{ contestId: 1, index: "A" }, { contestId: 2, index: "A" }])
+})
+
+test("the streak counts the UTC days in a row the problem was opened", () => {
+    const first = streakAfter(null, "2026-11-18")
+    assert.deepEqual(first, { last: "2026-11-18", count: 1 })
+    assert.deepEqual(streakAfter(first, "2026-11-18"), first, "opening it again the same day changes nothing")
+    const second = streakAfter(first, "2026-11-19")
+    assert.deepEqual(second, { last: "2026-11-19", count: 2 })
+    assert.deepEqual(streakAfter(second, "2026-11-20"), { last: "2026-11-20", count: 3 })
+    assert.deepEqual(streakAfter(second, "2026-11-21"), { last: "2026-11-21", count: 1 }, "a day missed starts again")
+    assert.deepEqual(streakAfter({ last: "2026-10-31", count: 4 }, "2026-11-01"), { last: "2026-11-01", count: 5 }, "across a month")
+    assert.deepEqual(streakAfter({ last: "2026-12-31", count: 4 }, "2027-01-01"), { last: "2027-01-01", count: 5 }, "across a year")
+})
+
+test("a streak kept in a damaged shape starts again at one", () => {
+    for (const stored of ["x", 7, { last: 3, count: 2 }, { last: "2026-11-17", count: "2" }, { last: "2026-11-17", count: 0 }]) {
+        assert.deepEqual(streakAfter(stored, "2026-11-18"), { last: "2026-11-18", count: 1 }, JSON.stringify(stored))
+    }
+    assert.deepEqual(streakAfter({ last: "2026-11-18", count: 0 }, "2026-11-18"), { last: "2026-11-18", count: 1 })
 })

@@ -72,6 +72,8 @@ export default {
     skipSeen: "Skip problems from my history",
     dailyButton: "Today's problem",
     dailyMark: "Today's problem, {date}",
+    dailyStreak: "Streak: {count} days in a row.",
+    dailyStreakOne: "Streak: {count} day in a row.",
     useRating: "Use my rating",
     ratingUsed: "{handle} is rated {rating}: the range is now {min} to {max}.",
     ratingUnrated: "{handle} is unrated: the range is now {min} to {max}.",

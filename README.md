@@ -34,6 +34,9 @@ skipping the ones you have already solved.
 - "Today's problem" draws one problem for the UTC day from the settings'
   pool, so everyone gets the same one that day; `?daily=1` in the address
   opens it. It does not change the draws, which keep their own rounds.
+- Counts the UTC days in a row the problem of the day was opened, shown beside
+  its date. The count is kept in this browser only; a day missed starts it
+  again at one.
 - "Use my rating" appears once a handle is typed: it sets the rating range to
   from 100 below the handle's rating to 300 above, rounded to hundreds and kept
   between 800 and 3500; a handle with no rating gets 800 to 1200.

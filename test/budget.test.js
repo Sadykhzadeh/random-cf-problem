@@ -26,11 +26,14 @@ import { firstLoad, root } from "./support/walk.js"
 // English and 1,250 raw and 340 gzip in Russian. The problem letter filter (its
 // field and strings, the parsing in params.js and the match) adds about 1.3 KB
 // raw and 320 gzip to both. The contests-until field (its field, strings, the
-// filter and the parsing) adds about 1 KB raw and 180 gzip to both. Raise these
-// only with a reason of the same kind.
+// filter and the parsing) adds about 1 KB raw and 180 gzip to both. The daily
+// streak (its line in the script and its strings; the counting is in daily.js,
+// which loads with the button) adds about 450 raw and 150 gzip in English and
+// 540 raw and 170 gzip in Russian. Raise these only with a reason of the same
+// kind.
 const LIMITS = {
-    en: { raw: 102650, gzip: 32050 },
-    ru: { raw: 105050, gzip: 32750 },
+    en: { raw: 103100, gzip: 32200 },
+    ru: { raw: 105580, gzip: 32900 },
 }
 
 const firstVisit = (language) => {

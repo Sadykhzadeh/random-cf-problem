@@ -401,12 +401,16 @@ async function showDaily() {
     drawStarted = true
     showMessage(text.searching)
     try {
-        const { todaysProblem } = await import("./modules/daily.js")
+        const { todaysProblem, streakAfter } = await import("./modules/daily.js")
         await todaysProblem({
             prepare: () => readyProblems(showMessage),
             filter: readFilter,
             none: (settings) => showMessage(noneText(settings)),
-            show: (problem, day) => showProblem(problem, day),
+            show: (problem, day) => {
+                const streak = streakAfter(readStored(DAILY_KEY), day)
+                saveStored(DAILY_KEY, streak)
+                showProblem(problem, day, streak.count)
+            },
         })
     } catch (error) {
         console.error(error)
@@ -812,9 +816,11 @@ byId("doNotShowTags").addEventListener("change", () => {
     if (shownProblem) showTopics(shownProblem)
 })
 
-function showProblem(problem, day = "") {
+function showProblem(problem, day = "", streak = 0) {
     shownProblem = problem
-    byId("dailyMark").textContent = day ? fill(text.dailyMark, { date: day }) : ""
+    byId("dailyMark").textContent = day
+        ? `${fill(text.dailyMark, { date: day })} · ${fill(countText(text, "dailyStreak", streak, lang), { count: countFormat.format(streak) })}`
+        : ""
     byId("dailyMark").hidden = !day
     byId("copyLink").hidden = false
     byId("shareLink").hidden = !canShare(navigator)
@@ -877,6 +883,7 @@ byId("copyLink").addEventListener("click", async () => {
 // found again. A round of draws (see drawFromRound) keeps the same problem
 // from coming up twice until every problem the settings leave has.
 const RECENT_KEY = "random-cf-problem:recent"
+const DAILY_KEY = "random-cf-problem:daily"
 const ROUND_KEY = "random-cf-problem:round"
 
 // Storage that is missing or unreadable is simply no history.
