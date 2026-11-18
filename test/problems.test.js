@@ -156,6 +156,22 @@ test("problems from contests that started before a year are left out", () => {
     assert.deepEqual(names({ starts }).length, 3, "no year, no filter")
 })
 
+test("problems from contests that started in or after a year are left out with a last year", () => {
+    const problems = [
+        { contestId: 4, index: "A", name: "Watermelon", rating: 800, tags: [] },
+        { contestId: 1520, index: "A", name: "Do Not Be Distracted!", rating: 800, tags: [] },
+        { contestId: 2276, index: "A", name: "Not in contest.list yet", rating: 800, tags: [] },
+    ]
+    // 4 started in March 2010, 1520 in May 2021.
+    const starts = new Map([[4, 1268395200], [1520, 1620225300]])
+    const names = (filter) => matchingProblems(problems, filter).map((p) => p.name)
+    assert.deepEqual(names({ until: yearStart(2021), starts }), ["Watermelon"])
+    assert.deepEqual(names({ until: yearStart(2022), starts }), ["Watermelon", "Do Not Be Distracted!"])
+    assert.deepEqual(names({ until: yearStart(2030), starts }), ["Watermelon", "Do Not Be Distracted!"], "a contest missing from the list is not known to be in range")
+    assert.deepEqual(names({ since: yearStart(2010), until: yearStart(2021), starts }), ["Watermelon"])
+    assert.deepEqual(names({ since: yearStart(2021), until: yearStart(2021), starts }), [], "a single year can be empty")
+})
+
 test("problems are kept by the letter they are indexed with, A1 and A2 as A", () => {
     const problems = [
         { contestId: 1, index: "A", name: "first", rating: 800, tags: [] },

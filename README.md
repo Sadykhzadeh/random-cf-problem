@@ -8,7 +8,8 @@ skipping the ones you have already solved.
 ## What it does
 
 - Draws a rated problem between a minimum and a maximum rating.
-- Optionally only from contests held in a given year or later.
+- Optionally only from contests held in a given year or later, and optionally
+  only up to a given year; both together give a range of years.
 - Optionally only problems that at least a given number of people have solved,
   which leaves out the ones too obscure to have a settled rating.
 - Optionally only from rounds for chosen divisions: Div. 1 to 4 and Educational,
@@ -73,6 +74,7 @@ skipping the ones you have already solved.
 | --- | --- | --- |
 | `min`, `max` | `min=1400&max=1900` | rating range, inclusive |
 | `since` | `since=2019` | contests held in that year or later |
+| `until` | `until=2021` | contests held in that year or earlier |
 | `solved` | `solved=5000` | problems solved by at least this many people |
 | `div` | `div=2,edu` | rounds for these divisions: `1`, `2`, `3`, `4` or `edu` |
 | `letter` | `letter=A,C` | problems indexed with these letters |

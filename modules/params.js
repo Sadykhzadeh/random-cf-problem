@@ -5,6 +5,7 @@ export const DEFAULTS = Object.freeze({
     min: "",
     max: "",
     since: "",
+    until: "",
     minSolved: "",
     divisions: [],
     letters: [],
@@ -18,7 +19,7 @@ export const DEFAULTS = Object.freeze({
 
 export const DIVISIONS = ["1", "2", "3", "4", "edu"]
 
-const KNOWN = ["min", "max", "since", "solved", "div", "letter", "tags", "any", "none", "nospecial", "skip", "tried", "hide"]
+const KNOWN = ["min", "max", "since", "until", "solved", "div", "letter", "tags", "any", "none", "nospecial", "skip", "tried", "hide"]
 
 const rating = (value) => {
     const text = String(value ?? "").trim()
@@ -60,6 +61,7 @@ export const readParams = (search) => {
         min: rating(params.get("min")),
         max: rating(params.get("max")),
         since: year(params.get("since")),
+        until: year(params.get("until")),
         minSolved: solvers(params.get("solved")),
         divisions: divisions(params.get("div")),
         letters: letters(params.get("letter")),
@@ -87,6 +89,7 @@ export const writeParams = (settings, lang, { set = "", shape = "rising", daily 
     if (rating(settings.min)) params.set("min", rating(settings.min))
     if (rating(settings.max)) params.set("max", rating(settings.max))
     if (year(settings.since)) params.set("since", year(settings.since))
+    if (year(settings.until)) params.set("until", year(settings.until))
     if (solvers(settings.minSolved)) params.set("solved", solvers(settings.minSolved))
     if (divisions(settings.divisions).length) params.set("div", divisions(settings.divisions).join(","))
     if (letters(settings.letters).length) params.set("letter", letters(settings.letters).join(","))

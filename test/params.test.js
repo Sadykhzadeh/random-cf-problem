@@ -8,6 +8,7 @@ test("settings survive a round trip through the address", () => {
         min: "1200",
         max: "1600",
         since: "2019",
+        until: "2021",
         minSolved: "5000",
         divisions: ["2", "edu"],
         letters: ["A", "C"],
@@ -19,8 +20,14 @@ test("settings survive a round trip through the address", () => {
         hide: true,
     }
     const search = writeParams(settings)
-    assert.equal(search, "min=1200&max=1600&since=2019&solved=5000&div=2,edu&letter=A,C&tags=dp,binary+search&any=1&nospecial=1&skip=tourist,+jiangly&tried=1&hide=1")
+    assert.equal(search, "min=1200&max=1600&since=2019&until=2021&solved=5000&div=2,edu&letter=A,C&tags=dp,binary+search&any=1&nospecial=1&skip=tourist,+jiangly&tried=1&hide=1")
     assert.deepEqual(readParams(`?${search}`), settings)
+})
+
+test("the last year of the contests is kept beside the first", () => {
+    assert.equal(writeParams({ ...DEFAULTS, until: "2021" }), "until=2021")
+    assert.equal(readParams("?until=2021").until, "2021")
+    for (const until of ["19", "20210", "abcd"]) assert.equal(readParams(`?until=${until}`).until, "", until)
 })
 
 test("problem letters are read from commas, spaces or a list, in capitals, once each", () => {

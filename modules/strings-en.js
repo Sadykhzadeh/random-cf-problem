@@ -9,6 +9,7 @@ export default {
     minRating: "Minimum rating",
     maxRating: "Maximum rating",
     since: "Contests since",
+    until: "Contests until",
     minSolved: "Solved by at least",
     division: "Contest division",
     letters: "Problem letters",

@@ -9,6 +9,7 @@ export default {
     minRating: "Минимальный рейтинг",
     maxRating: "Максимальный рейтинг",
     since: "Контесты с",
+    until: "Контесты до",
     minSolved: "Решили не менее",
     division: "Дивизион",
     letters: "Буквы задач",

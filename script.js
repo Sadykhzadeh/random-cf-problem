@@ -115,6 +115,7 @@ for (const [id, key] of [
     ["min_num_text", "minRating"],
     ["max_num_text", "maxRating"],
     ["since_label", "since"],
+    ["until_label", "until"],
     ["minSolved_label", "minSolved"],
     ["division_label", "division"],
     ["letters_label", "letters"],
@@ -960,10 +961,12 @@ function readFilter() {
     if (!Number.isFinite(min) || min < 0) min = 0
     if (!Number.isFinite(max) || max > 3800) max = 3800
     const year = Number(byId("since").value)
+    const lastYear = Number(byId("until").value)
     return {
         min,
         max,
         since: year > 0 ? yearStart(year) : undefined,
+        until: lastYear > 0 ? yearStart(lastYear + 1) : undefined,
         minSolved: Number(byId("min_solved").value) || 0,
         divisions: chosenDivisions(),
         letters: chosenLetters(),
@@ -978,7 +981,7 @@ function readFilter() {
 
 // The contest dates and names are only needed to date the contests or to tell
 // their divisions.
-const needsContests = (filter) => filter.since !== undefined || filter.divisions.length > 0
+const needsContests = (filter) => filter.since !== undefined || filter.until !== undefined || filter.divisions.length > 0
 
 // What to say when the settings leave no problem. When the handles' skips are
 // what empties them, it says so, rather than blaming the settings.
@@ -1040,6 +1043,7 @@ function currentSettings() {
         min: byId("min_num").value,
         max: byId("max_num").value,
         since: byId("since").value,
+        until: byId("until").value,
         minSolved: byId("min_solved").value,
         divisions: chosenDivisions(),
         letters: chosenLetters(),
@@ -1056,6 +1060,7 @@ function applySettings(settings) {
     byId("min_num").value = settings.min
     byId("max_num").value = settings.max
     byId("since").value = settings.since
+    byId("until").value = settings.until
     byId("min_solved").value = settings.minSolved
     for (const box of byId("divisions").querySelectorAll("input")) box.checked = settings.divisions.includes(box.value)
     byId("letters").value = settings.letters.join(" ")

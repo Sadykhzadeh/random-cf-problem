@@ -5,6 +5,7 @@ const disableAll = () => {
         document.getElementById("min_num").disabled = true
         document.getElementById("max_num").disabled = true
         document.getElementById("since").disabled = true
+        document.getElementById("until").disabled = true
     },
     enableAll = () => {
         document.getElementById('doNotShowTags').disabled = false
@@ -13,6 +14,7 @@ const disableAll = () => {
         document.getElementById("min_num").disabled = false
         document.getElementById("max_num").disabled = false
         document.getElementById("since").disabled = false
+        document.getElementById("until").disabled = false
     }
 
 // Whether a key press is the letter given, the one that draws again (R) or
