@@ -33,6 +33,7 @@ import {
     yearStart
 } from "./modules/problems.js"
 import {
+    countText,
     fill,
     loadStrings,
     pickLanguage
@@ -356,7 +357,7 @@ function listSummary() {
         : minutes < 60 ? ago.format(-minutes, "minute")
         : minutes < 1440 ? ago.format(-Math.floor(minutes / 60), "hour")
         : ago.format(-Math.floor(minutes / 1440), "day")
-    return fill(text.listSummary, { count: countFormat.format(problemset.problems.length), ago: when })
+    return fill(countText(text, "listSummary", problemset.problems.length, lang), { count: countFormat.format(problemset.problems.length), ago: when })
 }
 
 function showDataStatus() {
@@ -708,8 +709,7 @@ function showSkipStatus() {
     if (skip && problemset) {
         const count = problemset.problems.filter(skip).length
         const tried = byId("skipTried").checked
-        const template = count === 1 ? (tried ? text.skippingTriedOne : text.skippingOne)
-            : (tried ? text.skippingTried : text.skipping)
+        const template = countText(text, tried ? "skippingTried" : "skipping", count, lang)
         parts.unshift(fill(template, {
             count: countFormat.format(count),
             handles: skipState.loaded.join(", "),
@@ -823,7 +823,7 @@ function showProblem(problem, day = "") {
     // alone.
     ratingEl.replaceChildren(text.ratingLine, ratingBadge(problem))
     if (problem.solvedCount !== undefined) {
-        ratingEl.append(fill(text.solvedBy, { count: countFormat.format(problem.solvedCount) }))
+        ratingEl.append(fill(countText(text, "solvedBy", problem.solvedCount, lang), { count: countFormat.format(problem.solvedCount) }))
     }
 
     showTopics(problem)
@@ -1009,7 +1009,7 @@ function showMatching() {
     } else {
         const count = matchingProblems(problemset.problems, filter).length
         matching.textContent = !count ? noneText(filter)
-            : fill(count === 1 ? text.matchingOne : text.matching, { count: countFormat.format(count) })
+            : fill(countText(text, "matching", count, lang), { count: countFormat.format(count) })
     }
     matchingAnnounce.update(matching.textContent)
 }

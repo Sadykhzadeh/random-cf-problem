@@ -21,10 +21,13 @@ import { firstLoad, root } from "./support/walk.js"
 // raw. The draw's retry of those dates, at most once a minute while they fail,
 // adds about 70 more. The skip module's failed download, which is tried again
 // by the next call, and the status and button that say so add about 510 raw and
-// 90 gzip. Raise these only with a reason of the same kind.
+// 90 gzip. The count forms (countText and the One and Few strings of counts in
+// Russian, where a noun takes three endings) add about 670 raw and 260 gzip in
+// English and 1,250 raw and 340 gzip in Russian. Raise these only with a reason
+// of the same kind.
 const LIMITS = {
-    en: { raw: 99454, gzip: 31099 },
-    ru: { raw: 101249, gzip: 31695 },
+    en: { raw: 100300, gzip: 31400 },
+    ru: { raw: 102600, gzip: 32100 },
 }
 
 const firstVisit = (language) => {

@@ -18,6 +18,23 @@ export const pickLanguage = (search, stored, preferred = []) => {
 export const fill = (template, values) =>
     template.replace(/\{(\w+)\}/g, (match, name) => values[name] ?? match)
 
+// The text for a count: `key` with the suffix of the count's form ("One" for 1,
+// and in Russian "Few" for 2 to 4 except 12 to 14, where the noun takes another
+// ending), or the bare key when the language has no such form.
+export const countText = (strings, key, count, lang) => {
+    let form = ""
+    if (lang === "ru") {
+        const rest = count % 100
+        if (rest < 11 || rest > 19) {
+            if (count % 10 === 1) form = "One"
+            else if (count % 10 >= 2 && count % 10 <= 4) form = "Few"
+        }
+    } else if (count === 1) {
+        form = "One"
+    }
+    return strings[key + form] ?? strings[key]
+}
+
 
 // The interface text for `lang`. Each language is a module of its own, so a
 // visit fetches only the language it reads.

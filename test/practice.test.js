@@ -1,5 +1,6 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
+import { baseKeys } from "./support/keys.js"
 
 import {
     KEPT_SETS,
@@ -119,7 +120,7 @@ test("ticks are kept per set, merged with what the handles solved, and only for 
 test("the progress line says how many are done, in English and in Russian", () => {
     assert.equal(fill(practiceMessages.en.progress, { done: 2, total: 5 }), "2 of 5 done")
     assert.equal(fill(practiceMessages.ru.progress, { done: 2, total: 5 }), "Сделано: 2 из 5")
-    assert.deepEqual(Object.keys(practiceMessages.ru).sort(), Object.keys(practiceMessages.en).sort(), "both languages have every message")
+    assert.deepEqual(baseKeys(practiceMessages.ru), baseKeys(practiceMessages.en), "both languages have every message")
 })
 
 test("only the most recent sets keep their ticks, and a set touched again moves to the front", () => {

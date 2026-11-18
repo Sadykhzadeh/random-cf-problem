@@ -27,7 +27,7 @@ import {
     withTicks,
 } from "./practice.js"
 import { matchingProblems } from "./problems.js"
-import { fill } from "./i18n.js"
+import { countText, fill } from "./i18n.js"
 import { canShare, share, sharePayload } from "./ui.js"
 import { practiceMessages } from "./practice-strings.js"
 
@@ -178,8 +178,8 @@ export const mountPractice = (host) => {
         byId("setActions").hidden = !found.length
         showControls()
         resumeSession()
-        const headline = note ?? (found.length ? fill(messages.setCountText, { count: found.length }) : "")
-        const lost = missing.length ? fill(messages.setMissing, { count: missing.length }) : ""
+        const headline = note ?? (found.length ? fill(countText(messages, "setCountText", found.length, host.lang), { count: found.length }) : "")
+        const lost = missing.length ? fill(countText(messages, "setMissing", missing.length, host.lang), { count: missing.length }) : ""
         byId("setStatus").textContent = [headline, lost].filter(Boolean).join(" ")
         showProgress()
     }
@@ -209,7 +209,7 @@ export const mountPractice = (host) => {
             if (picked.length) {
                 setIds = picked
                 const short = picked.length < count
-                    ? fill(flat ? messages.setShortFlat : messages.setShort, { count: picked.length, wanted: count })
+                    ? fill(countText(messages, flat ? "setShortFlat" : "setShort", picked.length, host.lang), { count: picked.length, wanted: count })
                     : undefined
                 render(short)
             } else {
@@ -234,7 +234,7 @@ export const mountPractice = (host) => {
         try {
             const accepted = acceptedOf(setFound, await host.solvedByHandles())
             remember(mergeTicks(done, accepted))
-            render(fill(messages.checkedAccepted, { count: accepted.length }))
+            render(fill(countText(messages, "checkedAccepted", accepted.length, host.lang), { count: accepted.length }))
         } catch (error) {
             console.error(error)
             byId("setStatus").textContent = host.errorText(error)
