@@ -48,6 +48,7 @@ import {
 import {
     DEFAULTS,
     DIVISIONS,
+    letters,
     readParams,
     readShape,
     writeParams
@@ -116,6 +117,7 @@ for (const [id, key] of [
     ["since_label", "since"],
     ["minSolved_label", "minSolved"],
     ["division_label", "division"],
+    ["letters_label", "letters"],
     ["choose_label", "topic"],
     ["topicsSummary", "anyTopic"],
     ["modeAll", "modeAll"],
@@ -192,6 +194,8 @@ for (const division of DIVISIONS) {
 
 const chosenDivisions = () =>
     [...byId("divisions").querySelectorAll("input:checked")].map((box) => box.value)
+
+const chosenLetters = () => letters(byId("letters").value)
 
 const chosenTags = () =>
     [...chooseEl.querySelectorAll("input:checked")].map((box) => box.value)
@@ -962,6 +966,7 @@ function readFilter() {
         since: year > 0 ? yearStart(year) : undefined,
         minSolved: Number(byId("min_solved").value) || 0,
         divisions: chosenDivisions(),
+        letters: chosenLetters(),
         contestDivisions: divisionsOfContest ?? undefined,
         starts: contestStarts ?? undefined,
         tags: chosenTags(),
@@ -1037,6 +1042,7 @@ function currentSettings() {
         since: byId("since").value,
         minSolved: byId("min_solved").value,
         divisions: chosenDivisions(),
+        letters: chosenLetters(),
         tags: chosenTags(),
         mode: tagMode(),
         nospecial: byId("skipSpecial").checked,
@@ -1052,6 +1058,7 @@ function applySettings(settings) {
     byId("since").value = settings.since
     byId("min_solved").value = settings.minSolved
     for (const box of byId("divisions").querySelectorAll("input")) box.checked = settings.divisions.includes(box.value)
+    byId("letters").value = settings.letters.join(" ")
     for (const box of chooseEl.querySelectorAll("input")) box.checked = settings.tags.includes(box.value)
     byId("form").elements.mode.value = settings.mode
     byId("skipSpecial").checked = settings.nospecial

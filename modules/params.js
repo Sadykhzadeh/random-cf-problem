@@ -7,6 +7,7 @@ export const DEFAULTS = Object.freeze({
     since: "",
     minSolved: "",
     divisions: [],
+    letters: [],
     tags: [],
     mode: "all",
     nospecial: false,
@@ -17,7 +18,7 @@ export const DEFAULTS = Object.freeze({
 
 export const DIVISIONS = ["1", "2", "3", "4", "edu"]
 
-const KNOWN = ["min", "max", "since", "solved", "div", "tags", "any", "none", "nospecial", "skip", "tried", "hide"]
+const KNOWN = ["min", "max", "since", "solved", "div", "letter", "tags", "any", "none", "nospecial", "skip", "tried", "hide"]
 
 const rating = (value) => {
     const text = String(value ?? "").trim()
@@ -42,6 +43,14 @@ const divisions = (value) => {
     return DIVISIONS.filter((division) => given.includes(division))
 }
 
+// The problem letters among those given, as a list or as text separated by
+// commas or spaces; each once, in alphabetical order, in capitals.
+export const letters = (value) => {
+    const given = Array.isArray(value) ? value : String(value ?? "").split(/[\s,]+/)
+    const found = new Set(given.map((letter) => String(letter).trim().toUpperCase()).filter((letter) => /^[A-Z]$/.test(letter)))
+    return [...found].sort()
+}
+
 // null when the address says nothing about the settings, so the caller can
 // fall back to the ones remembered from last time.
 export const readParams = (search) => {
@@ -53,6 +62,7 @@ export const readParams = (search) => {
         since: year(params.get("since")),
         minSolved: solvers(params.get("solved")),
         divisions: divisions(params.get("div")),
+        letters: letters(params.get("letter")),
         tags: (params.get("tags") ?? "").split(",").map((tag) => tag.trim()).filter(Boolean),
         mode: params.get("any") === "1" ? "any" : params.get("none") === "1" ? "none" : "all",
         nospecial: params.get("nospecial") === "1",
@@ -79,6 +89,7 @@ export const writeParams = (settings, lang, { set = "", shape = "rising", daily 
     if (year(settings.since)) params.set("since", year(settings.since))
     if (solvers(settings.minSolved)) params.set("solved", solvers(settings.minSolved))
     if (divisions(settings.divisions).length) params.set("div", divisions(settings.divisions).join(","))
+    if (letters(settings.letters).length) params.set("letter", letters(settings.letters).join(","))
     if (settings.tags?.length) params.set("tags", settings.tags.join(","))
     if (settings.mode === "any" && settings.tags?.length) params.set("any", "1")
     if (settings.mode === "none" && settings.tags?.length) params.set("none", "1")

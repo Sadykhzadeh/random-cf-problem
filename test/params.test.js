@@ -1,7 +1,7 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 
-import { DEFAULTS, readParams, readShape, writeParams } from "../modules/params.js"
+import { DEFAULTS, letters, readParams, readShape, writeParams } from "../modules/params.js"
 
 test("settings survive a round trip through the address", () => {
     const settings = {
@@ -10,6 +10,7 @@ test("settings survive a round trip through the address", () => {
         since: "2019",
         minSolved: "5000",
         divisions: ["2", "edu"],
+        letters: ["A", "C"],
         tags: ["dp", "binary search"],
         mode: "any",
         nospecial: true,
@@ -18,8 +19,16 @@ test("settings survive a round trip through the address", () => {
         hide: true,
     }
     const search = writeParams(settings)
-    assert.equal(search, "min=1200&max=1600&since=2019&solved=5000&div=2,edu&tags=dp,binary+search&any=1&nospecial=1&skip=tourist,+jiangly&tried=1&hide=1")
+    assert.equal(search, "min=1200&max=1600&since=2019&solved=5000&div=2,edu&letter=A,C&tags=dp,binary+search&any=1&nospecial=1&skip=tourist,+jiangly&tried=1&hide=1")
     assert.deepEqual(readParams(`?${search}`), settings)
+})
+
+test("problem letters are read from commas, spaces or a list, in capitals, once each", () => {
+    assert.deepEqual(letters("b, a B  c ?"), ["A", "B", "C"])
+    assert.deepEqual(letters(["d", "D"]), ["D"])
+    assert.deepEqual(letters(""), [])
+    assert.deepEqual(readParams("?letter=c,a,AB").letters, ["A", "C"])
+    assert.equal(writeParams({ ...DEFAULTS, letters: ["a", "b"] }), "letter=A,B")
 })
 
 test("defaults are left out of the link", () => {

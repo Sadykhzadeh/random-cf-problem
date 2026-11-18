@@ -156,6 +156,19 @@ test("problems from contests that started before a year are left out", () => {
     assert.deepEqual(names({ starts }).length, 3, "no year, no filter")
 })
 
+test("problems are kept by the letter they are indexed with, A1 and A2 as A", () => {
+    const problems = [
+        { contestId: 1, index: "A", name: "first", rating: 800, tags: [] },
+        { contestId: 2, index: "B1", name: "second", rating: 800, tags: [] },
+        { contestId: 3, index: "C", name: "third", rating: 800, tags: [] },
+        { contestId: 4, index: "A2", name: "fourth", rating: 800, tags: [] },
+    ]
+    const names = (filter) => matchingProblems(problems, filter).map((p) => p.name)
+    assert.deepEqual(names({ letters: ["A"] }), ["first", "fourth"])
+    assert.deepEqual(names({ letters: ["B", "C"] }), ["second", "third"])
+    assert.deepEqual(names({ letters: [] }).length, 4, "no letters, no filter")
+})
+
 test("handles are split on commas and spaces, once each, five at most", () => {
     assert.deepEqual(parseHandles(" tourist,  Jiangly;tourist  ksun48 "), {
         handles: ["tourist", "Jiangly", "ksun48"],

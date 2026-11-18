@@ -23,11 +23,12 @@ import { firstLoad, root } from "./support/walk.js"
 // by the next call, and the status and button that say so add about 510 raw and
 // 90 gzip. The count forms (countText and the One and Few strings of counts in
 // Russian, where a noun takes three endings) add about 670 raw and 260 gzip in
-// English and 1,250 raw and 340 gzip in Russian. Raise these only with a reason
-// of the same kind.
+// English and 1,250 raw and 340 gzip in Russian. The problem letter filter (its
+// field and strings, the parsing in params.js and the match) adds about 1.3 KB
+// raw and 320 gzip to both. Raise these only with a reason of the same kind.
 const LIMITS = {
-    en: { raw: 100300, gzip: 31400 },
-    ru: { raw: 102600, gzip: 32100 },
+    en: { raw: 101600, gzip: 31750 },
+    ru: { raw: 103950, gzip: 32450 },
 }
 
 const firstVisit = (language) => {

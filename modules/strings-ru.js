@@ -11,6 +11,7 @@ export default {
     since: "Контесты с",
     minSolved: "Решили не менее",
     division: "Дивизион",
+    letters: "Буквы задач",
     divisionN: "Див. {n}",
     educational: "Educational",
     loadingContests: "Загружаю даты контестов с Codeforces...",

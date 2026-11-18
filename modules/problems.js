@@ -59,8 +59,9 @@ export const unpackSaved = (data) => {
 // contests that started before it (`starts` maps a contest to its start
 // time); a contest missing from `starts` is newer than the list, so it stays.
 // `minSolved` keeps the problems at least that many people have solved, and
-// leaves out one whose count is not known.
-export const matchingProblems = (problems, { min = 0, max = Infinity, minSolved = 0, tags = [], mode = "all", special = true, skip, since, starts, divisions = [], contestDivisions: divisionsOf } = {}) => {
+// leaves out one whose count is not known. `letters` keeps the problems whose
+// index starts with one of them, so A1 and A2 both count as A.
+export const matchingProblems = (problems, { min = 0, max = Infinity, minSolved = 0, tags = [], mode = "all", special = true, skip, since, starts, divisions = [], contestDivisions: divisionsOf, letters = [] } = {}) => {
     const hasTags = mode === "any" ? (problem) => tags.some((tag) => problem.tags.includes(tag))
         : mode === "none" ? (problem) => !tags.some((tag) => problem.tags.includes(tag))
         : (problem) => tags.every((tag) => problem.tags.includes(tag))
@@ -72,6 +73,7 @@ export const matchingProblems = (problems, { min = 0, max = Infinity, minSolved 
         (special || !problem.tags.includes("*special")) &&
         !(since !== undefined && starts?.get(problem.contestId) < since) &&
         (!divisions.length || divisions.some((division) => divisionsOf?.get(problem.contestId)?.includes(division))) &&
+        (!letters.length || letters.includes(problem.index.charAt(0))) &&
         !(skip && skip(problem)))
 }
 

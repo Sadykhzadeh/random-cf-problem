@@ -14,6 +14,8 @@ skipping the ones you have already solved.
 - Optionally only from rounds for chosen divisions: Div. 1 to 4 and Educational,
   taken from the contest names. A problem the Div. 1 and Div. 2 rounds share
   counts for both.
+- Optionally only problems with the chosen letters, as they are indexed: `B`
+  takes 1000B and 1000B1 alike, and `A B` takes both letters. Empty means any.
 - Narrows by topics: all of the chosen ones, any of them, or none of them.
   A line above the button says how many problems the settings leave.
 - Optionally leaves out the problems Codeforces tags `*special`: April
@@ -73,6 +75,7 @@ skipping the ones you have already solved.
 | `since` | `since=2019` | contests held in that year or later |
 | `solved` | `solved=5000` | problems solved by at least this many people |
 | `div` | `div=2,edu` | rounds for these divisions: `1`, `2`, `3`, `4` or `edu` |
+| `letter` | `letter=A,C` | problems indexed with these letters |
 | `tags` | `tags=dp,graphs` | topics, as Codeforces names them |
 | `any` | `any=1` | any of the topics rather than all of them |
 | `none` | `none=1` | none of the topics |

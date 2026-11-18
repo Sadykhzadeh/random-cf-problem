@@ -11,6 +11,7 @@ export default {
     since: "Contests since",
     minSolved: "Solved by at least",
     division: "Contest division",
+    letters: "Problem letters",
     divisionN: "Div. {n}",
     educational: "Educational",
     loadingContests: "Loading the contest dates from Codeforces...",
