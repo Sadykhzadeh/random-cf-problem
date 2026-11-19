@@ -26,7 +26,7 @@ import {
     unseenOf,
     withTicks,
 } from "./practice.js"
-import { matchingProblems } from "./problems.js"
+import { matchingProblems, parseHandles } from "./problems.js"
 import { countText, fill } from "./i18n.js"
 import { canShare, share, sharePayload } from "./ui.js"
 import { practiceMessages } from "./practice-strings.js"
@@ -103,7 +103,7 @@ export const mountPractice = (host) => {
     // The check is offered only with handles to check, and the timer only with
     // a limit to time by.
     function showControls() {
-        byId("checkSubmissions").hidden = !setFound.length || !host.handles().trim()
+        byId("checkSubmissions").hidden = !setFound.length || !parseHandles(host.handles()).handles.length
         byId("startSession").hidden = sessionLength(byId("setLimit").value) === null
         byId("shareSet").hidden = !setFound.length || !canShare(navigator)
         byId("sessionLine").hidden = !setFound.length
