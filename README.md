@@ -44,8 +44,8 @@ skipping the ones you have already solved.
 - Lists the last twenty draws with the time of each, marking the ones the
   handles have solved, and a "Solved" box on each to tick the ones you solved
   yourself (kept with the draw, and kept when the problem is drawn again).
-  "Copy as Markdown" copies the list as a task list with the ticks, and
-  "Clear history" empties the list. A draw does not
+  "Copy as Markdown" copies the list as a task list with the ticks, "Remove"
+  takes one draw out of it, and "Clear history" empties the list. A draw does not
   repeat a problem until every problem the settings leave has come up once;
   the round then starts again.
 - Builds a practice set: a number of problems on a rating ladder from one
