@@ -136,6 +136,9 @@ refuse to do from `file://`:
 npx http-server -p 4341
 ```
 
+Then open http://localhost:4341/ in the browser. The problems come from
+codeforces.com, so the page needs that site reachable to draw anything.
+
 The logic that does not touch the page lives in `modules/` and is tested
 with Node's built-in runner, no dependencies needed:
 
