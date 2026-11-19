@@ -21,6 +21,7 @@ import {
     packProblemset,
     parseHandles,
     addDraw,
+    historyMarkdown,
     markDone,
     drawFromRound,
     unpackHistory,
@@ -145,6 +146,7 @@ for (const [id, key] of [
     ["setNote", "setNote"],
     ["buildSet", "buildSet"],
     ["copySetMarkdown", "copyMarkdown"],
+    ["copyRecent", "copyMarkdown"],
     ["copySetLink", "copyLink"],
     ["checkSubmissions", "checkSubmissions"],
     ["useRating", "useRating"],
@@ -942,6 +944,10 @@ function showRecent() {
         return item
     }))
 }
+
+byId("copyRecent").addEventListener("click", async () => {
+    byId("recentStatus").textContent = await copyText(historyMarkdown(recent)) ? text.copied : text.copyListFailed
+})
 
 byId("clearRecent").addEventListener("click", () => {
     recent = []

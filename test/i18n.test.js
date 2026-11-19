@@ -46,3 +46,8 @@ test("a count with no form of its own reads the bare key", () => {
     assert.equal(countText({ solved: "bare" }, "solved", 1, "en"), "bare")
     assert.equal(countText({ solved: "bare" }, "solved", 3, "ru"), "bare")
 })
+
+test("a failed copy of the drawn-lately list says it is the list that was not copied", () => {
+    assert.equal(en.copyListFailed, "Could not copy the list.")
+    assert.equal(ru.copyListFailed, "Не удалось скопировать список.")
+})

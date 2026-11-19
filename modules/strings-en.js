@@ -67,6 +67,7 @@ export default {
     copyLink: "Copy link",
     copied: "Copied",
     copyFailed: "Could not copy the link.",
+    copyListFailed: "Could not copy the list.",
     generateHint: "Generate (R or Space)",
     openHint: "Open on Codeforces (O)",
     copyHint: "Copy the link (C)",

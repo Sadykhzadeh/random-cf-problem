@@ -6,6 +6,7 @@ import {
     HISTORY_COUNT,
     addDraw,
     drawFromRound,
+    historyMarkdown,
     markDone,
     matchingProblems,
     packProblemset,
@@ -478,6 +479,18 @@ test("the solved tick is set by the visitor and survives drawing the problem aga
     history = markDone(history, watermelon, false)
     assert.equal(history[0].done, false)
     assert.equal(markDone(history, { contestId: 99, index: "A" }, true).some((entry) => entry.done), false, "a problem not in the history changes nothing")
+})
+
+test("the history copies as a Markdown task list, ticked where solved", () => {
+    const history = [
+        { contestId: 1520, index: "F2", name: "Guess *the* [K]", rating: 2200, at: 2, done: true },
+        { contestId: 4, index: "A", name: "Watermelon", rating: undefined, at: 1, done: false },
+    ]
+    assert.equal(historyMarkdown(history), [
+        "- [x] [1520F2. Guess \\*the\\* \\[K\\]](https://codeforces.com/problemset/problem/1520/F2) (2200)",
+        "- [ ] [4A. Watermelon](https://codeforces.com/problemset/problem/4/A) (unrated)",
+    ].join("\n"))
+    assert.equal(historyMarkdown([]), "")
 })
 
 test("a history read back from storage keeps the draws and forgets what is not one", () => {

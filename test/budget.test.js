@@ -31,10 +31,12 @@ import { firstLoad, root } from "./support/walk.js"
 // which loads with the button) adds about 450 raw and 150 gzip in English and
 // 540 raw and 170 gzip in Russian. The solved tick in the drawn-lately list (a
 // box and its label for each draw, and markDone) adds about 1 KB raw and 270
-// gzip to both. Raise these only with a reason of the same kind.
+// gzip to both. The copy of the drawn-lately list as Markdown (its button and
+// status, the wiring and historyMarkdown) adds about 750 raw and 250 gzip. Raise
+// these only with a reason of the same kind.
 const LIMITS = {
-    en: { raw: 104200, gzip: 32550 },
-    ru: { raw: 106700, gzip: 33300 },
+    en: { raw: 105000, gzip: 32750 },
+    ru: { raw: 107500, gzip: 33400 },
 }
 
 const firstVisit = (language) => {

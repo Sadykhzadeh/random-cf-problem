@@ -166,6 +166,13 @@ export const addDraw = (history, problem, at) => {
 export const markDone = (history, problem, done) =>
     history.map((entry) => problemKey(entry) === problemKey(problem) ? { ...entry, done } : entry)
 
+// The history as a Markdown task list, one draw a line, ticked when the visitor
+// has solved it. Brackets and emphasis characters in a name are escaped.
+export const historyMarkdown = (history) => history.map((entry) => {
+    const name = entry.name.replace(/[\\[\]*_`]/g, "\\$&")
+    return `- [${entry.done ? "x" : " "}] [${entry.contestId}${entry.index}. ${name}](${problemUrl(entry)}) (${entry.rating ?? "unrated"})`
+}).join("\n")
+
 // A history read back from storage: anything that is not a draw is dropped,
 // and a time that does not read as one is forgotten rather than the draw.
 export const unpackHistory = (stored) => {

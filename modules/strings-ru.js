@@ -74,6 +74,7 @@ export default {
     copyLink: "Скопировать ссылку",
     copied: "Скопировано",
     copyFailed: "Не удалось скопировать ссылку.",
+    copyListFailed: "Не удалось скопировать список.",
     generateHint: "Сгенерировать (R или пробел)",
     openHint: "Открыть на Codeforces (O)",
     copyHint: "Скопировать ссылку (C)",
