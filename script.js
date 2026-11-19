@@ -23,6 +23,7 @@ import {
     addDraw,
     historyMarkdown,
     markDone,
+    removeDraw,
     drawFromRound,
     unpackHistory,
     unpackRound,
@@ -949,7 +950,15 @@ function showRecent() {
         })
         const tickLabel = document.createElement("label")
         tickLabel.append(" ", tick, " ", text.solvedTick)
-        item.append(tickLabel)
+        const remove = document.createElement("button")
+        remove.type = "button"
+        remove.textContent = text.removeDraw
+        remove.addEventListener("click", () => {
+            recent = removeDraw(recent, drawn)
+            saveStored(RECENT_KEY, recent)
+            showRecent()
+        })
+        item.append(tickLabel, " ", remove)
         return item
     }))
 }

@@ -166,6 +166,10 @@ export const addDraw = (history, problem, at) => {
 export const markDone = (history, problem, done) =>
     history.map((entry) => problemKey(entry) === problemKey(problem) ? { ...entry, done } : entry)
 
+// The history without its draw of `problem`, whichever time it was drawn at.
+export const removeDraw = (history, problem) =>
+    history.filter((entry) => problemKey(entry) !== problemKey(problem))
+
 // The history as a Markdown task list, one draw a line, ticked when the visitor
 // has solved it. Brackets and emphasis characters in a name are escaped.
 export const historyMarkdown = (history) => history.map((entry) => {

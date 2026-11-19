@@ -39,11 +39,13 @@ import { firstLoad, root } from "./support/walk.js"
 // handle that is not found rather than ticking nothing, adds about 150 raw and
 // 35 gzip to the script. The time-limit label and the Share button take their
 // text from the language files, which the two strings add to by about 60 raw
-// in English and 90 raw in Russian. Raise these only with a reason of the same
-// kind.
+// in English and 90 raw in Russian. The Remove button on each draw of the
+// drawn-lately list, with its handler and its string, adds about 560 raw and 120
+// gzip in English and 570 raw and 130 gzip in Russian. Raise these only with a
+// reason of the same kind.
 const LIMITS = {
-    en: { raw: 107200, gzip: 33200 },
-    ru: { raw: 109750, gzip: 33900 },
+    en: { raw: 107800, gzip: 33300 },
+    ru: { raw: 110350, gzip: 34050 },
 }
 
 const firstVisit = (language) => {

@@ -73,6 +73,7 @@ export default {
     solvedMark: " · решена",
     solvedTick: "Решена",
     copyLink: "Скопировать ссылку",
+    removeDraw: "Убрать",
     copied: "Скопировано",
     copyFailed: "Не удалось скопировать ссылку.",
     copyListFailed: "Не удалось скопировать список.",

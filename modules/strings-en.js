@@ -66,6 +66,7 @@ export default {
     solvedMark: " · solved",
     solvedTick: "Solved",
     copyLink: "Copy link",
+    removeDraw: "Remove",
     copied: "Copied",
     copyFailed: "Could not copy the link.",
     copyListFailed: "Could not copy the list.",

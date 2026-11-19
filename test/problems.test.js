@@ -9,6 +9,7 @@ import {
     historyMarkdown,
     markDone,
     matchingProblems,
+    removeDraw,
     packProblemset,
     parseHandles,
     emptiedBySkips,
@@ -482,6 +483,13 @@ test("the solved tick is set by the visitor and survives drawing the problem aga
     history = markDone(history, watermelon, false)
     assert.equal(history[0].done, false)
     assert.equal(markDone(history, { contestId: 99, index: "A" }, true).some((entry) => entry.done), false, "a problem not in the history changes nothing")
+})
+
+test("a draw can be taken out of the history, and the others stay", () => {
+    const watermelon = { contestId: 4, index: "A", name: "Watermelon", rating: 800 }
+    const history = addDraw(addDraw([], watermelon, 1), { contestId: 10, index: "B", name: "Mid", rating: 1500 }, 2)
+    assert.deepEqual(removeDraw(history, watermelon).map((entry) => [entry.contestId, entry.at]), [[10, 2]])
+    assert.equal(removeDraw(history, { contestId: 99, index: "A" }).length, 2, "a problem not in the history changes nothing")
 })
 
 test("the history copies as a Markdown task list, ticked where solved", () => {
