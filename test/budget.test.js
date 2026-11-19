@@ -37,10 +37,13 @@ import { firstLoad, root } from "./support/walk.js"
 // and written in params.js, with their listeners) adds about 2 KB raw and 490
 // gzip to both. The practice set's check of submissions, which now reports a
 // handle that is not found rather than ticking nothing, adds about 150 raw and
-// 35 gzip to the script. Raise these only with a reason of the same kind.
+// 35 gzip to the script. The time-limit label and the Share button take their
+// text from the language files, which the two strings add to by about 60 raw
+// in English and 90 raw in Russian. Raise these only with a reason of the same
+// kind.
 const LIMITS = {
     en: { raw: 107200, gzip: 33200 },
-    ru: { raw: 109700, gzip: 33900 },
+    ru: { raw: 109750, gzip: 33900 },
 }
 
 const firstVisit = (language) => {

@@ -94,5 +94,7 @@ export default {
     shapeRising: "Rising ladder",
     shapeFlat: "Flat, all in the range",
     startTimer: "Start the timer",
+    setLimit: "Time limit, minutes",
+    share: "Share",
     checkSubmissions: "Check my submissions",
 }

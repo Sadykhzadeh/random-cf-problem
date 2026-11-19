@@ -3,6 +3,7 @@ import assert from "node:assert/strict"
 
 import { countText, fill, loadStrings, pickLanguage } from "../modules/i18n.js"
 import { baseKeys } from "./support/keys.js"
+import { read } from "./support/walk.js"
 import en from "../modules/strings-en.js"
 import ru from "../modules/strings-ru.js"
 
@@ -25,6 +26,18 @@ test("both language files have the same keys, each with text", () => {
     for (const value of [...Object.values(en), ...Object.values(ru)]) {
         assert.equal(typeof value, "string")
         assert.ok(value.length > 0)
+    }
+})
+
+test("every string the page puts on screen is in both languages", () => {
+    const script = read("script.js")
+    const start = script.indexOf("for (const [id, key] of [")
+    const mapped = script.slice(start, script.indexOf("]) {", start))
+    const keys = new Set([...mapped.matchAll(/"(\w+)"\]/g)].map((match) => match[1]))
+    for (const [, key] of script.matchAll(/\btext\.(\w+)/g)) keys.add(key)
+    assert.ok(keys.size > 50, "the page's string keys were not found")
+    for (const strings of [en, ru]) {
+        for (const key of keys) assert.equal(typeof strings[key], "string", `${key} is not in a language file`)
     }
 })
 

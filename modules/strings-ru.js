@@ -102,5 +102,7 @@ export default {
     shapeRising: "Лесенка",
     shapeFlat: "Ровно, все в диапазоне",
     startTimer: "Запустить таймер",
+    setLimit: "Лимит времени, минут",
+    share: "Поделиться",
     checkSubmissions: "Проверить мои посылки",
 }
