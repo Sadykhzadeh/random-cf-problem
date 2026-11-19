@@ -392,8 +392,7 @@ byId("refreshData").addEventListener("click", async () => {
     try {
         await loadProblemset({ refresh: true })
     } catch (error) {
-        console.error(error)
-        byId("dataSummary").textContent = errorText(error)
+        showListFailure(error)
     } finally {
         button.disabled = false
     }
