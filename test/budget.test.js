@@ -45,10 +45,12 @@ import { firstLoad, root } from "./support/walk.js"
 // meta in index.html adds about 260 raw and 80 gzip to both. The overflow-wrap on
 // the drawn name and the two lists, so a name without a space breaks at a phone
 // width instead of widening the page, adds about 130 raw and 30 gzip to both.
-// Raise these only with a reason of the same kind.
+// Keeping the keyboard focus on the drawn-lately list after a Remove (the draw
+// that moves into the place of the removed one, or Generate) adds about 450 raw
+// and 140 gzip to both. Raise these only with a reason of the same kind.
 const LIMITS = {
-    en: { raw: 108100, gzip: 33420 },
-    ru: { raw: 110650, gzip: 34150 },
+    en: { raw: 108550, gzip: 33560 },
+    ru: { raw: 111100, gzip: 34290 },
 }
 
 const firstVisit = (language) => {

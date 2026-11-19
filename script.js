@@ -953,9 +953,17 @@ function showRecent() {
         remove.type = "button"
         remove.textContent = text.removeDraw
         remove.addEventListener("click", () => {
+            const focused = document.activeElement === remove
+            const row = [...byId("recentList").children].indexOf(item)
             recent = removeDraw(recent, drawn)
             saveStored(RECENT_KEY, recent)
             showRecent()
+            // The draw that moves into the removed one's place keeps the focus.
+            if (!focused) return
+            const rows = byId("recentList").children
+            const next = rows[row] ?? rows[row - 1]
+            if (next) next.querySelector("button").focus()
+            else byId("start").focus()
         })
         item.append(tickLabel, " ", remove)
         return item
