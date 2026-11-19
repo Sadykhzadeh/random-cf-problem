@@ -280,6 +280,13 @@ select {
     overflow-wrap: anywhere
 }
 
+/* A problem name without a space has no place to wrap either. */
+#name,
+#recentList,
+#setList {
+    overflow-wrap: anywhere
+}
+
 .check {
     flex-wrap: nowrap;
     gap: 8px

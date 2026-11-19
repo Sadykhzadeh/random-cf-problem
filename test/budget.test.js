@@ -42,11 +42,13 @@ import { firstLoad, root } from "./support/walk.js"
 // in English and 90 raw in Russian. The Remove button on each draw of the
 // drawn-lately list, with its handler and its string, adds about 560 raw and 120
 // gzip in English and 570 raw and 130 gzip in Russian. The Content-Security-Policy
-// meta in index.html adds about 260 raw and 80 gzip to both. Raise these only with
-// a reason of the same kind.
+// meta in index.html adds about 260 raw and 80 gzip to both. The overflow-wrap on
+// the drawn name and the two lists, so a name without a space breaks at a phone
+// width instead of widening the page, adds about 130 raw and 30 gzip to both.
+// Raise these only with a reason of the same kind.
 const LIMITS = {
-    en: { raw: 108050, gzip: 33400 },
-    ru: { raw: 110600, gzip: 34150 },
+    en: { raw: 108100, gzip: 33420 },
+    ru: { raw: 110650, gzip: 34150 },
 }
 
 const firstVisit = (language) => {
