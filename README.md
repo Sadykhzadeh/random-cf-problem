@@ -67,7 +67,8 @@ skipping the ones you have already solved.
   from the range at random, one per contest); flat is in the address as
   shape=flat, and the rest of the form in its own parameters, listed below.
 - A time limit in minutes starts a timer on the set: the deadline is kept, so
-  the countdown survives a reload, and "Time is up" is read out once.
+  the countdown survives a reload, the time left is in the tab's title, and
+  "Time is up" is read out once.
 - Remembers the settings, and keeps them in the address so a link
   reproduces them.
 - `R`, Space or Enter draws again (outside a field and outside buttons and

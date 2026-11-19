@@ -113,6 +113,11 @@ export const mountPractice = (host) => {
 
     const notice = { five: "fiveLeft", one: "oneLeft", end: "timeUp" }
 
+    // The tab's title carries the time left while a session runs, so it can be
+    // read from another tab. The page's own title comes back when none runs.
+    const pageTitle = document.title
+    const showTitle = (clock) => { document.title = clock ? `${clock} · ${pageTitle}` : pageTitle }
+
     function follow(session) {
         stopTimer?.()
         timedKey = session.key
@@ -122,7 +127,10 @@ export const mountPractice = (host) => {
             unschedule: clearInterval,
             // The clock is not a live region: it changes every second. Only the
             // moments that are reached are read out, once each.
-            show: (left) => { byId("sessionClock").textContent = fill(messages.timeLeft, { clock: clockText(left) }) },
+            show: (left) => {
+                byId("sessionClock").textContent = fill(messages.timeLeft, { clock: clockText(left) })
+                showTitle(left > 0 ? clockText(left) : "")
+            },
             announce: (mark) => {
                 byId("sessionStatus").textContent = messages[notice[mark]]
                 writeSession(session)
@@ -142,6 +150,7 @@ export const mountPractice = (host) => {
             stopTimer = null
             timedKey = null
             byId("sessionClock").textContent = ""
+            showTitle("")
             if (stored) writeSession(null)
             return
         }
