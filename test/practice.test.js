@@ -103,6 +103,14 @@ test("a set's ids survive the address, and anything that is not an id is dropped
     assert.equal(decodeSet(long).length, MAX_SET, "no more than the set size is read")
 })
 
+test("a problem with a numbered index keeps its contest in the address, and reads back", () => {
+    const ids = [{ contestId: 921, index: "14" }, { contestId: 1520, index: "F2" }, { contestId: 9211, index: "A" }]
+    assert.equal(encodeSet(ids), "921-14,1520F2,9211A")
+    assert.deepEqual(decodeSet(encodeSet(ids)), ids)
+    assert.equal(idKey({ contestId: 921, index: "14" }), "921-14")
+    assert.deepEqual(decodeSet("92114,921-14"), [{ contestId: 921, index: "14" }], "a bare run of digits is not an id")
+})
+
 test("a set resolves to the same problems, and an id no longer listed is reported", () => {
     const problems = [problem(1520, "F2", 2200), problem(4, "A", 800)]
     const ids = decodeSet("4A,9999Z,1520F2")

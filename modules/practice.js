@@ -55,9 +55,13 @@ export const replacementOf = (pool, set, replaced, random = Math.random) => {
         replaced.rating, random)
 }
 
-// The ids of a set as they go in an address: the contest number and the letter,
-// comma-separated, such as 1520F2,4A.
-export const encodeSet = (ids) => ids.map((id) => `${id.contestId}${id.index}`).join(",")
+// A problem's id as an address writes it: the contest number and the letter,
+// such as 1520F2. A numbered index, as the Labyrinth round of contest 921 has
+// them, is joined by a dash, since 92114 would read as contest 92114.
+const idText = (id) => /^\d+$/.test(id.index) ? `${id.contestId}-${id.index}` : `${id.contestId}${id.index}`
+
+// The ids of a set as they go in an address, comma-separated, such as 1520F2,4A.
+export const encodeSet = (ids) => ids.map(idText).join(",")
 
 // The ids read back from an address. Anything that is not an id is skipped, an
 // id given twice is kept once, and no more than MAX_SET are kept. The letter is
@@ -66,9 +70,9 @@ export const encodeSet = (ids) => ids.map((id) => `${id.contestId}${id.index}`).
 export const decodeSet = (text) => {
     const seen = new Set()
     return String(text ?? "").split(",")
-        .map((id) => /^(\d+)([A-Za-z]\d*)$/.exec(id.trim()))
+        .map((id) => /^(\d+)(?:-(\d+)|([A-Za-z]\d*))$/.exec(id.trim()))
         .filter(Boolean)
-        .map((match) => ({ contestId: Number(match[1]), index: match[2].toUpperCase() }))
+        .map((match) => ({ contestId: Number(match[1]), index: match[2] ?? match[3].toUpperCase() }))
         .filter((id) => {
             if (seen.has(idKey(id))) return false
             seen.add(idKey(id))
@@ -105,7 +109,7 @@ export const KEPT_SETS = 20
 
 // A problem's id as the set's address writes it, and the same key as the
 // problemset keeps it under (contest and index, as problemKey writes them).
-export const idKey = (id) => `${id.contestId}${id.index}`
+export const idKey = (id) => idText(id)
 export const solvedKey = (id) => `${id.contestId}|${id.index}`
 
 // The problems of a set that are ticked, in the set's order.
