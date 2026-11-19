@@ -17,6 +17,10 @@ export const practiceMessages = {
         checkedAccepted: "Ticked {count} the handles have solved.",
         timeUp: "Time is up.",
         badLimit: "The time limit is from 1 to 600 minutes.",
+        replace: "Replace",
+        replaceBox: "Replace {name}",
+        replaced: "{from} replaced with {to}.",
+        noReplacement: "No other problem fits this place in the set.",
     },
     ru: {
         timeLeft: "Осталось {clock}",
@@ -42,5 +46,9 @@ export const practiceMessages = {
         checkedAcceptedOne: "Отмечена {count} задача, решённая хендлами.",
         timeUp: "Время вышло.",
         badLimit: "Лимит времени — от 1 до 600 минут.",
+        replace: "Заменить",
+        replaceBox: "Заменить: {name}",
+        replaced: "{from} заменена на {to}.",
+        noReplacement: "На это место в наборе больше нет задач.",
     },
 }

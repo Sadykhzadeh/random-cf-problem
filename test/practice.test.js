@@ -14,12 +14,14 @@ import {
     idKey,
     ladderRatings,
     mergeTicks,
+    replacementOf,
     resolveSet,
     setMarkdown,
     ticksOf,
     unpackTicks,
     unseenOf,
     withTicks,
+    moveTicks,
     clockText,
     followSession,
     dueMarks,
@@ -77,6 +79,15 @@ test("a rung picks at random among equally near problems, reproducibly", () => {
     assert.ok(spread.size > 35, `picks spread over ${spread.size} of 50 contests`)
 })
 
+test("a swapped-out problem is replaced by the nearest rating the set lacks, from a contest the rest of the set does not use", () => {
+    const set = [problem(10, "A", 1200), problem(11, "A", 1400), problem(12, "A", 1600)]
+    const pool = [problem(10, "A", 1200), problem(10, "B", 1300), problem(11, "B", 1450), problem(13, "A", 1250), problem(12, "C", 1500)]
+    assert.equal(idKey(replacementOf(pool, set, set[1], seeded(1))), "11B", "its own contest is free again, and 11B is nearest")
+    assert.equal(idKey(replacementOf(pool, set, set[0], seeded(1))), "13A", "13A is nearer than 10B, and 11B and 12C share contests the set uses")
+    assert.equal(replacementOf([set[2]], set, set[2], seeded(1)), undefined, "a set with nothing else to take has no replacement")
+    assert.equal(replacementOf([], set, set[0], seeded(1)), undefined)
+})
+
 test("a set's ids survive the address, and anything that is not an id is dropped", () => {
     const ids = [{ contestId: 1520, index: "F2" }, { contestId: 4, index: "A" }, { contestId: 2000, index: "H" }]
     assert.equal(encodeSet(ids), "1520F2,4A,2000H")
@@ -125,6 +136,19 @@ test("the progress line says how many are done, in English and in Russian", () =
     assert.equal(fill(practiceMessages.en.progress, { done: 2, total: 5 }), "2 of 5 done")
     assert.equal(fill(practiceMessages.ru.progress, { done: 2, total: 5 }), "Сделано: 2 из 5")
     assert.deepEqual(baseKeys(practiceMessages.ru), baseKeys(practiceMessages.en), "both languages have every message")
+})
+
+test("a swapped problem moves the set's ticks to its new address and leaves the old entry out", () => {
+    const entries = [{ key: "1520F2,4A", done: ["1520F2", "4A"], at: 1 }, { key: "9A", done: ["9A"], at: 2 }]
+    assert.deepEqual(moveTicks(entries, "1520F2,4A", "1520F2,5B", "4A", 5), [
+        { key: "1520F2,5B", done: ["1520F2"], at: 5 },
+        { key: "9A", done: ["9A"], at: 2 },
+    ])
+    assert.deepEqual(moveTicks(entries, "7Z", "8C", "7Z", 6), [
+        { key: "8C", done: [], at: 6 },
+        { key: "9A", done: ["9A"], at: 2 },
+        { key: "1520F2,4A", done: ["1520F2", "4A"], at: 1 },
+    ], "a set with no ticks moves to nothing")
 })
 
 test("only the most recent sets keep their ticks, and a set touched again moves to the front", () => {

@@ -11,6 +11,23 @@ export const MAX_SET = 20
 export const ladderRatings = (count, from, to) =>
     count <= 1 ? [from] : Array.from({ length: count }, (_, i) => from + (i * (to - from)) / (count - 1))
 
+// The problem nearest `rating` in the pool, at random among those equally near,
+// or undefined from an empty pool.
+const nearestOf = (pool, rating, random) => {
+    let best = Infinity
+    let nearest = []
+    for (const problem of pool) {
+        const distance = Math.abs(problem.rating - rating)
+        if (distance < best) {
+            best = distance
+            nearest = [problem]
+        } else if (distance === best) {
+            nearest.push(problem)
+        }
+    }
+    return nearest.length ? nearest[Math.floor(random() * nearest.length)] : undefined
+}
+
 // One problem for each rung: among the problems whose rating is nearest the
 // rung's, one at random, never two from one contest. A rung with no problem
 // left is skipped, so a short pool gives a shorter set rather than a repeat.
@@ -18,24 +35,24 @@ export const buildLadder = (pool, count, from, to, random = Math.random) => {
     const contests = new Set()
     const picked = []
     for (const target of ladderRatings(count, from, to)) {
-        let best = Infinity
-        let nearest = []
-        for (const problem of pool) {
-            if (contests.has(problem.contestId)) continue
-            const distance = Math.abs(problem.rating - target)
-            if (distance < best) {
-                best = distance
-                nearest = [problem]
-            } else if (distance === best) {
-                nearest.push(problem)
-            }
-        }
-        if (!nearest.length) continue
-        const problem = nearest[Math.floor(random() * nearest.length)]
+        const problem = nearestOf(pool.filter((candidate) => !contests.has(candidate.contestId)), target, random)
+        if (!problem) continue
         contests.add(problem.contestId)
         picked.push(problem)
     }
     return picked
+}
+
+// A problem to take the place of `replaced` in a set: the one nearest its rating
+// among the pool's problems that the set does not hold and whose contests the
+// rest of the set does not use. `set` holds the set's problems with their
+// ratings. Undefined when no problem is left.
+export const replacementOf = (pool, set, replaced, random = Math.random) => {
+    const held = new Set(set.map(problemKey))
+    const contests = new Set(set.filter((problem) => problemKey(problem) !== problemKey(replaced))
+        .map((problem) => problem.contestId))
+    return nearestOf(pool.filter((problem) => !held.has(problemKey(problem)) && !contests.has(problem.contestId)),
+        replaced.rating, random)
 }
 
 // The ids of a set as they go in an address: the contest number and the letter,
@@ -119,6 +136,11 @@ export const withTicks = (entries, key, done, at) =>
     [{ key, done: [...new Set(done)], at }, ...entries.filter((entry) => entry.key !== key)]
         .sort((a, b) => b.at - a.at)
         .slice(0, KEPT_SETS)
+
+// The entries with a set's ticks moved from its old address to its new one, the
+// problem `dropped` (an id in address form) left out, and the old entry removed.
+export const moveTicks = (entries, fromKey, toKey, dropped, at) =>
+    withTicks(entries.filter((entry) => entry.key !== fromKey), toKey, ticksOf(entries, fromKey).filter((id) => id !== dropped), at)
 
 export const ticksOf = (entries, key) => entries.find((entry) => entry.key === key)?.done ?? []
 

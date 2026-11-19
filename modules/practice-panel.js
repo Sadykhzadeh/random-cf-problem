@@ -18,12 +18,14 @@ import {
     mergeTicks,
     newSession,
     pickSession,
+    replacementOf,
     resolveSet,
     sessionLength,
     setMarkdown,
     ticksOf,
     unpackTicks,
     unseenOf,
+    moveTicks,
     withTicks,
 } from "./practice.js"
 import { matchingProblems, parseHandles } from "./problems.js"
@@ -162,17 +164,23 @@ export const mountPractice = (host) => {
         done = ticksOf(readTicks(), encodeSet(setIds))
         byId("setList").replaceChildren(...found.map((problem) => {
             const item = document.createElement("li")
+            const label = `${problem.contestId}${problem.index}. ${problem.name}`
             const box = document.createElement("input")
             box.type = "checkbox"
             box.checked = done.includes(idKey(problem))
-            box.setAttribute("aria-label", fill(messages.doneBox, { name: `${problem.contestId}${problem.index}. ${problem.name}` }))
+            box.setAttribute("aria-label", fill(messages.doneBox, { name: label }))
             box.addEventListener("change", () => {
                 remember(box.checked
                     ? mergeTicks(done, [idKey(problem)])
                     : done.filter((key) => key !== idKey(problem)))
                 showProgress()
             })
-            item.append(box, " ", host.problemLink(problem), " ", host.ratingBadge(problem))
+            const swap = document.createElement("button")
+            swap.type = "button"
+            swap.textContent = messages.replace
+            swap.setAttribute("aria-label", fill(messages.replaceBox, { name: label }))
+            swap.addEventListener("click", () => swapOut(problem, swap))
+            item.append(box, " ", host.problemLink(problem), " ", host.ratingBadge(problem), " ", swap)
             return item
         }))
         byId("setActions").hidden = !found.length
@@ -223,6 +231,38 @@ export const mountPractice = (host) => {
         } finally {
             button.disabled = false
             if (document.activeElement === document.body) focused?.focus()
+        }
+    }
+
+    // Puts another problem in the place of `problem`: the nearest rating the set
+    // does not have, from the same settings as the set. The ticks and the timer
+    // move to the set's new address with it.
+    async function swapOut(problem, button) {
+        button.disabled = true
+        try {
+            const all = await host.prepare((message) => { byId("setStatus").textContent = message })
+            const filter = { ...host.filter(), min: ratingField("setFrom", 800), max: ratingField("setTo", 2000) }
+            const matching = matchingProblems(all, filter)
+            const pool = byId("skipSeen").checked ? unseenOf(matching, { drawn: host.recent(), done: everyTick() }) : matching
+            const next = replacementOf(pool, setFound, problem)
+            if (!next) {
+                byId("setStatus").textContent = messages.noReplacement
+                return
+            }
+            const oldKey = encodeSet(setIds)
+            setIds = setIds.map((id) => idKey(id) === idKey(problem) ? next : id)
+            writeTicks(moveTicks(readTicks(), oldKey, encodeSet(setIds), idKey(problem), Date.now()))
+            const session = pickSession(readSession(), oldKey)
+            if (session) writeSession({ ...session, key: encodeSet(setIds) })
+            host.setChanged(encodeSet(setIds))
+            render(fill(messages.replaced, { from: idKey(problem), to: idKey(next) }))
+            const row = setFound.findIndex((found) => idKey(found) === idKey(next))
+            byId("setList").children[row]?.querySelector("button")?.focus()
+        } catch (error) {
+            console.error(error)
+            byId("setStatus").textContent = host.errorText(error)
+        } finally {
+            button.disabled = false
         }
     }
 
