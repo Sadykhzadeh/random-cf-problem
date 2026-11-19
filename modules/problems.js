@@ -152,10 +152,19 @@ export const drawFromRound = (list, drawn, random = Math.random) => {
 // was drawn. A problem drawn again moves to the front rather than repeating.
 export const HISTORY_COUNT = 20
 
-export const addDraw = (history, problem, at) => [
-    { contestId: problem.contestId, index: problem.index, name: problem.name, rating: problem.rating, at },
-    ...history.filter((entry) => problemKey(entry) !== problemKey(problem)),
-].slice(0, HISTORY_COUNT)
+// A draw keeps the solved tick the problem already had: the tick is about the
+// problem, so drawing it again does not untick it.
+export const addDraw = (history, problem, at) => {
+    const earlier = history.find((entry) => problemKey(entry) === problemKey(problem))
+    return [
+        { contestId: problem.contestId, index: problem.index, name: problem.name, rating: problem.rating, at, done: earlier?.done === true },
+        ...history.filter((entry) => problemKey(entry) !== problemKey(problem)),
+    ].slice(0, HISTORY_COUNT)
+}
+
+// The history with the solved tick of `problem` set or cleared by the visitor.
+export const markDone = (history, problem, done) =>
+    history.map((entry) => problemKey(entry) === problemKey(problem) ? { ...entry, done } : entry)
 
 // A history read back from storage: anything that is not a draw is dropped,
 // and a time that does not read as one is forgotten rather than the draw.
@@ -172,6 +181,7 @@ export const unpackHistory = (stored) => {
                 name: p.name,
                 rating: typeof p.rating === "number" ? p.rating : undefined,
                 at: Number.isFinite(when) ? when : undefined,
+                done: p.done === true,
             }
         })
 }

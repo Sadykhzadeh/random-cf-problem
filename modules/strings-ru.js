@@ -70,6 +70,7 @@ export default {
     recent: "Недавние задачи",
     clearRecent: "Очистить историю",
     solvedMark: " · решена",
+    solvedTick: "Решена",
     copyLink: "Скопировать ссылку",
     copied: "Скопировано",
     copyFailed: "Не удалось скопировать ссылку.",

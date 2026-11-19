@@ -29,11 +29,12 @@ import { firstLoad, root } from "./support/walk.js"
 // filter and the parsing) adds about 1 KB raw and 180 gzip to both. The daily
 // streak (its line in the script and its strings; the counting is in daily.js,
 // which loads with the button) adds about 450 raw and 150 gzip in English and
-// 540 raw and 170 gzip in Russian. Raise these only with a reason of the same
-// kind.
+// 540 raw and 170 gzip in Russian. The solved tick in the drawn-lately list (a
+// box and its label for each draw, and markDone) adds about 1 KB raw and 270
+// gzip to both. Raise these only with a reason of the same kind.
 const LIMITS = {
-    en: { raw: 103100, gzip: 32200 },
-    ru: { raw: 105580, gzip: 32900 },
+    en: { raw: 104200, gzip: 32550 },
+    ru: { raw: 106700, gzip: 33300 },
 }
 
 const firstVisit = (language) => {

@@ -21,6 +21,7 @@ import {
     packProblemset,
     parseHandles,
     addDraw,
+    markDone,
     drawFromRound,
     unpackHistory,
     unpackRound,
@@ -928,6 +929,16 @@ function showRecent() {
             mark.textContent = text.solvedMark
             item.append(mark)
         }
+        const tick = document.createElement("input")
+        tick.type = "checkbox"
+        tick.checked = drawn.done
+        tick.addEventListener("change", () => {
+            recent = markDone(recent, drawn, tick.checked)
+            saveStored(RECENT_KEY, recent)
+        })
+        const tickLabel = document.createElement("label")
+        tickLabel.append(" ", tick, " ", text.solvedTick)
+        item.append(tickLabel)
         return item
     }))
 }

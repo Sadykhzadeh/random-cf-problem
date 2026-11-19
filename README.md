@@ -42,7 +42,9 @@ skipping the ones you have already solved.
   between 800 and 3500; a handle with no rating gets 800 to 1200.
 - Shows the problem drawn last again when the page is opened or reloaded.
 - Lists the last twenty draws with the time of each, marking the ones the
-  handles have solved, and "Clear history" empties the list. A draw does not
+  handles have solved, and a "Solved" box on each to tick the ones you solved
+  yourself (kept with the draw, and kept when the problem is drawn again).
+  "Clear history" empties the list. A draw does not
   repeat a problem until every problem the settings leave has come up once;
   the round then starts again.
 - Builds a practice set: a number of problems on a rating ladder from one

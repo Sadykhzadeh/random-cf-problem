@@ -6,6 +6,7 @@ import {
     HISTORY_COUNT,
     addDraw,
     drawFromRound,
+    markDone,
     matchingProblems,
     packProblemset,
     parseHandles,
@@ -466,17 +467,30 @@ test("the history keeps the newest twenty draws, once each, newest first", () =>
     assert.equal(history.filter((entry) => entry.contestId === 10).length, 1)
 })
 
+test("the solved tick is set by the visitor and survives drawing the problem again", () => {
+    const watermelon = { contestId: 4, index: "A", name: "Watermelon", rating: 800 }
+    let history = addDraw([], watermelon, 1)
+    history = addDraw(history, { contestId: 10, index: "B", name: "Mid", rating: 1500 }, 2)
+    history = markDone(history, watermelon, true)
+    assert.deepEqual(history.map((entry) => entry.done), [false, true])
+    history = addDraw(history, watermelon, 3)
+    assert.deepEqual(history.map((entry) => [entry.contestId, entry.done, entry.at]), [[4, true, 3], [10, false, 2]])
+    history = markDone(history, watermelon, false)
+    assert.equal(history[0].done, false)
+    assert.equal(markDone(history, { contestId: 99, index: "A" }, true).some((entry) => entry.done), false, "a problem not in the history changes nothing")
+})
+
 test("a history read back from storage keeps the draws and forgets what is not one", () => {
     const stored = [
-        { contestId: 4, index: "A", name: "Watermelon", rating: 800, at: 1700000000000 },
+        { contestId: 4, index: "A", name: "Watermelon", rating: 800, at: 1700000000000, done: true },
         { contestId: "4", index: "A", name: "bad id" },
         { contestId: 5, index: 7, name: "bad index" },
         null,
         { contestId: 6, index: "B", name: "No time", rating: "high", at: "not a time" },
     ]
     assert.deepEqual(unpackHistory(stored), [
-        { contestId: 4, index: "A", name: "Watermelon", rating: 800, at: 1700000000000 },
-        { contestId: 6, index: "B", name: "No time", rating: undefined, at: undefined },
+        { contestId: 4, index: "A", name: "Watermelon", rating: 800, at: 1700000000000, done: true },
+        { contestId: 6, index: "B", name: "No time", rating: undefined, at: undefined, done: false },
     ])
     assert.deepEqual(unpackHistory({ not: "a list" }), [])
     assert.equal(unpackHistory(Array.from({ length: 30 }, (_, i) => ({ contestId: i, index: "A", name: "x" }))).length, HISTORY_COUNT)

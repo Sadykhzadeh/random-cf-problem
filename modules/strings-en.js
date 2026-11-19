@@ -63,6 +63,7 @@ export default {
     recent: "Drawn lately",
     clearRecent: "Clear history",
     solvedMark: " · solved",
+    solvedTick: "Solved",
     copyLink: "Copy link",
     copied: "Copied",
     copyFailed: "Could not copy the link.",
