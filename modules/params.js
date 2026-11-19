@@ -79,7 +79,9 @@ export const readShape = (search) => new URLSearchParams(search).get("shape") ==
 
 // The rest of the practice set's form in an address: how many problems, the
 // rating range, the time limit in minutes, and noseen=1 when the problems from
-// the history are not left out. Values the form would not take are dropped.
+// the history are not left out. Text and a count or minutes of zero are
+// dropped. A count or rating past the form's limits is clamped when the set
+// is built; a time limit past 600 is refused when the timer starts.
 const count = (value) => {
     const text = String(value ?? "").trim()
     return /^\d{1,2}$/.test(text) && Number(text) > 0 ? String(Number(text)) : ""
