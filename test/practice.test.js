@@ -83,6 +83,7 @@ test("a set's ids survive the address, and anything that is not an id is dropped
     assert.deepEqual(decodeSet("1520F2, 4A,,junk,12,A4,7B1"), [
         { contestId: 1520, index: "F2" }, { contestId: 4, index: "A" }, { contestId: 7, index: "B1" },
     ])
+    assert.deepEqual(decodeSet("1520f2,4a"), [{ contestId: 1520, index: "F2" }, { contestId: 4, index: "A" }], "a letter in lower case is capitals")
     assert.deepEqual(decodeSet(null), [])
     const long = Array.from({ length: MAX_SET + 5 }, (_, i) => `${i + 1}A`).join(",")
     assert.equal(decodeSet(long).length, MAX_SET, "no more than the set size is read")

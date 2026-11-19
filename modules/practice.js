@@ -43,12 +43,13 @@ export const buildLadder = (pool, count, from, to, random = Math.random) => {
 export const encodeSet = (ids) => ids.map((id) => `${id.contestId}${id.index}`).join(",")
 
 // The ids read back from an address. Anything that is not an id is skipped,
-// and no more than MAX_SET are kept.
+// and no more than MAX_SET are kept. The letter is read in capitals, as
+// Codeforces writes it, so a link typed as 1520f2 finds the same problem.
 export const decodeSet = (text) => String(text ?? "").split(",")
     .map((id) => /^(\d+)([A-Za-z]\d*)$/.exec(id.trim()))
     .filter(Boolean)
     .slice(0, MAX_SET)
-    .map((match) => ({ contestId: Number(match[1]), index: match[2] }))
+    .map((match) => ({ contestId: Number(match[1]), index: match[2].toUpperCase() }))
 
 // The problems the ids name, in order, and the ids that no problem in the list
 // has any more.
