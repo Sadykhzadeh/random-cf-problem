@@ -95,6 +95,7 @@ skipping the ones you have already solved.
 | `hide` | `hide=1` | hide the drawn problem's topics |
 | `lang` | `lang=ru` | `en` or `ru`; remembered |
 | `set` | `set=1520F2,4A` | the problems of a practice set, by contest and letter |
+| `shape` | `shape=flat` | the practice set is flat (problems at random from the range) rather than rising |
 | `count` | `count=8` | problems in a practice set; five when left out |
 | `from`, `to` | `from=1000&to=1600` | the practice set's rating range |
 | `minutes` | `minutes=45` | the practice set's time limit |
