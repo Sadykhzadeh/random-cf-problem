@@ -1267,7 +1267,11 @@ const practiceHost = {
     prepare: (report) => readyProblems(report),
     filter: () => readFilter(),
     handles: () => byId("handles").value,
-    solvedByHandles: async () => skipLib.makeSkip((await loadSkips()).summaries, { starts: contestStarts ?? undefined }),
+    solvedByHandles: async () => {
+        const { summaries, errors } = await loadSkips()
+        if (!summaries.length && errors.length) throw new HandleError(errors.join(" "))
+        return skipLib.makeSkip(summaries, { starts: contestStarts ?? undefined })
+    },
     noneText,
     problemLink,
     ratingBadge,

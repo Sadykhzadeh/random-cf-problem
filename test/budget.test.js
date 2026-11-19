@@ -35,10 +35,12 @@ import { firstLoad, root } from "./support/walk.js"
 // status, the wiring and historyMarkdown) adds about 750 raw and 250 gzip. The
 // practice set's form in the address (the four fields and the skip box, read
 // and written in params.js, with their listeners) adds about 2 KB raw and 490
-// gzip to both. Raise these only with a reason of the same kind.
+// gzip to both. The practice set's check of submissions, which now reports a
+// handle that is not found rather than ticking nothing, adds about 150 raw and
+// 35 gzip to the script. Raise these only with a reason of the same kind.
 const LIMITS = {
-    en: { raw: 107000, gzip: 33200 },
-    ru: { raw: 109500, gzip: 33900 },
+    en: { raw: 107200, gzip: 33200 },
+    ru: { raw: 109700, gzip: 33900 },
 }
 
 const firstVisit = (language) => {
