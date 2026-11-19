@@ -32,11 +32,13 @@ import { firstLoad, root } from "./support/walk.js"
 // 540 raw and 170 gzip in Russian. The solved tick in the drawn-lately list (a
 // box and its label for each draw, and markDone) adds about 1 KB raw and 270
 // gzip to both. The copy of the drawn-lately list as Markdown (its button and
-// status, the wiring and historyMarkdown) adds about 750 raw and 250 gzip. Raise
-// these only with a reason of the same kind.
+// status, the wiring and historyMarkdown) adds about 750 raw and 250 gzip. The
+// practice set's form in the address (the four fields and the skip box, read
+// and written in params.js, with their listeners) adds about 2 KB raw and 490
+// gzip to both. Raise these only with a reason of the same kind.
 const LIMITS = {
-    en: { raw: 105000, gzip: 32750 },
-    ru: { raw: 107500, gzip: 33400 },
+    en: { raw: 107000, gzip: 33200 },
+    ru: { raw: 109500, gzip: 33900 },
 }
 
 const firstVisit = (language) => {

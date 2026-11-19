@@ -1,7 +1,8 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 
-import { DEFAULTS, letters, readParams, readShape, writeParams } from "../modules/params.js"
+import { DEFAULTS, letters, readParams, readSetForm, readShape, writeParams } from "../modules/params.js"
+import { read } from "./support/walk.js"
 
 test("settings survive a round trip through the address", () => {
     const settings = {
@@ -66,6 +67,23 @@ test("a practice set rides along in the address without counting as a setting", 
     assert.deepEqual(readParams("?set=1520F2&tags=dp").tags, ["dp"])
 })
 
+test("the practice set's form rides along in the address, and its defaults are left out", () => {
+    const form = { count: "8", from: "1200", to: "1900", minutes: "45", noSeen: true }
+    const search = writeParams(DEFAULTS, "en", { set: "1520F2", form })
+    assert.equal(search, "lang=en&set=1520F2&count=8&from=1200&to=1900&minutes=45&noseen=1")
+    assert.deepEqual(readSetForm(`?${search}`), form)
+    assert.equal(readParams(`?${search}`), null, "the form alone leaves the remembered settings in place")
+    assert.equal(writeParams(DEFAULTS, "en", { set: "1520F2", form: { count: "5", from: "", to: "", minutes: "", noSeen: false } }), "lang=en&set=1520F2", "five problems and the box ticked are the page's own")
+    assert.deepEqual(readSetForm("?set=1520F2"), { count: "", from: "", to: "", minutes: "", noSeen: false })
+})
+
+test("the practice set's form drops what the form would not take", () => {
+    assert.deepEqual(readSetForm("?count=0&from=abc&to=99999&minutes=-3&noseen=0"),
+        { count: "", from: "", to: "", minutes: "", noSeen: false })
+    assert.deepEqual(readSetForm("?count=20&from=0800&minutes=1000"), { count: "20", from: "800", to: "", minutes: "", noSeen: false })
+    assert.equal(writeParams(DEFAULTS, "en", { form: { count: "3.5", minutes: "x" } }), "lang=en")
+})
+
 test("the divisions are kept in the order of the page, and unknown ones are dropped", () => {
     assert.deepEqual(readParams("?div=edu,3,x,3,").divisions, ["3", "edu"])
     assert.deepEqual(readParams("?div=").divisions, [])
@@ -86,4 +104,11 @@ test("the least number of solvers is kept only when it asks for something", () =
     assert.equal(readParams("?solved=02500").minSolved, "2500")
     for (const solved of ["0", "-5", "many", "12345678", "1.5"]) assert.equal(readParams(`?solved=${solved}`).minSolved, "", solved)
     assert.equal(readParams("?solved=300") === null, false, "a link with only this carries settings")
+})
+
+test("each address parameter has one row in the README's table", () => {
+    const names = read("README.md").split("\n")
+        .filter((line) => line.startsWith("| `"))
+        .flatMap((line) => line.split("|")[1].match(/`[^`]+`/g).map((name) => name.slice(1, -1)))
+    assert.deepEqual(names.filter((name, i) => names.indexOf(name) !== i), [])
 })

@@ -52,6 +52,7 @@ import {
     DIVISIONS,
     letters,
     readParams,
+    readSetForm,
     readShape,
     writeParams
 } from "./modules/params.js"
@@ -774,6 +775,14 @@ byId("useRating").addEventListener("click", async () => {
 })
 byId("setLimit").addEventListener("input", () => practice?.then((panel) => panel.showControls()))
 byId("setShape").value = readShape(window.location.search)
+const setForm = readSetForm(window.location.search)
+for (const [id, value] of [["setCount", setForm.count], ["setFrom", setForm.from], ["setTo", setForm.to], ["setLimit", setForm.minutes]]) {
+    if (value) byId(id).value = value
+}
+byId("skipSeen").checked = !setForm.noSeen
+byId("setForm").addEventListener("input", saveSettings)
+byId("setForm").addEventListener("change", saveSettings)
+byId("setLimit").addEventListener("input", saveSettings)
 byId("skipTried").addEventListener("change", () => {
     showSkipStatus()
 })
@@ -1126,7 +1135,7 @@ function saveSettings() {
         } catch {
             // See LANG_KEY.
         }
-        const practice = { set: practiceSet, shape: shapeValue(), daily: dailyOn }
+        const practice = { set: practiceSet, shape: shapeValue(), daily: dailyOn, form: setFormValues() }
         const search = writeParams(settings, lang, practice)
         history.replaceState(history.state, "", `${window.location.pathname}${search ? `?${search}` : ""}`)
         for (const link of document.querySelectorAll("#langs a[data-lang]")) {
@@ -1238,9 +1247,17 @@ byId("form").addEventListener("submit", async (event) => {
 let practiceSet = new URLSearchParams(window.location.search).get("set") ?? ""
 let practice = null
 
-const setLinkFor = (ids) => `${window.location.origin}${window.location.pathname}?${writeParams(DEFAULTS, lang, { set: ids, shape: shapeValue() })}`
-
 const shapeValue = () => byId("setShape").value === "flat" ? "flat" : "rising"
+
+const setFormValues = () => ({
+    count: byId("setCount").value,
+    from: byId("setFrom").value,
+    to: byId("setTo").value,
+    minutes: byId("setLimit").value,
+    noSeen: !byId("skipSeen").checked,
+})
+
+const setLinkFor = (ids) => `${window.location.origin}${window.location.pathname}?${writeParams(DEFAULTS, lang, { set: ids, shape: shapeValue(), form: setFormValues() })}`
 
 const practiceHost = {
     text,

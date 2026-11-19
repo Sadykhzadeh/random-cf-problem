@@ -77,15 +77,45 @@ export const readParams = (search) => {
 // The practice set's shape in an address: "flat", or "rising" when it says nothing.
 export const readShape = (search) => new URLSearchParams(search).get("shape") === "flat" ? "flat" : "rising"
 
-// `practice` holds the practice set's ids (see encodeSet) and its shape. Neither
-// is a setting, so readParams does not count them as one; the shape is only
-// written when it is flat, the one that is not the default.
-export const writeParams = (settings, lang, { set = "", shape = "rising", daily = false } = {}) => {
+// The rest of the practice set's form in an address: how many problems, the
+// rating range, the time limit in minutes, and noseen=1 when the problems from
+// the history are not left out. Values the form would not take are dropped.
+const count = (value) => {
+    const text = String(value ?? "").trim()
+    return /^\d{1,2}$/.test(text) && Number(text) > 0 ? String(Number(text)) : ""
+}
+
+const minutes = (value) => {
+    const text = String(value ?? "").trim()
+    return /^\d{1,3}$/.test(text) && Number(text) > 0 ? String(Number(text)) : ""
+}
+
+export const readSetForm = (search) => {
+    const params = new URLSearchParams(search)
+    return {
+        count: count(params.get("count")),
+        from: rating(params.get("from")),
+        to: rating(params.get("to")),
+        minutes: minutes(params.get("minutes")),
+        noSeen: params.get("noseen") === "1",
+    }
+}
+
+// `practice` holds the practice set's ids (see encodeSet), its shape and the
+// rest of its form (see readSetForm). None of it is a setting, so readParams
+// does not count it as one; the shape is only written when it is flat, the one
+// that is not the default, and the form only where it differs from the page's.
+export const writeParams = (settings, lang, { set = "", shape = "rising", daily = false, form = {} } = {}) => {
     const params = new URLSearchParams()
     if (lang) params.set("lang", lang)
     if (set) params.set("set", set)
     if (shape === "flat") params.set("shape", "flat")
     if (daily) params.set("daily", "1")
+    if (count(form.count) && count(form.count) !== "5") params.set("count", count(form.count))
+    if (rating(form.from)) params.set("from", rating(form.from))
+    if (rating(form.to)) params.set("to", rating(form.to))
+    if (minutes(form.minutes)) params.set("minutes", minutes(form.minutes))
+    if (form.noSeen) params.set("noseen", "1")
     if (rating(settings.min)) params.set("min", rating(settings.min))
     if (rating(settings.max)) params.set("max", rating(settings.max))
     if (year(settings.since)) params.set("since", year(settings.since))
