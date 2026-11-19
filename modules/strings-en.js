@@ -15,6 +15,7 @@ export default {
     letters: "Problem letters",
     divisionN: "Div. {n}",
     educational: "Educational",
+    global: "Global",
     loadingContests: "Loading the contest dates from Codeforces...",
     topic: "Topics",
     anyTopic: "Any topic",

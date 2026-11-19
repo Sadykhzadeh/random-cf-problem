@@ -17,7 +17,7 @@ export const DEFAULTS = Object.freeze({
     hide: false,
 })
 
-export const DIVISIONS = ["1", "2", "3", "4", "edu"]
+export const DIVISIONS = ["1", "2", "3", "4", "edu", "global"]
 
 const KNOWN = ["min", "max", "since", "until", "solved", "div", "letter", "tags", "any", "none", "nospecial", "skip", "tried", "hide"]
 

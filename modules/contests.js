@@ -3,12 +3,14 @@
 // so the page loads it only when one of those is asked for (see
 // loadContestStarts in script.js).
 
-// The divisions a contest is for, as its name says: 1 to 4, or "edu" for an
-// Educational round, whose "Rated for Div. 2" is not a Div. 2 round. A
-// Global round or a cup names none.
+// The divisions a contest is for, as its name says: 1 to 4, "edu" for an
+// Educational round, whose "Rated for Div. 2" is not a Div. 2 round, or "global"
+// for a Global round, which names no division. A cup names none.
 export const contestDivisions = (name) => {
-    if (/educational/i.test(name ?? "")) return ["edu"]
-    const numbers = [...String(name ?? "").matchAll(/Div[.]?[ ]*([1-4])/gi)].map((match) => match[1])
+    const text = String(name ?? "")
+    if (/educational/i.test(text)) return ["edu"]
+    const numbers = [...text.matchAll(/Div[.]?[ ]*([1-4])/gi)].map((match) => match[1])
+    if (!numbers.length && /global round/i.test(text)) return ["global"]
     return [...new Set(numbers)].sort()
 }
 
@@ -35,7 +37,7 @@ export const unpackContestDivisions = (packed, problems = []) => {
         if (!Array.isArray(item) || !Number.isFinite(item[0]) || typeof item[2] !== "string") return null
         const own = item[2] ? item[2].split(",") : []
         divisions.set(item[0], own)
-        if (!own.length || own[0] === "edu") continue
+        if (!own.length || own[0] === "edu" || own[0] === "global") continue
         if (!together.has(item[1])) together.set(item[1], [])
         together.get(item[1]).push(item[0])
     }

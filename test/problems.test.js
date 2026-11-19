@@ -357,7 +357,9 @@ test("a contest name says which divisions it is for", () => {
     assert.deepEqual(contestDivisions("WorldQuant Round 1 (Codeforces Round 1128, Div. 1 + Div. 2)"), ["1", "2"])
     // Rated for Div. 2 is what Educational rounds say, and they are a kind of their own.
     assert.deepEqual(contestDivisions("Educational Codeforces Round 196 (Rated for Div. 2)"), ["edu"])
-    assert.deepEqual(contestDivisions("Codeforces Global Round 27"), [])
+    assert.deepEqual(contestDivisions("Codeforces Global Round 27"), ["global"])
+    assert.deepEqual(contestDivisions("Codeforces Round 1 (Div. 2, based on Global Round 2)"), ["2"], "a division in the name wins")
+    assert.deepEqual(contestDivisions("Codeforces Round 5 (Based on Some Cup)"), [], "a cup names none")
     assert.deepEqual(contestDivisions(undefined), [])
 })
 
@@ -382,7 +384,7 @@ test("of two parallel rounds, the one that lists the shared problems counts for 
     const packed = JSON.parse(JSON.stringify(packContestStarts(contests)))
     const divisions = unpackContestDivisions(packed, problems)
     assert.deepEqual([...divisions], [
-        [1967, ["1", "2"]], [1972, ["2"]], [1973, ["3"]], [1974, ["edu"]], [1975, []],
+        [1967, ["1", "2"]], [1972, ["2"]], [1973, ["3"]], [1974, ["edu"]], [1975, ["global"]],
     ])
     assert.equal(unpackContestDivisions(null, problems), null)
     assert.equal(unpackContestDivisions([[1967, 1714487700]], problems), null, "a copy kept before divisions were")
@@ -392,6 +394,7 @@ test("of two parallel rounds, the one that lists the shared problems counts for 
     assert.deepEqual(names({ divisions: ["1"] }), ["P1967A", "P1967B", "P1967C", "P1967D", "P1967E", "P1967F"])
     assert.equal(names({ divisions: ["2"] }).length, 8)
     assert.deepEqual(names({ divisions: ["3", "edu"] }), ["P1973A", "P1974A"])
+    assert.deepEqual(names({ divisions: ["global"] }), ["P1975A"], "a Global round is a division of its own, and leaves the parallel pair alone")
     assert.deepEqual(names({ divisions: ["4"] }), [], "a contest missing from the list cannot be told")
 })
 

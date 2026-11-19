@@ -193,7 +193,7 @@ for (const division of DIVISIONS) {
     box.value = division
     const label = document.createElement("label")
     label.className = "topic"
-    label.append(box, " ", division === "edu" ? text.educational : fill(text.divisionN, { n: division }))
+    label.append(box, " ", division === "edu" ? text.educational : division === "global" ? text.global : fill(text.divisionN, { n: division }))
     byId("divisions").append(label)
 }
 
@@ -572,7 +572,7 @@ async function loadSolved(handle) {
 // contest.list is 410 KB of JSON, of which the start times are kept for a
 // day. An older copy is used for this visit and replaced for the next one.
 const CONTESTS_URL = "https://codeforces.com/api/contest.list"
-const STARTS_KEY = new URL("starts.v3.json", window.location.href).href
+const STARTS_KEY = new URL("starts.v4.json", window.location.href).href
 let startsLoading = null
 let contestStarts = null
 // Which divisions a contest counts for depends on the problem list as well

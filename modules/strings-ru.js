@@ -15,6 +15,7 @@ export default {
     letters: "Буквы задач",
     divisionN: "Див. {n}",
     educational: "Educational",
+    global: "Global",
     loadingContests: "Загружаю даты контестов с Codeforces...",
     topic: "Темы",
     anyTopic: "Любая тема",

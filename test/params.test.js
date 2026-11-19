@@ -86,6 +86,7 @@ test("the practice set's form drops what the form would not take", () => {
 
 test("the divisions are kept in the order of the page, and unknown ones are dropped", () => {
     assert.deepEqual(readParams("?div=edu,3,x,3,").divisions, ["3", "edu"])
+    assert.deepEqual(readParams("?div=global,1").divisions, ["1", "global"])
     assert.deepEqual(readParams("?div=").divisions, [])
     assert.equal(writeParams({ ...DEFAULTS, divisions: ["edu", "1"] }), "div=1,edu")
     assert.equal(readParams("?div=1,2") === null, false, "a link with only divisions carries settings")
