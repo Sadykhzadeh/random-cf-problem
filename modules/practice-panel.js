@@ -289,7 +289,7 @@ export const mountPractice = (host) => {
 
     byId("copySetMarkdown").addEventListener("click", async () => {
         if (!setFound.length) return
-        byId("setStatus").textContent = await host.copyText(setMarkdown(setFound)) ? text.copied : text.copyListFailed
+        byId("setStatus").textContent = await host.copyText(setMarkdown(setFound, done)) ? text.copied : text.copyListFailed
     })
 
     byId("copySetLink").addEventListener("click", async () => {

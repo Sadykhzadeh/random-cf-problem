@@ -52,10 +52,10 @@ skipping the ones you have already solved.
   rating to another in equal steps, one problem per rung and no two from
   the same contest. The topics, divisions and skipped handles of the form
   apply too. The set is in the address as the problem ids, so the link
-  brings back exactly the same problems; it copies as a Markdown list. A
-  problem that does not suit can be replaced with the one nearest its rating
-  that the set does not have, from a contest the rest of the set does not use
-  and from the same settings; the ticks and the timer
+  brings back exactly the same problems; it copies as a Markdown task list,
+  with the ticks. A problem that does not suit can be replaced with the one
+  nearest its rating that the set does not have, from a contest the rest of
+  the set does not use and from the same settings; the ticks and the timer
   stay with the set. The form's count, rating range, time limit and history
   box are in the address too, so the link brings back the form as well as the
   set.

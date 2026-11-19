@@ -111,15 +111,19 @@ test("a set resolves to the same problems, and an id no longer listed is reporte
     assert.deepEqual(missing, [{ contestId: 9999, index: "Z" }])
 })
 
-test("the set copies as a Markdown list with its links and ratings, brackets escaped", () => {
+test("the set copies as a Markdown task list with its links, ratings and ticks, brackets escaped", () => {
     const problems = [
         problem(1520, "F2", 2200, "Guess the K-th Zero (Hard version)"),
         problem(4, "A", 800, "Water [melon] *fresh*"),
     ]
     assert.equal(setMarkdown(problems), [
-        "- [1520F2. Guess the K-th Zero (Hard version)](https://codeforces.com/problemset/problem/1520/F2) (2200)",
-        "- [4A. Water \\[melon\\] \\*fresh\\*](https://codeforces.com/problemset/problem/4/A) (800)",
+        "- [ ] [1520F2. Guess the K-th Zero (Hard version)](https://codeforces.com/problemset/problem/1520/F2) (2200)",
+        "- [ ] [4A. Water \\[melon\\] \\*fresh\\*](https://codeforces.com/problemset/problem/4/A) (800)",
     ].join("\n"))
+    assert.equal(setMarkdown(problems, ["4A"]), [
+        "- [ ] [1520F2. Guess the K-th Zero (Hard version)](https://codeforces.com/problemset/problem/1520/F2) (2200)",
+        "- [x] [4A. Water \\[melon\\] \\*fresh\\*](https://codeforces.com/problemset/problem/4/A) (800)",
+    ].join("\n"), "a ticked problem is ticked in the list")
 })
 
 const ids = [{ contestId: 1520, index: "F2" }, { contestId: 4, index: "A" }, { contestId: 2000, index: "H" }]

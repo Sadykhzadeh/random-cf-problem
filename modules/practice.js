@@ -91,11 +91,13 @@ export const resolveSet = (problems, ids) => {
     return { found, missing }
 }
 
-// The set as a Markdown list, one problem a line, with its rating. Brackets
-// and emphasis characters in a name are escaped so the link stays a link.
-export const setMarkdown = (problems) => problems.map((problem) => {
+// The set as a Markdown task list, one problem a line, with its rating and
+// ticked when the visitor has done it (`done` holds the ids ticked, in their
+// address form). Brackets and emphasis characters in a name are escaped so the
+// link stays a link.
+export const setMarkdown = (problems, done = []) => problems.map((problem) => {
     const name = problem.name.replace(/[\\[\]*_`]/g, "\\$&")
-    return `- [${problem.contestId}${problem.index}. ${name}](${problemUrl(problem)}) (${problem.rating ?? "unrated"})`
+    return `- [${done.includes(idKey(problem)) ? "x" : " "}] [${problem.contestId}${problem.index}. ${name}](${problemUrl(problem)}) (${problem.rating ?? "unrated"})`
 }).join("\n")
 
 // The ticks kept for at most this many sets, the most recently ticked first.
