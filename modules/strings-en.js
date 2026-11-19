@@ -67,6 +67,8 @@ export default {
     solvedTick: "Solved",
     copyLink: "Copy link",
     removeDraw: "Remove",
+    removeDrawBox: "Remove {name}",
+    solvedDrawBox: "Solved: {name}",
     copied: "Copied",
     copyFailed: "Could not copy the link.",
     copyListFailed: "Could not copy the list.",

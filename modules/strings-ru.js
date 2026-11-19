@@ -74,6 +74,8 @@ export default {
     solvedTick: "Решена",
     copyLink: "Скопировать ссылку",
     removeDraw: "Убрать",
+    removeDrawBox: "Убрать {name}",
+    solvedDrawBox: "Решена: {name}",
     copied: "Скопировано",
     copyFailed: "Не удалось скопировать ссылку.",
     copyListFailed: "Не удалось скопировать список.",

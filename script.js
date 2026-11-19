@@ -943,6 +943,7 @@ function showRecent() {
         const tick = document.createElement("input")
         tick.type = "checkbox"
         tick.checked = drawn.done
+        tick.setAttribute("aria-label", fill(text.solvedDrawBox, { name: problemTitle(problem) }))
         tick.addEventListener("change", () => {
             recent = markDone(recent, drawn, tick.checked)
             saveStored(RECENT_KEY, recent)
@@ -952,6 +953,7 @@ function showRecent() {
         const remove = document.createElement("button")
         remove.type = "button"
         remove.textContent = text.removeDraw
+        remove.setAttribute("aria-label", fill(text.removeDrawBox, { name: problemTitle(problem) }))
         remove.addEventListener("click", () => {
             const focused = document.activeElement === remove
             const row = [...byId("recentList").children].indexOf(item)

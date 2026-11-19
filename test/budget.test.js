@@ -47,10 +47,13 @@ import { firstLoad, root } from "./support/walk.js"
 // width instead of widening the page, adds about 130 raw and 30 gzip to both.
 // Keeping the keyboard focus on the drawn-lately list after a Remove (the draw
 // that moves into the place of the removed one, or Generate) adds about 450 raw
-// and 140 gzip to both. Raise these only with a reason of the same kind.
+// and 140 gzip to both. The name in the Remove button and the Solved box of each
+// draw (their labels in the language files, and the labels set in showRecent)
+// adds about 270 raw and 60 gzip to both. Raise these only with a reason of the
+// same kind.
 const LIMITS = {
-    en: { raw: 108550, gzip: 33560 },
-    ru: { raw: 111100, gzip: 34290 },
+    en: { raw: 108820, gzip: 33620 },
+    ru: { raw: 111380, gzip: 34350 },
 }
 
 const firstVisit = (language) => {
