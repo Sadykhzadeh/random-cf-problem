@@ -49,11 +49,12 @@ import { firstLoad, root } from "./support/walk.js"
 // that moves into the place of the removed one, or Generate) adds about 450 raw
 // and 140 gzip to both. The name in the Remove button and the Solved box of each
 // draw (their labels in the language files, and the labels set in showRecent)
-// adds about 270 raw and 60 gzip to both. Raise these only with a reason of the
-// same kind.
+// adds about 270 raw and 60 gzip to both. Moving the focus to Generate when Clear
+// history hides the button that had it adds about 190 raw and 45 gzip to both.
+// Raise these only with a reason of the same kind.
 const LIMITS = {
-    en: { raw: 108820, gzip: 33620 },
-    ru: { raw: 111380, gzip: 34350 },
+    en: { raw: 109030, gzip: 33660 },
+    ru: { raw: 111590, gzip: 34400 },
 }
 
 const firstVisit = (language) => {

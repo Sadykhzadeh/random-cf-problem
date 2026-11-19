@@ -977,11 +977,14 @@ byId("copyRecent").addEventListener("click", async () => {
 })
 
 byId("clearRecent").addEventListener("click", () => {
+    const focused = document.activeElement === byId("clearRecent")
     recent = []
     round = new Set()
     saveStored(RECENT_KEY, recent)
     saveStored(ROUND_KEY, [])
     showRecent()
+    // The section with the button is hidden now, so the focus goes to Generate.
+    if (focused) byId("start").focus()
 })
 
 function remember(problem) {
