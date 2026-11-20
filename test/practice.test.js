@@ -28,6 +28,10 @@ import {
     newSession,
     passedMarks,
     pickSession,
+    spendTime,
+    storesSession,
+    unpackSession,
+    timeLeft,
     sessionLength,
     solvedKey,
 } from "../modules/practice.js"
@@ -223,12 +227,31 @@ test("the clock reads mm:ss and rounds a part second up", () => {
 
 test("a session belongs to one set, and what is stored is read back only when it is one", () => {
     const session = newSession("1520F2,4A", 1000, 2)
-    assert.deepEqual(session, { key: "1520F2,4A", deadline: 1000 + 120000, said: [] })
-    assert.deepEqual(pickSession(JSON.parse(JSON.stringify(session)), "1520F2,4A"), session)
-    assert.equal(pickSession(JSON.parse(JSON.stringify(session)), "4A"), null, "another set")
-    assert.equal(pickSession({ key: "x", deadline: "soon", said: [] }, "x"), null)
-    assert.equal(pickSession({ key: "x", deadline: 1, said: "five" }, "x"), null)
-    assert.equal(pickSession(null, "x"), null)
+    assert.deepEqual(session, { key: "1520F2,4A", started: 1000, limit: 120000, spent: 0, seen: 1000, said: [] })
+    assert.deepEqual(pickSession(JSON.parse(JSON.stringify(session)), "1520F2,4A", 5000), session)
+    assert.equal(pickSession(JSON.parse(JSON.stringify(session)), "4A", 5000), null, "another set")
+    assert.equal(pickSession({ key: "x", started: 1, limit: "soon", spent: 0, seen: 1, said: [] }, "x", 5000), null)
+    assert.equal(pickSession({ key: "x", deadline: "soon", said: [] }, "x", 5000), null)
+    assert.equal(pickSession({ key: "x", deadline: 1, said: "five" }, "x", 5000), null)
+    assert.equal(pickSession(null, "x", 5000), null)
+})
+
+test("a session stored with a deadline keeps the time it had left, and one past its deadline has none", () => {
+    const stored = JSON.parse(JSON.stringify({ key: "k", deadline: 1000 + 120000, said: ["five"] }))
+    assert.deepEqual(pickSession(stored, "k", 1000 + 30000), { key: "k", started: 31000, limit: 90000, spent: 0, seen: 31000, said: ["five"] })
+    assert.deepEqual(pickSession(stored, "k", 1000 + 200000), { key: "k", started: 201000, limit: 0, spent: 0, seen: 201000, said: ["five"] })
+})
+
+test("time spent counts from the last update, and a clock set back spends nothing", () => {
+    const session = newSession("k", 1000000, 10)
+    spendTime(session, 1000000 + 9 * 60000)
+    assert.equal(timeLeft(session), 60000)
+    spendTime(session, 1000000 - 3600000)
+    assert.equal(timeLeft(session), 60000, "no time given back")
+    spendTime(session, 1000000 - 3600000 + 30000)
+    assert.equal(timeLeft(session), 30000, "the time after the set-back counts")
+    spendTime(session, 1000000 - 3600000 + 10 * 60000)
+    assert.equal(timeLeft(session), 0, "never below zero")
 })
 
 // A clock the test moves by hand, and a scheduler it can see.
@@ -296,11 +319,44 @@ test("a running session shows the time left each second and announces each momen
     assert.equal(session.said.length, 3)
 })
 
+test("a second tab's newer session is not overwritten by a tab still running an older one", () => {
+    const mine = newSession("k", 1000, 6)
+    const theirs = JSON.parse(JSON.stringify(newSession("k", 9000, 30)))
+    assert.equal(storesSession(JSON.parse(JSON.stringify(mine)), mine), true, "its own session is stored")
+    assert.equal(storesSession(theirs, mine), false, "a newer session in storage is left alone")
+    assert.equal(storesSession(null, mine), false, "nothing stored")
+})
+
+test("stored time spent is kept between zero and the limit", () => {
+    const base = { key: "k", started: 1, limit: 60000, seen: 1, said: [] }
+    assert.equal(unpackSession({ ...base, spent: -5000 }, 0).spent, 0)
+    assert.equal(unpackSession({ ...base, spent: 90000 }, 0).spent, 60000)
+    assert.equal(unpackSession({ ...base, spent: 20000 }, 0).spent, 20000)
+})
+
+test("a clock set back while a session runs does not show more time than the limit", () => {
+    const clock = clockAndTimers()
+    clock.state.now = 3600000
+    const session = newSession("k", clock.now(), 10)
+    const shown = []
+    followSession(session, {
+        now: clock.now, schedule: clock.schedule, unschedule: clock.unschedule,
+        show: (left) => shown.push(clockText(left)), announce: () => {},
+    })
+    clock.state.now = 3600000 + 9 * 60000
+    clock.fire()
+    clock.state.now = 9 * 60000
+    clock.fire()
+    clock.state.now = 9 * 60000 + 30000
+    clock.fire()
+    assert.deepEqual(shown, ["10:00", "01:00", "01:00", "00:30"])
+})
+
 test("a session opened after it has run out announces only its end, once", () => {
     const clock = clockAndTimers()
     clock.state.now = 10 * 60000
     const announced = []
-    const late = { key: "k", deadline: 60000, said: [] }
+    const late = { key: "k", limit: 60000, spent: 0, seen: 0, said: [] }
     followSession(late, { now: clock.now, schedule: clock.schedule, unschedule: clock.unschedule, show: () => {}, announce: (mark) => announced.push(mark) })
     assert.deepEqual(announced, ["end"])
     assert.equal(clock.scheduled(), 0)

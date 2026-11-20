@@ -150,8 +150,9 @@ export const moveTicks = (entries, fromKey, toKey, dropped, at) =>
 
 export const ticksOf = (entries, key) => entries.find((entry) => entry.key === key)?.done ?? []
 
-// A timed session on a set: the deadline is kept, not a running count, so the
-// time left is worked out from the clock whenever it is shown.
+// A timed session on a set: the limit is kept with the time spent so far. The
+// time spent grows by the wall-clock time since the last update, so the time
+// left never grows back, even when the clock is set back.
 export const SESSION_MAX_MINUTES = 600
 
 // The limit the form's field gives, in whole minutes, or null when there is none.
@@ -163,21 +164,43 @@ export const sessionLength = (raw) => {
 // The session started at `now` (ms) for the set `key`. `said` lists the
 // moments of it that have been read out, so each is read once however often
 // the page opens.
-export const newSession = (key, now, minutes) => ({ key, deadline: now + minutes * 60000, said: [] })
+export const newSession = (key, now, minutes) => ({ key, started: now, limit: minutes * 60000, spent: 0, seen: now, said: [] })
 
 // A session read back from storage, or null when what is stored is not one.
-export const unpackSession = (stored) => stored && typeof stored.key === "string" &&
-    Number.isFinite(stored.deadline) && Array.isArray(stored.said)
-    ? { key: stored.key, deadline: stored.deadline, said: stored.said.filter((mark) => typeof mark === "string") }
-    : null
+// Time spent is kept within the limit. A session holding a deadline in place
+// of a limit is read with the time left until that deadline, counted from `now`.
+export const unpackSession = (stored, now) => {
+    if (!stored || typeof stored.key !== "string" || !Array.isArray(stored.said)) return null
+    const said = stored.said.filter((mark) => typeof mark === "string")
+    if ([stored.started, stored.limit, stored.spent, stored.seen].every(Number.isFinite)) {
+        const limit = Math.max(0, stored.limit)
+        const spent = Math.min(limit, Math.max(0, stored.spent))
+        return { key: stored.key, started: stored.started, limit, spent, seen: stored.seen, said }
+    }
+    if (Number.isFinite(stored.deadline)) {
+        return { key: stored.key, started: now, limit: Math.max(0, stored.deadline - now), spent: 0, seen: now, said }
+    }
+    return null
+}
 
 // The session stored for this set, or null: a session belongs to one set.
-export const pickSession = (stored, key) => {
-    const session = unpackSession(stored)
+export const pickSession = (stored, key, now) => {
+    const session = unpackSession(stored, now)
     return session && session.key === key ? session : null
 }
 
-export const timeLeft = (session, now) => Math.max(0, session.deadline - now)
+// Moves the session's clock on to `now`. A clock set back spends nothing, and
+// the time after it counts from the new clock.
+export const spendTime = (session, now) => {
+    session.spent = Math.min(session.limit, session.spent + Math.max(0, now - session.seen))
+    session.seen = now
+}
+
+export const timeLeft = (session) => Math.max(0, session.limit - session.spent)
+
+// Whether what storage holds is `session` itself. A tab writes its session only
+// while this holds, so a session another tab started in its place is kept.
+export const storesSession = (stored, session) => stored?.started === session.started
 
 // mm:ss, rounding a part second up so the display reads 00:01 until it is over.
 export const clockText = (ms) => {
@@ -215,7 +238,8 @@ export const followSession = (session, { now, every = 1000, schedule, unschedule
         timer = null
     }
     const tick = () => {
-        const left = timeLeft(session, now())
+        spendTime(session, now())
+        const left = timeLeft(session)
         show(left)
         for (const mark of dueMarks(left, session.said)) {
             session.said.push(mark)
@@ -223,9 +247,10 @@ export const followSession = (session, { now, every = 1000, schedule, unschedule
         }
         if (left === 0) stop()
     }
-    session.said.push(...passedMarks(timeLeft(session, now()), session.said))
+    spendTime(session, now())
+    session.said.push(...passedMarks(timeLeft(session), session.said))
     tick()
-    if (timeLeft(session, now()) > 0) timer = schedule(tick, every)
+    if (timeLeft(session) > 0) timer = schedule(tick, every)
     return stop
 }
 

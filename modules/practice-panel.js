@@ -18,6 +18,7 @@ import {
     mergeTicks,
     newSession,
     pickSession,
+    storesSession,
     replacementOf,
     resolveSet,
     sessionLength,
@@ -59,7 +60,7 @@ function writeTicks(entries) {
 
 const SESSION_KEY = "random-cf-problem:session"
 
-// A timed session is kept as its deadline, so it survives a reload. Only one
+// A timed session is kept with the time it has spent, so it survives a reload. Only one
 // is kept, for the set it was started on.
 function readSession() {
     try {
@@ -130,10 +131,11 @@ export const mountPractice = (host) => {
             show: (left) => {
                 byId("sessionClock").textContent = fill(messages.timeLeft, { clock: clockText(left) })
                 showTitle(left > 0 ? clockText(left) : "")
+                if (storesSession(readSession(), session)) writeSession(session)
             },
             announce: (mark) => {
                 byId("sessionStatus").textContent = messages[notice[mark]]
-                writeSession(session)
+                if (storesSession(readSession(), session)) writeSession(session)
             },
         })
         writeSession(session)
@@ -144,7 +146,7 @@ export const mountPractice = (host) => {
     function resumeSession() {
         const key = encodeSet(setIds)
         const stored = readSession()
-        const session = pickSession(stored, key)
+        const session = pickSession(stored, key, Date.now())
         if (!session) {
             stopTimer?.()
             stopTimer = null
@@ -261,7 +263,7 @@ export const mountPractice = (host) => {
             const oldKey = encodeSet(setIds)
             setIds = setIds.map((id) => idKey(id) === idKey(problem) ? next : id)
             writeTicks(moveTicks(readTicks(), oldKey, encodeSet(setIds), idKey(problem), Date.now()))
-            const session = pickSession(readSession(), oldKey)
+            const session = pickSession(readSession(), oldKey, Date.now())
             if (session) writeSession({ ...session, key: encodeSet(setIds) })
             host.setChanged(encodeSet(setIds))
             render(fill(messages.replaced, { from: idKey(problem), to: idKey(next) }))
