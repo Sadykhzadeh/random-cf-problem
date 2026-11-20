@@ -70,7 +70,7 @@ export const encodeSet = (ids) => ids.map(idText).join(",")
 export const decodeSet = (text) => {
     const seen = new Set()
     return String(text ?? "").split(",")
-        .map((id) => /^(\d+)(?:-(\d+)|([A-Za-z]\d*))$/.exec(id.trim()))
+        .map((id) => /^(\d{1,9})(?:-(\d+)|([A-Za-z]\d*))$/.exec(id.trim()))
         .filter(Boolean)
         .map((match) => ({ contestId: Number(match[1]), index: match[2] ?? match[3].toUpperCase() }))
         .filter((id) => {
