@@ -734,10 +734,6 @@ function showSkipStatus() {
 byId("handles").addEventListener("change", () => loadSkips())
 byId("handles").addEventListener("input", () => practice?.then((panel) => panel.showControls()))
 
-byId("handles").addEventListener("input", () => {
-    byId("useRating").hidden = !parseHandles(byId("handles").value).handles.length
-})
-
 const ratingKey = (handle) =>
     new URL(`${inLanguage("rating.v1")}/${encodeURIComponent(handle.toLowerCase())}.json`, window.location.href).href
 
@@ -1054,6 +1050,7 @@ const matchingAnnounce = createSettle((message) => {
 })
 
 function showMatching() {
+    byId("useRating").hidden = !parseHandles(byId("handles").value).handles.length
     const filter = readFilter()
     const matching = byId("matching")
     if (!problemset) matching.textContent = ""
@@ -1167,6 +1164,7 @@ function saveSettings() {
 
 applySettings(readParams(window.location.search) ?? storedSettings() ?? DEFAULTS)
 showTopicsSummary()
+showMatching()
 saveSettings()
 if (byId("handles").value.trim()) loadSkips()
 
