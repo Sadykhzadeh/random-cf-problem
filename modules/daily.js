@@ -37,6 +37,11 @@ export const streakAfter = (stored, day) => {
     const last = typeof stored?.last === "string" ? stored.last : ""
     const count = Number.isInteger(stored?.count) && stored.count > 0 ? stored.count : 0
     if (last === day) return { last, count: count || 1 }
+    // A stored day after this one means the clock has been set back. The
+    // stored day stays as it is and the count holds until the clock reaches
+    // that day again, however far back it was set; the next day in a row after
+    // the stored one then adds to the count.
+    if (last > day && /^\d{4}-\d{2}-\d{2}$/.test(last)) return { last, count: count || 1 }
     const yesterday = dayKey(Date.parse(`${day}T00:00:00Z`) - 86400000)
     return { last: day, count: last === yesterday && count ? count + 1 : 1 }
 }

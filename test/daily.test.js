@@ -46,6 +46,12 @@ test("the streak counts the UTC days in a row the problem was opened", () => {
     assert.deepEqual(streakAfter({ last: "2026-12-31", count: 4 }, "2027-01-01"), { last: "2027-01-01", count: 5 }, "across a year")
 })
 
+test("a clock set back keeps the streak, and the next day in a row goes on from it", () => {
+    assert.deepEqual(streakAfter({ last: "2026-11-20", count: 4 }, "2026-11-19"), { last: "2026-11-20", count: 4 })
+    assert.deepEqual(streakAfter({ last: "2026-11-20", count: 4 }, "2026-11-21"), { last: "2026-11-21", count: 5 })
+    assert.deepEqual(streakAfter({ last: "2026-11-20", count: 4 }, "2026-11-22"), { last: "2026-11-22", count: 1 })
+})
+
 test("a streak kept in a damaged shape starts again at one", () => {
     for (const stored of ["x", 7, { last: 3, count: 2 }, { last: "2026-11-17", count: "2" }, { last: "2026-11-17", count: 0 }]) {
         assert.deepEqual(streakAfter(stored, "2026-11-18"), { last: "2026-11-18", count: 1 }, JSON.stringify(stored))
