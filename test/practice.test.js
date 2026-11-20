@@ -31,7 +31,7 @@ import {
     sessionLength,
     solvedKey,
 } from "../modules/practice.js"
-import { fill } from "../modules/i18n.js"
+import { countText, fill } from "../modules/i18n.js"
 import { practiceMessages } from "../modules/practice-strings.js"
 
 // A fixed generator, so the picks are the same on every run.
@@ -148,6 +148,14 @@ test("the progress line says how many are done, in English and in Russian", () =
     assert.equal(fill(practiceMessages.en.progress, { done: 2, total: 5 }), "2 of 5 done")
     assert.equal(fill(practiceMessages.ru.progress, { done: 2, total: 5 }), "Сделано: 2 из 5")
     assert.deepEqual(baseKeys(practiceMessages.ru), baseKeys(practiceMessages.en), "both languages have every message")
+})
+
+test("a one-problem set is worded in the singular in English", () => {
+    const en = practiceMessages.en
+    assert.equal(fill(countText(en, "setCountText", 1, "en"), { count: 1 }), "1 problem.")
+    assert.equal(fill(countText(en, "setCountText", 5, "en"), { count: 5 }), "5 problems.")
+    assert.equal(fill(countText(en, "setMissing", 1, "en"), { count: 1 }), "1 problem of this set is no longer in the list.")
+    assert.equal(fill(countText(en, "setShortFlat", 1, "en"), { count: 1, wanted: 3 }), "Only 1 problem of the 3 fits the range.")
 })
 
 test("a swapped problem moves the set's ticks to its new address and leaves the old entry out", () => {
