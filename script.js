@@ -1015,8 +1015,8 @@ function readFilter() {
     return {
         min,
         max,
-        since: year > 0 ? yearStart(year) : undefined,
-        until: lastYear > 0 ? yearStart(lastYear + 1) : undefined,
+        since: year >= 1000 && year < 10000 ? yearStart(year) : undefined,
+        until: lastYear >= 1000 && lastYear < 10000 ? yearStart(lastYear + 1) : undefined,
         minSolved: Number(byId("min_solved").value) || 0,
         divisions: chosenDivisions(),
         letters: chosenLetters(),
