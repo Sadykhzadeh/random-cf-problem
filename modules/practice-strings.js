@@ -7,6 +7,7 @@ export const practiceMessages = {
         fiveLeft: "Five minutes left.",
         oneLeft: "One minute left.",
         timerStarted: "Timer started: {minutes} minutes.",
+        timerStartedOne: "Timer started: {minutes} minute.",
         allSeen: "Every problem in the range was drawn or ticked before. Untick the option above to include them.",
         setCountText: "{count} problems.",
         setCountTextOne: "{count} problem.",

@@ -160,6 +160,12 @@ test("a one-problem set is worded in the singular in English", () => {
     assert.equal(fill(countText(en, "checkedAccepted", 1, "en"), { count: 1 }), "Ticked 1 problem the handles have solved.")
 })
 
+test("a timer is worded in the singular for one minute in English", () => {
+    const en = practiceMessages.en
+    assert.equal(fill(countText(en, "timerStarted", 1, "en"), { minutes: 1 }), "Timer started: 1 minute.")
+    assert.equal(fill(countText(en, "timerStarted", 45, "en"), { minutes: 45 }), "Timer started: 45 minutes.")
+})
+
 test("a swapped problem moves the set's ticks to its new address and leaves the old entry out", () => {
     const entries = [{ key: "1520F2,4A", done: ["1520F2", "4A"], at: 1 }, { key: "9A", done: ["9A"], at: 2 }]
     assert.deepEqual(moveTicks(entries, "1520F2,4A", "1520F2,5B", "4A", 5), [

@@ -313,7 +313,7 @@ export const mountPractice = (host) => {
         }
         const session = newSession(encodeSet(setIds), Date.now(), minutes)
         writeSession(session)
-        byId("sessionStatus").textContent = fill(messages.timerStarted, { minutes })
+        byId("sessionStatus").textContent = fill(countText(messages, "timerStarted", minutes, host.lang), { minutes })
         follow(session)
     })
 
