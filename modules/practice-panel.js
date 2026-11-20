@@ -106,7 +106,7 @@ export const mountPractice = (host) => {
     // a limit to time by.
     function showControls() {
         byId("checkSubmissions").hidden = !setFound.length || !parseHandles(host.handles()).handles.length
-        byId("startSession").hidden = sessionLength(byId("setLimit").value) === null
+        byId("startSession").hidden = byId("setLimit").value.trim() === ""
         byId("shareSet").hidden = !setFound.length || !canShare(navigator)
         byId("sessionLine").hidden = !setFound.length
     }
