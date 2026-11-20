@@ -129,6 +129,7 @@ test("the set copies as a Markdown task list with its links, ratings and ticks, 
         problem(1520, "F2", 2200, "Guess the K-th Zero (Hard version)"),
         problem(4, "A", 800, "Water [melon] *fresh*"),
     ]
+    assert.equal(setMarkdown([problem(921, "14", 1500, "Labyrinth")]), "- [ ] [921-14. Labyrinth](https://codeforces.com/problemset/problem/921/14) (1500)", "a numbered index is joined by a dash, as in the address")
     assert.equal(setMarkdown(problems), [
         "- [ ] [1520F2. Guess the K-th Zero (Hard version)](https://codeforces.com/problemset/problem/1520/F2) (2200)",
         "- [ ] [4A. Water \\[melon\\] \\*fresh\\*](https://codeforces.com/problemset/problem/4/A) (800)",

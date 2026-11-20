@@ -101,7 +101,7 @@ export const resolveSet = (problems, ids) => {
 // link stays a link.
 export const setMarkdown = (problems, done = []) => problems.map((problem) => {
     const name = problem.name.replace(/[\\[\]*_`]/g, "\\$&")
-    return `- [${done.includes(idKey(problem)) ? "x" : " "}] [${problem.contestId}${problem.index}. ${name}](${problemUrl(problem)}) (${problem.rating ?? "unrated"})`
+    return `- [${done.includes(idKey(problem)) ? "x" : " "}] [${idKey(problem)}. ${name}](${problemUrl(problem)}) (${problem.rating ?? "unrated"})`
 }).join("\n")
 
 // The ticks kept for at most this many sets, the most recently ticked first.

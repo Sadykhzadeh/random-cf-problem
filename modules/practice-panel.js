@@ -175,7 +175,7 @@ export const mountPractice = (host) => {
         done = ticksOf(readTicks(), encodeSet(setIds))
         byId("setList").replaceChildren(...found.map((problem) => {
             const item = document.createElement("li")
-            const label = `${problem.contestId}${problem.index}. ${problem.name}`
+            const label = `${idKey(problem)}. ${problem.name}`
             const box = document.createElement("input")
             box.type = "checkbox"
             box.checked = done.includes(idKey(problem))
