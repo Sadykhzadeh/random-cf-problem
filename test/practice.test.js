@@ -156,6 +156,8 @@ test("a one-problem set is worded in the singular in English", () => {
     assert.equal(fill(countText(en, "setCountText", 5, "en"), { count: 5 }), "5 problems.")
     assert.equal(fill(countText(en, "setMissing", 1, "en"), { count: 1 }), "1 problem of this set is no longer in the list.")
     assert.equal(fill(countText(en, "setShortFlat", 1, "en"), { count: 1, wanted: 3 }), "Only 1 problem of the 3 fits the range.")
+    assert.equal(fill(countText(en, "checkedAccepted", 0, "en"), { count: 0 }), "Ticked 0 problems the handles have solved.")
+    assert.equal(fill(countText(en, "checkedAccepted", 1, "en"), { count: 1 }), "Ticked 1 problem the handles have solved.")
 })
 
 test("a swapped problem moves the set's ticks to its new address and leaves the old entry out", () => {
