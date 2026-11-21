@@ -111,6 +111,8 @@ test("a set's ids survive the address, and anything that is not an id is dropped
         { contestId: 1520, index: "F2" }, { contestId: 4, index: "A" },
     ], "an id given twice is read once")
     assert.deepEqual(decodeSet("99999999999999999999999A,4A"), [{ contestId: 4, index: "A" }], "a contest number no Codeforces id has is skipped")
+    assert.deepEqual(decodeSet("4-99999999999999999999"), [], "a numbered index no problem has is skipped")
+    assert.deepEqual(decodeSet("4A99999999999999999999"), [], "a letter's digits no problem has are skipped")
     assert.deepEqual(decodeSet(null), [])
     const long = Array.from({ length: MAX_SET + 5 }, (_, i) => `${i + 1}A`).join(",")
     assert.equal(decodeSet(long).length, MAX_SET, "no more than the set size is read")

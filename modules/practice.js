@@ -65,11 +65,12 @@ export const encodeSet = (ids) => ids.map(problemLabel).join(",")
 // The ids read back from an address. Anything that is not an id is skipped, an
 // id given twice is kept once, and no more than MAX_SET are kept. The letter is
 // read in capitals, as Codeforces writes it, so a link typed as 1520f2 finds the
-// same problem.
+// same problem. The contest number and the index are bounded to what Codeforces
+// has, so a run of digits a problem never has is not read as one.
 export const decodeSet = (text) => {
     const seen = new Set()
     return String(text ?? "").split(",")
-        .map((id) => /^(\d{1,9})(?:-(\d+)|([A-Za-z]\d*))$/.exec(id.trim()))
+        .map((id) => /^(\d{1,9})(?:-(\d{1,3})|([A-Za-z]\d{0,3}))$/.exec(id.trim()))
         .filter(Boolean)
         .map((match) => ({ contestId: Number(match[1]), index: match[2] ?? match[3].toUpperCase() }))
         .filter((id) => {
