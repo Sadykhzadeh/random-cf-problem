@@ -104,6 +104,7 @@ skipping the ones you have already solved.
 | `skip` | `skip=tourist,jiangly` | skip what these handles solved |
 | `tried` | `tried=1` | also skip what they tried |
 | `hide` | `hide=1` | hide the drawn problem's topics |
+| `daily` | `daily=1` | open today's problem, from the settings' pool for the UTC day |
 | `lang` | `lang=ru` | `en` or `ru`; remembered |
 | `set` | `set=1520F2,4A` | the problems of a practice set, by contest and letter; a numbered index is joined by a dash, as in `set=921-14` |
 | `shape` | `shape=flat` | the practice set is flat (problems at random from the range) rather than rising |
