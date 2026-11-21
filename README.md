@@ -52,29 +52,31 @@ skipping the ones you have already solved.
   rating to another in equal steps, one problem per rung and no two from
   the same contest. The topics, divisions and skipped handles of the form
   apply too. The set is in the address as the problem ids, so the link
-  brings back exactly the same problems; it copies as a Markdown task list,
-  with the ticks. A problem that does not suit can be replaced with the one
-  nearest its rating that the set does not have, from a contest the rest of
-  the set does not use and from the same settings; the ticks and the timer
-  stay with the set. The form's count, rating range, time limit and history
-  box are in the address too, so the link brings back the form as well as the
-  set. The last twenty sets built or opened are listed under the set, each with
-  how many of its problems are done, and Open brings one back; the list is kept
-  in this browser only. "Save progress" downloads the ticks and those sets as a
-  JSON file, and "Load progress" merges such a file into this browser.
-- "Skip problems from my history" (on by default) leaves out the problems drawn
-  lately and the ones ticked done in any set when a set is built.
-- Ticks the problems of a set as done, kept per set in the browser; "Check
-  my submissions" ticks the ones the typed handles have solved, and "Untick
-  all" clears the set's ticks.
+  brings back exactly the same problems. The form's count, rating range,
+  time limit and history box are in the address too, so the link brings back
+  the form as well as the set.
 - The set is rising (one problem per rung, the default) or flat (all problems
   from the range at random, one per contest); flat is in the address as
   shape=flat, and the rest of the form in its own parameters, listed below.
+- "Skip problems from my history" (on by default) leaves out the problems drawn
+  lately and the ones ticked done in any set when a set is built.
 - A time limit in minutes gives the set a timer: "Start the timer" begins the
   countdown. The time spent is kept, so the countdown survives a reload and a
   clock set back does not give time back. The time left is in the tab's title,
   and "Time is up" is read out once. "Pause timer" stops the countdown and
   "Resume timer" starts it again; the time paused is not spent.
+- Ticks the problems of a set as done, kept per set in the browser; "Check
+  my submissions" ticks the ones the typed handles have solved, and "Untick
+  all" clears the set's ticks. A problem that does not suit can be replaced
+  with the one nearest its rating that the set does not have, from a contest
+  the rest of the set does not use and from the same settings; the ticks and
+  the timer stay with the set. "Copy as Markdown" copies the set as a Markdown
+  task list, with the ticks.
+- The last twenty sets built or opened are listed under the set, each with
+  how many of its problems are done, and Open brings one back; the list is kept
+  in this browser only.
+- "Save progress" downloads the ticks and those sets as a JSON file, and
+  "Load progress" merges such a file into this browser.
 - Remembers the settings, and keeps them in the address so a link
   reproduces them.
 - `R`, Space or Enter draws again (outside a field and outside buttons and
