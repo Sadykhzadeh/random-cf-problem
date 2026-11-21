@@ -11,12 +11,13 @@ export const MAX_SET = 20
 export const ladderRatings = (count, from, to) =>
     count <= 1 ? [from] : Array.from({ length: count }, (_, i) => from + (i * (to - from)) / (count - 1))
 
-// The problem nearest `rating` in the pool, at random among those equally near,
-// or undefined from an empty pool.
-const nearestOf = (pool, rating, random) => {
+// The problem nearest `rating` in the pool that `allowed` takes, at random among
+// those equally near, or undefined from an empty pool.
+const nearestOf = (pool, rating, random, allowed = () => true) => {
     let best = Infinity
     let nearest = []
     for (const problem of pool) {
+        if (!allowed(problem)) continue
         const distance = Math.abs(problem.rating - rating)
         if (distance < best) {
             best = distance
@@ -35,7 +36,7 @@ export const buildLadder = (pool, count, from, to, random = Math.random) => {
     const contests = new Set()
     const picked = []
     for (const target of ladderRatings(count, from, to)) {
-        const problem = nearestOf(pool.filter((candidate) => !contests.has(candidate.contestId)), target, random)
+        const problem = nearestOf(pool, target, random, (candidate) => !contests.has(candidate.contestId))
         if (!problem) continue
         contests.add(problem.contestId)
         picked.push(problem)
