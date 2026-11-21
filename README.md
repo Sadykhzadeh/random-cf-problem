@@ -65,7 +65,8 @@ skipping the ones you have already solved.
 - "Skip problems from my history" (on by default) leaves out the problems drawn
   lately and the ones ticked done in any set when a set is built.
 - Ticks the problems of a set as done, kept per set in the browser; "Check
-  my submissions" ticks the ones the typed handles have solved.
+  my submissions" ticks the ones the typed handles have solved, and "Untick
+  all" clears the set's ticks.
 - The set is rising (one problem per rung, the default) or flat (all problems
   from the range at random, one per contest); flat is in the address as
   shape=flat, and the rest of the form in its own parameters, listed below.

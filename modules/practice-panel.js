@@ -319,6 +319,7 @@ export const mountPractice = (host) => {
         byId("setProgress").textContent = setFound.length
             ? fill(messages.progress, { done: ticked, total: setFound.length })
             : ""
+        untickAll.hidden = !ticked
     }
 
     // The set on screen, with what it says about itself: its size, unless a
@@ -434,6 +435,19 @@ export const mountPractice = (host) => {
             button.disabled = false
         }
     }
+
+    // Clears every tick of the set, for doing it again. The button is there
+    // only while some problem is ticked.
+    const untickAll = document.createElement("button")
+    untickAll.type = "button"
+    untickAll.textContent = messages.untickAll
+    untickAll.addEventListener("click", () => {
+        if (!window.confirm(messages.untickConfirm)) return
+        remember([])
+        render()
+        byId("setList").querySelector("input")?.focus()
+    })
+    byId("setActions").append(" ", untickAll)
 
     // What the handles have solved is read as for a draw, and the set's
     // problems among them are ticked.
