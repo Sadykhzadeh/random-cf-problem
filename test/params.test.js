@@ -107,6 +107,17 @@ test("the least number of solvers is kept only when it asks for something", () =
     assert.equal(readParams("?solved=300") === null, false, "a link with only this carries settings")
 })
 
+test("the rating ceiling of the form is the same in its fields and in the code that clamps to it", () => {
+    const ceilings = [
+        ...[...read("index.html").matchAll(/<input[^>]*id="(?:min_num|max_num|setFrom|setTo)"[^>]*\smax="(\d+)"/g)].map((match) => match[1]),
+        read("script.js").match(/maxRaw === "" \? (\d+) :/)[1],
+        read("script.js").match(/max > (\d+)\) max = /)[1],
+        read("modules/practice-panel.js").match(/Math\.min\((\d+), Math\.max\(0, value\)\)/)[1],
+    ]
+    assert.equal(ceilings.length, 7)
+    assert.deepEqual([...new Set(ceilings)], ["3800"])
+})
+
 test("each address parameter has one row in the README's table", () => {
     const names = read("README.md").split("\n")
         .filter((line) => line.startsWith("| `"))
