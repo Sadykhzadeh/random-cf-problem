@@ -26,6 +26,9 @@ export const practiceMessages = {
         replaceBox: "Replace {name}",
         replaced: "{from} replaced with {to}.",
         noReplacement: "No other problem fits this place in the set.",
+        recentSets: "Recent sets",
+        openSet: "Open",
+        openSetBox: "Open the set {ids}",
     },
     ru: {
         timeLeft: "Осталось {clock}",
@@ -55,5 +58,8 @@ export const practiceMessages = {
         replaceBox: "Заменить: {name}",
         replaced: "{from} заменена на {to}.",
         noReplacement: "На это место в наборе больше нет задач.",
+        recentSets: "Недавние наборы",
+        openSet: "Открыть",
+        openSetBox: "Открыть набор {ids}",
     },
 }

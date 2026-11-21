@@ -24,9 +24,11 @@ import {
     sessionLength,
     setMarkdown,
     ticksOf,
+    unpackRecentSets,
     unpackTicks,
     unseenOf,
     moveTicks,
+    withRecentSet,
     withTicks,
 } from "./practice.js"
 import { matchingProblems, parseHandles } from "./problems.js"
@@ -79,6 +81,25 @@ function writeSession(session) {
     }
 }
 
+const RECENT_SETS_KEY = "random-cf-problem:sets"
+
+// The sets built or opened lately, by address. Without storage there is no list.
+function readRecentSets() {
+    try {
+        return unpackRecentSets(JSON.parse(localStorage.getItem(RECENT_SETS_KEY)))
+    } catch {
+        return []
+    }
+}
+
+function writeRecentSets(keys) {
+    try {
+        localStorage.setItem(RECENT_SETS_KEY, JSON.stringify(keys))
+    } catch {
+        // The list is a convenience, not a requirement.
+    }
+}
+
 const ratingField = (id, fallback) => {
     const raw = byId(id).value
     const value = raw === "" ? fallback : Number(raw)
@@ -101,6 +122,45 @@ export const mountPractice = (host) => {
     const remember = (next) => {
         done = next
         writeTicks(withTicks(readTicks(), encodeSet(setIds), done, Date.now()))
+        showRecentSets()
+    }
+
+    // The sets built or opened lately, each with how many of its problems are
+    // done. Open puts the set back on the page, with its ticks and timer.
+    const recentBox = document.createElement("section")
+    const recentHeading = document.createElement("h3")
+    const recentItems = document.createElement("ol")
+    recentHeading.textContent = messages.recentSets
+    recentBox.append(recentHeading, recentItems)
+    byId("practice").append(recentBox)
+
+    // The set is kept at the front of the recent sets when it is built or
+    // opened; `replaces` is the address the set has moved away from.
+    const keepSet = (key, replaces) => writeRecentSets(withRecentSet(readRecentSets(), key, replaces))
+
+    function showRecentSets() {
+        const keys = readRecentSets()
+        recentBox.hidden = !keys.length
+        recentItems.replaceChildren(...keys.map((key) => {
+            const ids = decodeSet(key)
+            const ticked = doneOf(ids, ticksOf(readTicks(), key)).length
+            const open = document.createElement("button")
+            open.type = "button"
+            open.textContent = messages.openSet
+            open.setAttribute("aria-label", fill(messages.openSetBox, { ids: key }))
+            open.addEventListener("click", () => openRecent(key))
+            const item = document.createElement("li")
+            item.append(key, " ", fill(messages.progress, { done: ticked, total: ids.length }), " ", open)
+            return item
+        }))
+    }
+
+    function openRecent(key) {
+        setIds = decodeSet(key)
+        keepSet(key)
+        host.setChanged(encodeSet(setIds))
+        render()
+        recentItems.querySelector("button")?.focus()
     }
 
     // The check is offered only with handles to check, and the timer only with
@@ -195,6 +255,7 @@ export const mountPractice = (host) => {
             return item
         }))
         byId("setActions").hidden = !found.length
+        showRecentSets()
         showControls()
         resumeSession()
         const headline = note ?? (found.length ? fill(countText(messages, "setCountText", found.length, host.lang), { count: found.length }) : "")
@@ -227,6 +288,7 @@ export const mountPractice = (host) => {
             const picked = flat ? buildFlat(pool, count) : buildLadder(pool, count, from, to)
             if (picked.length) {
                 setIds = picked
+                keepSet(encodeSet(setIds))
                 const short = picked.length < count
                     ? fill(countText(messages, flat ? "setShortFlat" : "setShort", picked.length, host.lang), { count: picked.length, wanted: count })
                     : undefined
@@ -266,6 +328,7 @@ export const mountPractice = (host) => {
             const session = pickSession(readSession(), oldKey, Date.now())
             if (session) writeSession({ ...session, key: encodeSet(setIds) })
             host.setChanged(encodeSet(setIds))
+            keepSet(encodeSet(setIds), oldKey)
             render(fill(messages.replaced, { from: idKey(problem), to: idKey(next) }))
             const row = setFound.findIndex((found) => idKey(found) === idKey(next))
             byId("setList").children[row]?.querySelector("button")?.focus()
@@ -319,6 +382,7 @@ export const mountPractice = (host) => {
         follow(session)
     })
 
+    if (setIds.length) keepSet(encodeSet(setIds))
     render()
     return { build, render, showControls }
 }

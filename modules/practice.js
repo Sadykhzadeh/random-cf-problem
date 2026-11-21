@@ -150,6 +150,19 @@ export const moveTicks = (entries, fromKey, toKey, dropped, at) =>
 
 export const ticksOf = (entries, key) => entries.find((entry) => entry.key === key)?.done ?? []
 
+// The keys of the sets built or opened lately, the most recent first and at most
+// KEPT_SETS. `replaces` is the key a set has moved away from, which is dropped.
+export const withRecentSet = (keys, key, replaces) =>
+    [key, ...keys.filter((other) => other !== key && other !== replaces)].slice(0, KEPT_SETS)
+
+// The recent keys read back from storage: only addresses that read as a set,
+// each once.
+export const unpackRecentSets = (stored) => {
+    if (!Array.isArray(stored)) return []
+    return [...new Set(stored.filter((key) => typeof key === "string" && key !== "" && encodeSet(decodeSet(key)) === key))]
+        .slice(0, KEPT_SETS)
+}
+
 // A timed session on a set: the limit is kept with the time spent so far. The
 // time spent grows by the wall-clock time since the last update, so the time
 // left never grows back, even when the clock is set back.

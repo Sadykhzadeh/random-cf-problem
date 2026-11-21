@@ -34,6 +34,8 @@ import {
     timeLeft,
     sessionLength,
     solvedKey,
+    unpackRecentSets,
+    withRecentSet,
 } from "../modules/practice.js"
 import { countText, fill } from "../modules/i18n.js"
 import { practiceMessages } from "../modules/practice-strings.js"
@@ -211,6 +213,27 @@ test("ticks read back from storage keep the sets that read cleanly, newest first
         { key: "a", done: ["1A"], at: 1 },
     ])
     assert.deepEqual(unpackTicks("junk"), [])
+})
+
+test("the sets built or opened lately are listed most recent first, and a set moved from one address to another leaves its old one", () => {
+    let keys = []
+    for (let i = 0; i < KEPT_SETS + 3; i++) keys = withRecentSet(keys, `${i}A`)
+    assert.equal(keys.length, KEPT_SETS)
+    assert.equal(keys[0], `${KEPT_SETS + 2}A`)
+    assert.ok(!keys.includes("0A"), "the oldest set is dropped")
+    keys = withRecentSet(keys, `${KEPT_SETS - 1}A`)
+    assert.equal(keys.length, KEPT_SETS, "a set does not appear twice")
+    assert.equal(keys[0], `${KEPT_SETS - 1}A`)
+    keys = withRecentSet(keys, "1520F2,4A", `${KEPT_SETS - 1}A`)
+    assert.equal(keys[0], "1520F2,4A")
+    assert.ok(!keys.includes(`${KEPT_SETS - 1}A`), "the set it replaced is gone")
+})
+
+test("the stored sets read back only as canonical set addresses, each once", () => {
+    const stored = ["1520F2,4A", "1520F2,4A", "", "junk", "4a", "921-14", 7, null, "1520F2,4A,1520F2"]
+    assert.deepEqual(unpackRecentSets(stored), ["1520F2,4A", "921-14"])
+    assert.deepEqual(unpackRecentSets({ 0: "1A" }), [])
+    assert.deepEqual(unpackRecentSets(null), [])
 })
 
 test("a session's limit is whole minutes from 1 to 600, and anything else is no limit", () => {

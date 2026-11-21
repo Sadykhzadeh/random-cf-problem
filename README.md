@@ -58,7 +58,9 @@ skipping the ones you have already solved.
   the set does not use and from the same settings; the ticks and the timer
   stay with the set. The form's count, rating range, time limit and history
   box are in the address too, so the link brings back the form as well as the
-  set.
+  set. The last twenty sets built or opened are listed under the set, each with
+  how many of its problems are done, and Open brings one back; the list is kept
+  in this browser only.
 - "Skip problems from my history" (on by default) leaves out the problems drawn
   lately and the ones ticked done in any set when a set is built.
 - Ticks the problems of a set as done, kept per set in the browser; "Check
