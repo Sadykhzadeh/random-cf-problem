@@ -130,8 +130,14 @@ const PARALLEL_GAP = 7
 // lists its shared problems under 1967 only. With `includeTried`, the same
 // goes for a problem tried there.
 export const makeSkip = (summaries, { includeTried = false, starts = new Map() } = {}) => {
-    const keys = new Set()
+    const keys = new Map()
     const names = new Map()
+    const addKey = (key) => {
+        const bar = key.indexOf("|")
+        const contestId = Number(key.slice(0, bar))
+        if (!keys.has(contestId)) keys.set(contestId, new Set())
+        keys.get(contestId).add(key.slice(bar + 1))
+    }
     const addNames = (list) => {
         for (const [name, solvedIn] of list) {
             if (!names.has(name)) names.set(name, [])
@@ -139,15 +145,16 @@ export const makeSkip = (summaries, { includeTried = false, starts = new Map() }
         }
     }
     for (const summary of summaries) {
-        for (const key of summary.solved) keys.add(key)
+        for (const key of summary.solved) addKey(key)
         addNames(summary.names)
         if (includeTried) {
-            for (const key of summary.tried) keys.add(key)
+            for (const key of summary.tried) addKey(key)
             addNames(summary.triedNames)
         }
     }
+    // Looked up by contest and then by letter, so a problem costs no key string.
     return (problem) => {
-        if (keys.has(problemKey(problem))) return true
+        if (keys.get(problem.contestId)?.has(problem.index)) return true
         const solvedIn = names.get(problem.name)
         if (!solvedIn) return false
         const start = starts.get(problem.contestId)

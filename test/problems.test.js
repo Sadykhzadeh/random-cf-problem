@@ -234,6 +234,15 @@ test("solved problems are skipped, tried ones only when asked", () => {
     assert.deepEqual(names(makeSkip([summary], { includeTried: true })), ["Guess the K-th Zero (Hard version)"])
 })
 
+test("a skip keeps contests and letters apart, so 1000A does not skip 1000B, 100A or 1000A1", () => {
+    const solved = summarizeSubmissions([{ verdict: "OK", problem: { contestId: 1000, index: "A", name: "Only A" } }])
+    const skip = makeSkip([solved])
+    assert.equal(skip({ contestId: 1000, index: "A", name: "Only A", rating: 900 }), true)
+    assert.equal(skip({ contestId: 1000, index: "B", name: "Other", rating: 900 }), false)
+    assert.equal(skip({ contestId: 100, index: "A", name: "Other", rating: 900 }), false)
+    assert.equal(skip({ contestId: 1000, index: "A1", name: "Other", rating: 900 }), false)
+})
+
 test("a problem solved in the parallel round counts, a namesake elsewhere does not", () => {
     const solvedIn = (contestId, name, rating = 1500, start = null) =>
         ({ solved: [`${contestId}|X`], tried: [], names: [[name, [[contestId, rating, start]]]] })
