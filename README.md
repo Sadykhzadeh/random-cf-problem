@@ -70,11 +70,11 @@ skipping the ones you have already solved.
 - The set is rising (one problem per rung, the default) or flat (all problems
   from the range at random, one per contest); flat is in the address as
   shape=flat, and the rest of the form in its own parameters, listed below.
-- A time limit in minutes starts a timer on the set: the time spent is kept, so
-  the countdown survives a reload and a clock set back does not give time
-  back. The time left is in the tab's title, and "Time is up" is read out
-  once. Pause stops the countdown and Resume starts it again; the time paused
-  is not spent.
+- A time limit in minutes gives the set a timer: "Start the timer" begins the
+  countdown. The time spent is kept, so the countdown survives a reload and a
+  clock set back does not give time back. The time left is in the tab's title,
+  and "Time is up" is read out once. "Pause timer" stops the countdown and
+  "Resume timer" starts it again; the time paused is not spent.
 - Remembers the settings, and keeps them in the address so a link
   reproduces them.
 - `R`, Space or Enter draws again (outside a field and outside buttons and
