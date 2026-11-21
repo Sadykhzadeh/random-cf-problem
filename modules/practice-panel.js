@@ -29,6 +29,7 @@ import {
     replacementOf,
     timeLeft,
     resolveSet,
+    SESSION_MAX_MINUTES,
     sessionLength,
     setMarkdown,
     ticksOf,
@@ -482,7 +483,7 @@ export const mountPractice = (host) => {
     byId("startSession").addEventListener("click", () => {
         const minutes = sessionLength(byId("setLimit").value)
         if (minutes === null) {
-            byId("setStatus").textContent = messages.badLimit
+            byId("setStatus").textContent = fill(messages.badLimit, { max: SESSION_MAX_MINUTES })
             return
         }
         const session = newSession(encodeSet(setIds), Date.now(), minutes)
