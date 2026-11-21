@@ -37,6 +37,9 @@ import {
     timeLeft,
     sessionLength,
     solvedKey,
+    mergeProgress,
+    progressText,
+    unpackProgress,
     unpackRecentSets,
     withRecentSet,
 } from "../modules/practice.js"
@@ -237,6 +240,45 @@ test("the stored sets read back only as canonical set addresses, each once", () 
     assert.deepEqual(unpackRecentSets(stored), ["1520F2,4A", "921-14"])
     assert.deepEqual(unpackRecentSets({ 0: "1A" }), [])
     assert.deepEqual(unpackRecentSets(null), [])
+})
+
+test("a progress file brings back the ticks and recent sets, and a merge keeps what both browsers ticked", () => {
+    const local = { ticks: [{ key: "1520F2,4A", done: ["4A"], at: 5 }], sets: ["1520F2,4A"] }
+    const file = progressText([{ key: "1520F2,4A", done: ["1520F2"], at: 9 }, { key: "2C", done: ["2C"], at: 1 }], ["2C", "1520F2,4A"])
+    const incoming = unpackProgress(file)
+    assert.deepEqual(incoming, { ticks: [{ key: "1520F2,4A", done: ["1520F2"], at: 9 }, { key: "2C", done: ["2C"], at: 1 }], sets: ["2C", "1520F2,4A"] })
+    assert.deepEqual(mergeProgress(local, incoming), {
+        ticks: [{ key: "1520F2,4A", done: ["4A", "1520F2"], at: 9 }, { key: "2C", done: ["2C"], at: 1 }],
+        sets: ["1520F2,4A", "2C"],
+        left: 0,
+    })
+})
+
+test("a progress file is refused whole when an entry is not a set's own, or the file is past the sets kept", () => {
+    const ok = { key: "4A", done: ["4A"], at: 1 }
+    const refused = [
+        "", "junk", "[]", "null", "42", "{}", "{\"ticks\":\"x\"}", "{\"sets\":\"x\"}",
+        JSON.stringify({ sets: ["4a"] }), JSON.stringify({ sets: ["4A", "junk"] }),
+        JSON.stringify({ ticks: [{ key: "4A", done: ["1B"], at: 1 }] }),
+        JSON.stringify({ ticks: [{ key: "4A", done: ["4A", "4A"], at: 1 }] }),
+        JSON.stringify({ ticks: [{ key: "4A", done: ["4A"], at: "soon" }] }),
+        JSON.stringify({ ticks: [{ key: "4A", done: "4A", at: 1 }] }),
+        JSON.stringify({ ticks: [{ key: "4A", done: [], at: 1 }, ok, { key: "4A", done: ["x"], at: 1 }] }),
+        JSON.stringify({ sets: Array.from({ length: KEPT_SETS + 1 }, (_, i) => `${i + 1}A`) }),
+    ]
+    for (const text of refused) assert.equal(unpackProgress(text), null, text)
+    assert.deepEqual(unpackProgress(JSON.stringify({ sets: ["4A"] })), { ticks: [], sets: ["4A"] })
+    assert.deepEqual(unpackProgress(JSON.stringify({ ticks: [ok] })), { ticks: [ok], sets: [] })
+})
+
+test("a merge that does not fit keeps the most recently ticked sets and counts the ones left out", () => {
+    const local = { ticks: Array.from({ length: KEPT_SETS }, (_, i) => ({ key: `${i + 1}A`, done: [], at: 1000 + i })), sets: [] }
+    const incoming = { ticks: [{ key: "5B", done: ["5B"], at: 2000 }], sets: [] }
+    const merged = mergeProgress(local, incoming)
+    assert.equal(merged.ticks.length, KEPT_SETS)
+    assert.equal(merged.ticks[0].key, "5B")
+    assert.equal(merged.left, 1, "the oldest set does not fit")
+    assert.ok(!merged.ticks.some((entry) => entry.key === "1A"))
 })
 
 test("a session's limit is whole minutes from 1 to 600, and anything else is no limit", () => {

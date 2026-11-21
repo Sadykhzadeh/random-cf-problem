@@ -16,9 +16,13 @@ import {
     followSession,
     idKey,
     mergeTicks,
+    mergeProgress,
     newSession,
+    KEPT_SETS,
+    PROGRESS_MAX_BYTES,
     adoptPause,
     pauseTime,
+    progressText,
     pickSession,
     resumeTime,
     storesSession,
@@ -28,6 +32,7 @@ import {
     sessionLength,
     setMarkdown,
     ticksOf,
+    unpackProgress,
     unpackRecentSets,
     unpackTicks,
     unseenOf,
@@ -59,8 +64,10 @@ const everyTick = () => readTicks().flatMap((entry) => entry.done)
 function writeTicks(entries) {
     try {
         localStorage.setItem(TICKS_KEY, JSON.stringify(entries))
+        return true
     } catch {
         // Remembering the ticks is a convenience, not a requirement.
+        return false
     }
 }
 
@@ -99,8 +106,10 @@ function readRecentSets() {
 function writeRecentSets(keys) {
     try {
         localStorage.setItem(RECENT_SETS_KEY, JSON.stringify(keys))
+        return true
     } catch {
         // The list is a convenience, not a requirement.
+        return false
     }
 }
 
@@ -142,6 +151,53 @@ export const mountPractice = (host) => {
     // The set is kept at the front of the recent sets when it is built or
     // opened; `replaces` is the address the set has moved away from.
     const keepSet = (key, replaces) => writeRecentSets(withRecentSet(readRecentSets(), key, replaces))
+
+    // The progress is kept in this browser only, so it can be saved to a file
+    // and loaded in another browser.
+    const progressLine = document.createElement("p")
+    const saveProgress = document.createElement("button")
+    saveProgress.type = "button"
+    saveProgress.textContent = messages.saveProgress
+    const loadProgress = document.createElement("button")
+    loadProgress.type = "button"
+    loadProgress.textContent = messages.loadProgress
+    const progressFile = document.createElement("input")
+    progressFile.type = "file"
+    progressFile.accept = "application/json,.json"
+    progressFile.hidden = true
+    progressLine.append(saveProgress, " ", loadProgress, progressFile)
+    byId("practice").append(progressLine)
+
+    saveProgress.addEventListener("click", () => {
+        const url = URL.createObjectURL(new Blob([progressText(readTicks(), readRecentSets())], { type: "application/json" }))
+        const link = document.createElement("a")
+        link.href = url
+        link.download = "random-cf-problem-practice.json"
+        link.click()
+        setTimeout(() => URL.revokeObjectURL(url), 1000)
+    })
+
+    loadProgress.addEventListener("click", () => progressFile.click())
+
+    progressFile.addEventListener("change", async () => {
+        const file = progressFile.files[0]
+        progressFile.value = ""
+        if (!file) return
+        const incoming = file.size > PROGRESS_MAX_BYTES ? null : unpackProgress(await file.text().catch(() => ""))
+        if (!incoming) {
+            byId("setStatus").textContent = messages.progressBad
+            return
+        }
+        const merged = mergeProgress({ ticks: readTicks(), sets: readRecentSets() }, incoming)
+        if (!writeTicks(merged.ticks) || !writeRecentSets(merged.sets)) {
+            byId("setStatus").textContent = messages.progressNotSaved
+            return
+        }
+        const note = merged.left
+            ? fill(countText(messages, "progressLeft", merged.left, host.lang), { count: KEPT_SETS, left: merged.left })
+            : messages.progressLoaded
+        render(note)
+    })
 
     function showRecentSets() {
         const keys = readRecentSets()

@@ -60,7 +60,8 @@ skipping the ones you have already solved.
   box are in the address too, so the link brings back the form as well as the
   set. The last twenty sets built or opened are listed under the set, each with
   how many of its problems are done, and Open brings one back; the list is kept
-  in this browser only.
+  in this browser only. "Save progress" downloads the ticks and those sets as a
+  JSON file, and "Load progress" merges such a file into this browser.
 - "Skip problems from my history" (on by default) leaves out the problems drawn
   lately and the ones ticked done in any set when a set is built.
 - Ticks the problems of a set as done, kept per set in the browser; "Check

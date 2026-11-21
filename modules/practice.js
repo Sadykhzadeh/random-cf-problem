@@ -163,6 +163,64 @@ export const unpackRecentSets = (stored) => {
         .slice(0, KEPT_SETS)
 }
 
+// The practice progress as a file's text: the ticks of every set and the sets
+// lately built or opened.
+export const progressText = (ticks, sets) => JSON.stringify({ ticks, sets })
+
+// The largest progress file that is read.
+export const PROGRESS_MAX_BYTES = 1024 * 1024
+
+// Whether `key` is a set's address written the way encodeSet writes it.
+const isSetKey = (key) => typeof key === "string" && key !== "" && encodeSet(decodeSet(key)) === key
+
+// A file's tick entry, which must name a set and tick only problems of that set,
+// each once, with a time.
+const isTickEntry = (entry) => {
+    if (!entry || typeof entry !== "object" || !isSetKey(entry.key) || !Number.isFinite(entry.at) || !Array.isArray(entry.done)) return false
+    const ids = decodeSet(entry.key).map(idKey)
+    return new Set(entry.done).size === entry.done.length && entry.done.length <= ids.length &&
+        entry.done.every((id) => ids.includes(id))
+}
+
+// The progress a file holds, or null when the text is not one. Strict: a file
+// with any entry that does not read as a set's, or more sets than are kept, is
+// refused whole.
+export const unpackProgress = (text) => {
+    let data
+    try {
+        data = JSON.parse(text)
+    } catch {
+        return null
+    }
+    if (!data || typeof data !== "object" || Array.isArray(data)) return null
+    const hasTicks = Array.isArray(data.ticks)
+    const hasSets = Array.isArray(data.sets)
+    if (!hasTicks && !hasSets) return null
+    if (("ticks" in data && !hasTicks) || ("sets" in data && !hasSets)) return null
+    const ticks = hasTicks ? data.ticks : []
+    const sets = hasSets ? data.sets : []
+    if (ticks.length > KEPT_SETS || sets.length > KEPT_SETS) return null
+    if (!ticks.every(isTickEntry) || !sets.every(isSetKey)) return null
+    return { ticks: ticks.map((entry) => ({ key: entry.key, done: [...entry.done], at: entry.at })), sets: [...sets] }
+}
+
+// The progress of this browser with a file's merged in. The ticks of at most
+// KEPT_SETS sets are kept, the most recently ticked first, as storage keeps them;
+// `left` counts the sets that did not fit. The lists of recent sets keep this
+// browser's first.
+export const mergeProgress = (local, incoming) => {
+    const ticks = incoming.ticks.reduce((entries, entry) => {
+        const own = entries.find((other) => other.key === entry.key)
+        return withTicks(entries, entry.key, mergeTicks(own?.done ?? [], entry.done), Math.max(entry.at, own?.at ?? 0))
+    }, local.ticks)
+    const keys = new Set([...local.ticks, ...incoming.ticks].map((entry) => entry.key))
+    return {
+        ticks,
+        sets: [...new Set([...local.sets, ...incoming.sets])].slice(0, KEPT_SETS),
+        left: keys.size - ticks.length,
+    }
+}
+
 // A timed session on a set: the limit is kept with the time spent so far. The
 // time spent grows by the wall-clock time since the last update, so the time
 // left never grows back, even when the clock is set back.
