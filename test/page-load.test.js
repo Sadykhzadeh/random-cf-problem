@@ -96,7 +96,7 @@ const loadPage = async (search, remembered = {}) => {
     console.error = (...args) => logged.push(args.map(String).join(" "))
     try {
         await import(`../script.js?page=${encodeURIComponent(page)}`)
-        await new Promise((resolve) => setTimeout(resolve, 300))
+        await new Promise((resolve) => setImmediate(resolve))
     } finally {
         process.off("unhandledRejection", onRejection)
         console.error = logError
