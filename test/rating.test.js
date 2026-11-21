@@ -1,7 +1,7 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 
-import { RATING_FRESH_FOR, ratingRange, readRating } from "../modules/skip.js"
+import { RATING_FRESH_FOR, applyRating, ratingRange, readRating } from "../modules/skip.js"
 
 test("the range runs from a hundred below the rating to three hundred above, rounded to hundreds", () => {
     assert.deepEqual(ratingRange(1500), { min: 1400, max: 1800 })
@@ -53,4 +53,52 @@ test("an old copy is asked for again, and a failed answer is reported as a failu
     assert.equal(await readRating("x", { request: answer([{ rating: 1200 }]), cache, key: "k", failure, now }), 1200)
     const bad = async () => ({ response: { ok: false, status: 400 }, json: { status: "FAILED", comment: "no such user" } })
     await assert.rejects(readRating("zz", { request: bad, cache: null, key: "z", failure }), /no such user/)
+})
+
+test("use my rating sets the range and says which rating it used, or that the handle is unrated", async () => {
+    const text = {
+        ratingUsed: "{handle} is rated {rating}: the range is now {min} to {max}.",
+        ratingUnrated: "{handle} is unrated: the range is now {min} to {max}.",
+    }
+    const ranges = []
+    const said = []
+    const run = (result) => applyRating({
+        handle: "tourist",
+        request: answer(result),
+        cache: null,
+        key: "k",
+        failure,
+        text,
+        setRange: (min, max) => ranges.push([min, max]),
+        say: (message) => said.push(message),
+        fail: (error) => said.push(`failed: ${error.message}`),
+    })
+    await run([{ handle: "tourist", rating: 1500 }])
+    await run([{ handle: "tourist" }])
+    assert.deepEqual(ranges, [[1400, 1800], [800, 1200]])
+    assert.deepEqual(said, [
+        "tourist is rated 1500: the range is now 1400 to 1800.",
+        "tourist is unrated: the range is now 800 to 1200.",
+    ])
+})
+
+test("use my rating leaves the range alone when Codeforces refuses the handle", async () => {
+    const ranges = []
+    const said = []
+    const failed = []
+    const refused = async () => ({ response: { ok: false, status: 400 }, json: { status: "FAILED", comment: "handle: Field should contain between 3 and 24 characters" } })
+    await applyRating({
+        handle: "ab",
+        request: refused,
+        cache: null,
+        key: "k",
+        failure: (response, json) => new Error(json.comment),
+        text: {},
+        setRange: (min, max) => ranges.push([min, max]),
+        say: (message) => said.push(message),
+        fail: (error) => failed.push(error.message),
+    })
+    assert.deepEqual(ranges, [], "no range is set")
+    assert.deepEqual(said, [], "no message is said")
+    assert.deepEqual(failed, ["handle: Field should contain between 3 and 24 characters"], "the reason is reported as a failure")
 })
