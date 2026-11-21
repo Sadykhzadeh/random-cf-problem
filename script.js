@@ -28,6 +28,7 @@ import {
     unpackHistory,
     unpackRound,
     problemKey,
+    problemLabel,
     fetchApi,
     problemUrl,
     rankClass,
@@ -793,7 +794,7 @@ function problemLink(problem) {
     // A _blank target without noopener hands the opened page a handle back
     // to this one.
     link.rel = "noopener noreferrer"
-    link.textContent = `${problem.contestId}${problem.index}. ${problem.name}`
+    link.textContent = problemTitle(problem)
     // Sighted users see the new tab; a screen reader is told as well.
     const newTab = document.createElement("span")
     newTab.className = "visually-hidden"
@@ -879,7 +880,7 @@ byId("shareLink").addEventListener("click", () => {
 })
 
 function problemTitle(problem) {
-    return `${problem.contestId}${problem.index}. ${problem.name}`
+    return `${problemLabel(problem)}. ${problem.name}`
 }
 
 byId("copyLink").addEventListener("click", async () => {

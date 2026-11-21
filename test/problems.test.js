@@ -19,6 +19,7 @@ import {
     isTimeout,
     pickOne,
     problemKey,
+    problemLabel,
     problemUrl,
     rankClass,
     unpackHistory,
@@ -502,6 +503,13 @@ test("the history copies as a Markdown task list, ticked where solved", () => {
         "- [ ] [4A. Watermelon](https://codeforces.com/problemset/problem/4/A) (unrated)",
     ].join("\n"))
     assert.equal(historyMarkdown([]), "")
+})
+
+test("a numbered index is written with a dash, as in the practice set's address", () => {
+    assert.equal(problemLabel({ contestId: 1520, index: "F2" }), "1520F2")
+    assert.equal(problemLabel({ contestId: 921, index: "14" }), "921-14", "92114 would read as contest 92114")
+    assert.equal(historyMarkdown([{ contestId: 921, index: "14", name: "Labyrinth", rating: 1700, at: 1, done: false }]),
+        "- [ ] [921-14. Labyrinth](https://codeforces.com/problemset/problem/921/14) (1700)")
 })
 
 test("a history read back from storage keeps the draws and forgets what is not one", () => {

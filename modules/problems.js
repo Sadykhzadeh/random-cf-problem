@@ -118,6 +118,7 @@ export const isStale = (savedAt, now, maxAge) => now - savedAt > maxAge || saved
 
 // The page of a problem in the problemset, as Codeforces addresses it.
 export const problemUrl = (problem) => `https://codeforces.com/problemset/problem/${problem.contestId}/${problem.index}`
+export const problemLabel = (p) => `${p.contestId}${p.index.replace(/^\d+$/, "-$&")}`
 
 // Which Codeforces rank colour a rating is shown in.
 export const rankClass = (rating) => {
@@ -174,7 +175,7 @@ export const removeDraw = (history, problem) =>
 // has solved it. Brackets and emphasis characters in a name are escaped.
 export const historyMarkdown = (history) => history.map((entry) => {
     const name = entry.name.replace(/[\\[\]*_`]/g, "\\$&")
-    return `- [${entry.done ? "x" : " "}] [${entry.contestId}${entry.index}. ${name}](${problemUrl(entry)}) (${entry.rating ?? "unrated"})`
+    return `- [${entry.done ? "x" : " "}] [${problemLabel(entry)}. ${name}](${problemUrl(entry)}) (${entry.rating ?? "unrated"})`
 }).join("\n")
 
 // A history read back from storage: anything that is not a draw is dropped,

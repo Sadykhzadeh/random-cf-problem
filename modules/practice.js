@@ -2,7 +2,7 @@
 // no two from the same contest. A set is shared as the ids of its problems, so
 // its link brings back exactly the same problems, whatever the list says now.
 
-import { problemKey, problemUrl } from "./problems.js"
+import { problemKey, problemLabel, problemUrl } from "./problems.js"
 
 // Sets are kept to this many problems, in the page and in an address.
 export const MAX_SET = 20
@@ -58,10 +58,8 @@ export const replacementOf = (pool, set, replaced, random = Math.random) => {
 // A problem's id as an address writes it: the contest number and the letter,
 // such as 1520F2. A numbered index, as the Labyrinth round of contest 921 has
 // them, is joined by a dash, since 92114 would read as contest 92114.
-const idText = (id) => /^\d+$/.test(id.index) ? `${id.contestId}-${id.index}` : `${id.contestId}${id.index}`
-
 // The ids of a set as they go in an address, comma-separated, such as 1520F2,4A.
-export const encodeSet = (ids) => ids.map(idText).join(",")
+export const encodeSet = (ids) => ids.map(problemLabel).join(",")
 
 // The ids read back from an address. Anything that is not an id is skipped, an
 // id given twice is kept once, and no more than MAX_SET are kept. The letter is
@@ -109,7 +107,7 @@ export const KEPT_SETS = 20
 
 // A problem's id as the set's address writes it, and the same key as the
 // problemset keeps it under (contest and index, as problemKey writes them).
-export const idKey = (id) => idText(id)
+export const idKey = (id) => problemLabel(id)
 export const solvedKey = (id) => `${id.contestId}|${id.index}`
 
 // The problems of a set that are ticked, in the set's order.

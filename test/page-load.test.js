@@ -13,6 +13,7 @@ const problemset = {
             { contestId: 4, index: "A", name: "Watermelon", rating: 800, tags: ["math"] },
             { contestId: 10, index: "B", name: "Mid", rating: 1500, tags: ["dp"] },
             { contestId: 1520, index: "F2", name: "Guess", rating: 2200, tags: ["binary search"] },
+            { contestId: 921, index: "14", name: "Labyrinth", rating: 1700, tags: ["implementation"] },
         ],
         problemStatistics: [],
     },
@@ -120,6 +121,13 @@ test("a visit with saved draws shows the last one again, once the list is in", a
     assert.deepEqual(logged.filter(isScriptError), [])
     const [link] = byId("name").children ?? []
     assert.match(String(link?.textContent), /Mid/, "the card shows the last draw")
+})
+
+test("a numbered problem is named with a dash on the card, as in the practice set's list", async () => {
+    const recent = JSON.stringify([{ contestId: 921, index: "14", name: "Labyrinth", rating: 1700, at: 1 }])
+    await loadPage("", { "random-cf-problem:recent": recent })
+    const [link] = byId("name").children ?? []
+    assert.equal(link?.textContent, "921-14. Labyrinth")
 })
 
 test("a link with daily=1 shows the problem of the day, marked with its date", async () => {
