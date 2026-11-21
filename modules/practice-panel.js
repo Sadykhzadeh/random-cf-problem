@@ -17,9 +17,13 @@ import {
     idKey,
     mergeTicks,
     newSession,
+    adoptPause,
+    pauseTime,
     pickSession,
+    resumeTime,
     storesSession,
     replacementOf,
+    timeLeft,
     resolveSet,
     sessionLength,
     setMarkdown,
@@ -116,6 +120,7 @@ export const mountPractice = (host) => {
     // there is one; `stopTimer` stops the one running.
     let stopTimer = null
     let timedKey = null
+    let activeSession = null
 
     // The set's key in the ticks is its address form, so the same set has
     // the same ticks however it was opened.
@@ -179,26 +184,58 @@ export const mountPractice = (host) => {
     const pageTitle = document.title
     const showTitle = (clock) => { document.title = clock ? `${clock} · ${pageTitle}` : pageTitle }
 
+    const clockLine = (left, paused) => fill(messages[paused ? "pausedClock" : "timeLeft"], { clock: clockText(left) })
+
+    // The button stops the clock of the session on screen and starts it again;
+    // it is there only while a session is.
+    const pauseButton = document.createElement("button")
+    pauseButton.type = "button"
+    pauseButton.hidden = true
+    pauseButton.addEventListener("click", () => {
+        const session = activeSession
+        if (!session) return
+        adoptPause(session, readSession(), Date.now())
+        if (session.paused) resumeTime(session, Date.now())
+        else pauseTime(session, Date.now())
+        if (storesSession(readSession(), session)) writeSession(session)
+        byId("sessionClock").textContent = clockLine(timeLeft(session), session.paused)
+        byId("sessionStatus").textContent = messages[session.paused ? "timerPaused" : "timerResumed"]
+        showPause()
+    })
+    byId("sessionLine").append(" ", pauseButton)
+
+    function showPause() {
+        pauseButton.hidden = !activeSession || timeLeft(activeSession) === 0
+        pauseButton.textContent = messages[activeSession?.paused ? "resumeTimer" : "pauseTimer"]
+    }
+
     function follow(session) {
         stopTimer?.()
         timedKey = session.key
+        activeSession = session
         stopTimer = followSession(session, {
             now: Date.now,
             schedule: (fn, ms) => setInterval(fn, ms),
             unschedule: clearInterval,
             // The clock is not a live region: it changes every second. Only the
             // moments that are reached are read out, once each.
-            show: (left) => {
-                byId("sessionClock").textContent = fill(messages.timeLeft, { clock: clockText(left) })
+            // Another tab may have paused or resumed the same session since the
+            // last tick, so its pause is taken over before the clock is shown.
+            show: () => {
+                adoptPause(session, readSession(), Date.now())
+                const left = timeLeft(session)
+                byId("sessionClock").textContent = clockLine(left, session.paused)
                 showTitle(left > 0 ? clockText(left) : "")
                 if (storesSession(readSession(), session)) writeSession(session)
             },
             announce: (mark) => {
                 byId("sessionStatus").textContent = messages[notice[mark]]
                 if (storesSession(readSession(), session)) writeSession(session)
+                showPause()
             },
         })
         writeSession(session)
+        showPause()
     }
 
     // The session of the set on screen goes on where it was, if it has not
@@ -211,8 +248,10 @@ export const mountPractice = (host) => {
             stopTimer?.()
             stopTimer = null
             timedKey = null
+            activeSession = null
             byId("sessionClock").textContent = ""
             showTitle("")
+            showPause()
             if (stored) writeSession(null)
             return
         }

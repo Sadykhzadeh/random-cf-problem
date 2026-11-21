@@ -71,7 +71,8 @@ skipping the ones you have already solved.
 - A time limit in minutes starts a timer on the set: the time spent is kept, so
   the countdown survives a reload and a clock set back does not give time
   back. The time left is in the tab's title, and "Time is up" is read out
-  once.
+  once. Pause stops the countdown and Resume starts it again; the time paused
+  is not spent.
 - Remembers the settings, and keeps them in the address so a link
   reproduces them.
 - `R`, Space or Enter draws again (outside a field and outside buttons and

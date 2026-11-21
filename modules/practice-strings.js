@@ -29,6 +29,11 @@ export const practiceMessages = {
         recentSets: "Recent sets",
         openSet: "Open",
         openSetBox: "Open the set {ids}",
+        pauseTimer: "Pause timer",
+        resumeTimer: "Resume timer",
+        pausedClock: "Paused, {clock} left",
+        timerPaused: "Timer paused.",
+        timerResumed: "Timer resumed.",
     },
     ru: {
         timeLeft: "Осталось {clock}",
@@ -61,5 +66,10 @@ export const practiceMessages = {
         recentSets: "Недавние наборы",
         openSet: "Открыть",
         openSetBox: "Открыть набор {ids}",
+        pauseTimer: "Пауза",
+        resumeTimer: "Продолжить",
+        pausedClock: "На паузе, осталось {clock}",
+        timerPaused: "Таймер на паузе.",
+        timerResumed: "Таймер снова идёт.",
     },
 }

@@ -29,6 +29,9 @@ import {
     passedMarks,
     pickSession,
     spendTime,
+    adoptPause,
+    pauseTime,
+    resumeTime,
     storesSession,
     unpackSession,
     timeLeft,
@@ -251,7 +254,7 @@ test("the clock reads mm:ss and rounds a part second up", () => {
 
 test("a session belongs to one set, and what is stored is read back only when it is one", () => {
     const session = newSession("1520F2,4A", 1000, 2)
-    assert.deepEqual(session, { key: "1520F2,4A", started: 1000, limit: 120000, spent: 0, seen: 1000, said: [] })
+    assert.deepEqual(session, { key: "1520F2,4A", started: 1000, limit: 120000, spent: 0, seen: 1000, said: [], paused: false })
     assert.deepEqual(pickSession(JSON.parse(JSON.stringify(session)), "1520F2,4A", 5000), session)
     assert.equal(pickSession(JSON.parse(JSON.stringify(session)), "4A", 5000), null, "another set")
     assert.equal(pickSession({ key: "x", started: 1, limit: "soon", spent: 0, seen: 1, said: [] }, "x", 5000), null)
@@ -262,8 +265,8 @@ test("a session belongs to one set, and what is stored is read back only when it
 
 test("a session stored with a deadline keeps the time it had left, and one past its deadline has none", () => {
     const stored = JSON.parse(JSON.stringify({ key: "k", deadline: 1000 + 120000, said: ["five"] }))
-    assert.deepEqual(pickSession(stored, "k", 1000 + 30000), { key: "k", started: 31000, limit: 90000, spent: 0, seen: 31000, said: ["five"] })
-    assert.deepEqual(pickSession(stored, "k", 1000 + 200000), { key: "k", started: 201000, limit: 0, spent: 0, seen: 201000, said: ["five"] })
+    assert.deepEqual(pickSession(stored, "k", 1000 + 30000), { key: "k", started: 31000, limit: 90000, spent: 0, seen: 31000, said: ["five"], paused: false })
+    assert.deepEqual(pickSession(stored, "k", 1000 + 200000), { key: "k", started: 201000, limit: 0, spent: 0, seen: 201000, said: ["five"], paused: false })
 })
 
 test("time spent counts from the last update, and a clock set back spends nothing", () => {
@@ -356,6 +359,53 @@ test("stored time spent is kept between zero and the limit", () => {
     assert.equal(unpackSession({ ...base, spent: -5000 }, 0).spent, 0)
     assert.equal(unpackSession({ ...base, spent: 90000 }, 0).spent, 60000)
     assert.equal(unpackSession({ ...base, spent: 20000 }, 0).spent, 20000)
+})
+
+test("a paused session spends nothing until it is resumed, and the stored pause is read back", () => {
+    const session = newSession("k", 0, 10)
+    pauseTime(session, 60000)
+    spendTime(session, 600000)
+    assert.equal(timeLeft(session), 540000, "nine minutes paused cost nothing")
+    assert.equal(unpackSession(JSON.parse(JSON.stringify(session)), 0).paused, true)
+    resumeTime(session, 600000)
+    spendTime(session, 660000)
+    assert.equal(timeLeft(session), 480000)
+    assert.equal(unpackSession(JSON.parse(JSON.stringify(session)), 0).paused, false)
+})
+
+test("a tab takes over the pause another tab put on its session, and the paused time is not spent", () => {
+    const mine = newSession("k", 0, 10)
+    spendTime(mine, 60000)
+    adoptPause(mine, { ...JSON.parse(JSON.stringify(mine)), paused: true }, 60000)
+    assert.equal(mine.paused, true)
+    spendTime(mine, 600000)
+    assert.equal(timeLeft(mine), 540000, "nine minutes paused in the other tab cost nothing here")
+    adoptPause(mine, { ...JSON.parse(JSON.stringify(mine)), paused: false }, 600000)
+    assert.equal(mine.paused, false)
+    spendTime(mine, 660000)
+    assert.equal(timeLeft(mine), 480000)
+    adoptPause(mine, { ...JSON.parse(JSON.stringify(mine)), key: "other", started: 5, paused: true }, 700000)
+    assert.equal(mine.paused, false, "another session's pause is not taken")
+})
+
+test("a paused session shows the same time left until it is resumed", () => {
+    const clock = clockAndTimers()
+    const session = newSession("k", clock.now(), 5)
+    const shown = []
+    followSession(session, {
+        now: clock.now, schedule: clock.schedule, unschedule: clock.unschedule,
+        show: (left) => shown.push(clockText(left)), announce: () => {},
+    })
+    clock.state.now = 60000
+    clock.fire()
+    pauseTime(session, clock.now())
+    clock.state.now = 180000
+    clock.fire()
+    assert.deepEqual(shown, ["05:00", "04:00", "04:00"])
+    resumeTime(session, clock.now())
+    clock.state.now = 240000
+    clock.fire()
+    assert.equal(shown.at(-1), "03:00")
 })
 
 test("a clock set back while a session runs does not show more time than the limit", () => {

@@ -177,7 +177,7 @@ export const sessionLength = (raw) => {
 // The session started at `now` (ms) for the set `key`. `said` lists the
 // moments of it that have been read out, so each is read once however often
 // the page opens.
-export const newSession = (key, now, minutes) => ({ key, started: now, limit: minutes * 60000, spent: 0, seen: now, said: [] })
+export const newSession = (key, now, minutes) => ({ key, started: now, limit: minutes * 60000, spent: 0, seen: now, said: [], paused: false })
 
 // A session read back from storage, or null when what is stored is not one.
 // Time spent is kept within the limit. A session holding a deadline in place
@@ -188,10 +188,10 @@ export const unpackSession = (stored, now) => {
     if ([stored.started, stored.limit, stored.spent, stored.seen].every(Number.isFinite)) {
         const limit = Math.max(0, stored.limit)
         const spent = Math.min(limit, Math.max(0, stored.spent))
-        return { key: stored.key, started: stored.started, limit, spent, seen: stored.seen, said }
+        return { key: stored.key, started: stored.started, limit, spent, seen: stored.seen, said, paused: stored.paused === true }
     }
     if (Number.isFinite(stored.deadline)) {
-        return { key: stored.key, started: now, limit: Math.max(0, stored.deadline - now), spent: 0, seen: now, said }
+        return { key: stored.key, started: now, limit: Math.max(0, stored.deadline - now), spent: 0, seen: now, said, paused: false }
     }
     return null
 }
@@ -203,10 +203,23 @@ export const pickSession = (stored, key, now) => {
 }
 
 // Moves the session's clock on to `now`. A clock set back spends nothing, and
-// the time after it counts from the new clock.
+// the time after it counts from the new clock; so does a paused session, which
+// spends nothing until it is resumed.
 export const spendTime = (session, now) => {
-    session.spent = Math.min(session.limit, session.spent + Math.max(0, now - session.seen))
+    if (!session.paused) session.spent = Math.min(session.limit, session.spent + Math.max(0, now - session.seen))
     session.seen = now
+}
+
+// Stops the session's clock at `now`. The time until it is resumed is not spent.
+export const pauseTime = (session, now) => {
+    spendTime(session, now)
+    session.paused = true
+}
+
+// Starts the session's clock again at `now`, with nothing spent while it was paused.
+export const resumeTime = (session, now) => {
+    spendTime(session, now)
+    session.paused = false
 }
 
 export const timeLeft = (session) => Math.max(0, session.limit - session.spent)
@@ -214,6 +227,16 @@ export const timeLeft = (session) => Math.max(0, session.limit - session.spent)
 // Whether what storage holds is `session` itself. A tab writes its session only
 // while this holds, so a session another tab started in its place is kept.
 export const storesSession = (stored, session) => stored?.started === session.started
+
+// Takes over the pause that another tab has put on the session stored, from
+// `now`, so the time spent here follows it. A stored session that is not this
+// one, or is paused the same way, changes nothing.
+export const adoptPause = (session, stored, now) => {
+    if (!storesSession(stored, session) || Boolean(stored.paused) === session.paused) return session
+    if (stored.paused) pauseTime(session, now)
+    else resumeTime(session, now)
+    return session
+}
 
 // mm:ss, rounding a part second up so the display reads 00:01 until it is over.
 export const clockText = (ms) => {
