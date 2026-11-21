@@ -1,6 +1,8 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 
+import strings from "../modules/strings-en.js"
+
 // Loads script.js the way a browser does, against a small stub of the page, and
 // asserts that the start of the page throws nothing. A call made at the top of
 // the script that reaches a binding declared further down fails here with a
@@ -20,6 +22,9 @@ const problemset = {
 }
 
 const elements = new Map()
+
+// Set while a test has the problemset call fail to reach Codeforces.
+let listUnreachable = false
 
 // Any element: properties are kept as set, and anything else answers with a
 // harmless default, so the script's DOM use does not need a real page.
@@ -75,6 +80,7 @@ const installStubs = (search, remembered = {}) => {
         activeElement: makeElement("body"),
     })
     set("fetch", async (url) => {
+        if (listUnreachable && String(url).includes("problemset.problems")) throw new TypeError("Failed to fetch")
         const answer = String(url).includes("problemset.problems") ? problemset : { status: "FAILED", comment: "stub" }
         return new Response(JSON.stringify(answer), { status: answer.status === "OK" ? 200 : 400 })
     })
@@ -134,4 +140,22 @@ test("a link with daily=1 shows the problem of the day, marked with its date", a
     await loadPage("?daily=1")
     assert.equal(byId("dailyMark").hidden, false)
     assert.match(byId("dailyMark").textContent, /^Today's problem, \d{4}-\d{2}-\d{2} · Streak: 1 day in a row\.$/)
+})
+
+const until = async (done, attempts = 400) => {
+    for (let i = 0; i < attempts && !done(); i++) await new Promise((resolve) => setTimeout(resolve, 10))
+}
+
+test("a set opened from an address says why it is not shown when the list cannot load", async () => {
+    listUnreachable = true
+    try {
+        const { raised, logged } = await loadPage("?set=1520F2,4A")
+        // The list is asked for again after the page's two-second gap, so the failure comes late.
+        await until(() => byId("setStatus").textContent === strings.networkError)
+        assert.deepEqual(raised.map(String), [], "no unhandled rejection")
+        assert.deepEqual(logged.filter(isScriptError), [], "no error from the script")
+        assert.equal(byId("setStatus").textContent, strings.networkError)
+    } finally {
+        listUnreachable = false
+    }
 })

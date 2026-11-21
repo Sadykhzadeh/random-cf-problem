@@ -497,5 +497,13 @@ export const mountPractice = (host) => {
 
     if (setIds.length) keepSet(encodeSet(setIds))
     render()
+    // A set opened from an address waits for the list as a build does, so a
+    // list that cannot load is said here rather than leaving the set blank.
+    if (setIds.length && !host.problems()) {
+        host.prepare((message) => { byId("setStatus").textContent = message }).catch((error) => {
+            console.error(error)
+            byId("setStatus").textContent = host.errorText(error)
+        })
+    }
     return { build, render, showControls }
 }
