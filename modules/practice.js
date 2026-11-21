@@ -83,11 +83,15 @@ export const decodeSet = (text) => {
 // The problems the ids name, in order, and the ids that no problem in the list
 // has any more.
 export const resolveSet = (problems, ids) => {
-    const byKey = new Map(problems.map((problem) => [problemKey(problem), problem]))
+    const byContest = new Map()
+    for (const problem of problems) {
+        if (!byContest.has(problem.contestId)) byContest.set(problem.contestId, new Map())
+        byContest.get(problem.contestId).set(problem.index, problem)
+    }
     const found = []
     const missing = []
     for (const id of ids) {
-        const problem = byKey.get(`${id.contestId}|${id.index}`)
+        const problem = byContest.get(id.contestId)?.get(id.index)
         if (problem) found.push(problem)
         else missing.push(id)
     }
