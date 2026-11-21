@@ -210,19 +210,17 @@ export const unpackProgress = (text) => {
 
 // The progress of this browser with a file's merged in. The ticks of at most
 // KEPT_SETS sets are kept, the most recently ticked first, as storage keeps them;
-// `left` counts the sets that did not fit. The lists of recent sets keep this
-// browser's first.
+// the lists of recent sets keep this browser's first. `left` counts the sets of
+// either list that did not fit.
 export const mergeProgress = (local, incoming) => {
     const ticks = incoming.ticks.reduce((entries, entry) => {
         const own = entries.find((other) => other.key === entry.key)
         return withTicks(entries, entry.key, mergeTicks(own?.done ?? [], entry.done), Math.max(entry.at, own?.at ?? 0))
     }, local.ticks)
-    const keys = new Set([...local.ticks, ...incoming.ticks].map((entry) => entry.key))
-    return {
-        ticks,
-        sets: [...new Set([...local.sets, ...incoming.sets])].slice(0, KEPT_SETS),
-        left: keys.size - ticks.length,
-    }
+    const sets = [...new Set([...local.sets, ...incoming.sets])].slice(0, KEPT_SETS)
+    const all = new Set([...local.ticks, ...incoming.ticks].map((entry) => entry.key).concat(local.sets, incoming.sets))
+    const kept = new Set([...ticks.map((entry) => entry.key), ...sets])
+    return { ticks, sets, left: all.size - kept.size }
 }
 
 // A timed session on a set: the limit is kept with the time spent so far. The

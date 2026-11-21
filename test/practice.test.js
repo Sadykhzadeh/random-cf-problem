@@ -283,6 +283,19 @@ test("a merge that does not fit keeps the most recently ticked sets and counts t
     assert.ok(!merged.ticks.some((entry) => entry.key === "1A"))
 })
 
+test("a merge counts the recent sets it drops, not only the ticked ones", () => {
+    const local = { ticks: [], sets: Array.from({ length: KEPT_SETS }, (_, i) => `${i + 1}A`) }
+    const incoming = { ticks: [], sets: ["9001A", "9002A"] }
+    const merged = mergeProgress(local, incoming)
+    assert.equal(merged.left, 2, "the two recent sets that do not fit are counted")
+    assert.equal(merged.sets.length, KEPT_SETS)
+    assert.ok(!merged.sets.includes("9001A"))
+    // A set named in both lists is counted once, not twice.
+    const both = mergeProgress({ ticks: [{ key: "1A", done: ["1A"], at: 1 }], sets: ["1A"] },
+        { ticks: [], sets: ["1A", "2A", "3A"] })
+    assert.equal(both.left, 0, "nothing is dropped")
+})
+
 test("a session's limit is whole minutes from 1 to 600, and anything else is no limit", () => {
     assert.equal(sessionLength("25"), 25)
     assert.equal(sessionLength("600"), 600)
