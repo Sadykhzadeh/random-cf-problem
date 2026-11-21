@@ -283,6 +283,9 @@ export const mountPractice = (host) => {
                 const left = timeLeft(session)
                 byId("sessionClock").textContent = clockLine(left, session.paused)
                 showTitle(left > 0 ? clockText(left) : "")
+                // A pause taken over from another tab also swaps the button's
+                // label, so it keeps saying what it does.
+                showPause()
                 if (storesSession(readSession(), session)) writeSession(session)
             },
             announce: (mark) => {
