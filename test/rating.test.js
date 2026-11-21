@@ -22,15 +22,23 @@ test("an unrated handle gets the range of a newcomer", () => {
     assert.deepEqual(ratingRange(undefined), { min: 800, max: 1200 })
 })
 
-// A cache held in memory, as the Cache API would hold it.
-const memoryCache = (entries = {}) => ({
-    async match(key) {
-        if (!(key in entries)) return undefined
-        return new Response(JSON.stringify(entries[key]), { headers: { "Content-Type": "application/json" } })
-    },
-    async put(key, response) { entries[key] = await response.json() },
-    entries,
-})
+// A cache held in memory, as the Cache API would hold it. Each write is kept in `writes`.
+const memoryCache = (entries = {}) => {
+    const writes = []
+    return {
+        async match(key) {
+            if (!(key in entries)) return undefined
+            return new Response(JSON.stringify(entries[key]), { headers: { "Content-Type": "application/json" } })
+        },
+        put(key, response) {
+            const write = response.json().then((value) => { entries[key] = value })
+            writes.push(write)
+            return write
+        },
+        entries,
+        writes,
+    }
+}
 
 const answer = (result) => async () => ({ response: { ok: true, status: 200 }, json: { status: "OK", result } })
 const failure = (response, json) => new Error(`failed: ${json?.comment ?? response.status}`)
@@ -41,7 +49,7 @@ test("a rating is asked for once and then kept, and an unrated handle keeps no r
     const cache = memoryCache()
     const io = { request, cache, key: "k", failure, now: () => 1000 }
     assert.equal(await readRating("x", io), 1500)
-    await new Promise((resolve) => setTimeout(resolve, 0))
+    await Promise.all(cache.writes)
     assert.equal(await readRating("x", io), 1500)
     assert.equal(asked, 1, "the second read comes from the copy")
     assert.equal(await readRating("y", { ...io, request: answer([{ handle: "y" }]), key: "k2" }), null, "unrated")
