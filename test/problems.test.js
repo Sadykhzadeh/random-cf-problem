@@ -511,10 +511,18 @@ test("a history read back from storage keeps the draws and forgets what is not o
         { contestId: 5, index: 7, name: "bad index" },
         null,
         { contestId: 6, index: "B", name: "No time", rating: "high", at: "not a time" },
+        { contestId: 7, index: "C", name: "Null time", at: null },
+        { contestId: 8, index: "D", name: "Flag time", at: true },
+        { contestId: 9, index: "E", name: "Too late", at: 1e20 },
+        { contestId: 10, index: "F", name: "Just past", at: 8.64e15 + 1 },
     ]
     assert.deepEqual(unpackHistory(stored), [
         { contestId: 4, index: "A", name: "Watermelon", rating: 800, at: 1700000000000, done: true },
         { contestId: 6, index: "B", name: "No time", rating: undefined, at: undefined, done: false },
+        { contestId: 7, index: "C", name: "Null time", rating: undefined, at: undefined, done: false },
+        { contestId: 8, index: "D", name: "Flag time", rating: undefined, at: undefined, done: false },
+        { contestId: 9, index: "E", name: "Too late", rating: undefined, at: undefined, done: false },
+        { contestId: 10, index: "F", name: "Just past", rating: undefined, at: undefined, done: false },
     ])
     assert.deepEqual(unpackHistory({ not: "a list" }), [])
     assert.equal(unpackHistory(Array.from({ length: 30 }, (_, i) => ({ contestId: i, index: "A", name: "x" }))).length, HISTORY_COUNT)

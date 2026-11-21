@@ -184,17 +184,14 @@ export const unpackHistory = (stored) => {
     return stored
         .filter((p) => p && Number.isFinite(p.contestId) && typeof p.index === "string" && typeof p.name === "string")
         .slice(0, HISTORY_COUNT)
-        .map((p) => {
-            const when = new Date(p.at).getTime()
-            return {
-                contestId: p.contestId,
-                index: p.index,
-                name: p.name,
-                rating: typeof p.rating === "number" ? p.rating : undefined,
-                at: Number.isFinite(when) ? when : undefined,
-                done: p.done === true,
-            }
-        })
+        .map((p) => ({
+            contestId: p.contestId,
+            index: p.index,
+            name: p.name,
+            rating: typeof p.rating === "number" ? p.rating : undefined,
+            at: typeof p.at === "number" && p.at >= -864e13 && p.at <= 864e13 ? p.at : undefined,
+            done: p.done === true,
+        }))
 }
 
 // The keys drawn in the current round, read back from storage.
