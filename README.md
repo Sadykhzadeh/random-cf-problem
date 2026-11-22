@@ -110,9 +110,9 @@ skipping the ones you have already solved.
 | `lang` | `lang=ru` | `en` or `ru`; remembered |
 | `set` | `set=1520F2,4A` | the problems of a practice set, by contest and letter; a numbered index is joined by a dash, as in `set=921-14` |
 | `shape` | `shape=flat` | the practice set is flat (problems at random from the range) rather than rising |
-| `count` | `count=8` | problems in a practice set, from 1 to 20; five when left out |
-| `from`, `to` | `from=1000&to=1600` | the practice set's rating range, from 0 to 3800 |
-| `minutes` | `minutes=45` | the practice set's time limit, from 1 to 600 minutes |
+| `count` | `count=8` | problems in a practice set, from 1 to 20; a count from 21 to 999 is cut to 20 when the set is built, and five when left out |
+| `from`, `to` | `from=1000&to=1600` | the practice set's rating range, from 0 to 3800; a rating from 3801 to 9999 is cut to 3800 when the set is built |
+| `minutes` | `minutes=45` | the practice set's time limit, from 1 to 600 minutes; a limit from 601 to 999 is refused when the timer starts |
 | `noseen` | `noseen=1` | the practice set does not skip the problems from the history |
 
 ## Progress file
