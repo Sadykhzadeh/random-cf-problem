@@ -224,6 +224,13 @@ test("a swapped problem moves the set's ticks to its new address and leaves the 
     ], "a set with no ticks moves to nothing")
 })
 
+test("a swap onto a set that already has ticks keeps those ticks as well", () => {
+    const entries = [{ key: "1520F2,5B", done: ["5B"], at: 9 }, { key: "1520F2,4A", done: ["1520F2", "4A"], at: 1 }]
+    assert.deepEqual(moveTicks(entries, "1520F2,4A", "1520F2,5B", "4A", 5), [
+        { key: "1520F2,5B", done: ["5B", "1520F2"], at: 5 },
+    ])
+})
+
 test("only the most recent sets keep their ticks, and a set touched again moves to the front", () => {
     let entries = []
     for (let i = 0; i < KEPT_SETS + 5; i++) entries = withTicks(entries, `set${i}`, ["1A"], i)

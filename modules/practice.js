@@ -150,7 +150,8 @@ export const withTicks = (entries, key, done, at) =>
 // The entries with a set's ticks moved from its old address to its new one, the
 // problem `dropped` (an id in address form) left out, and the old entry removed.
 export const moveTicks = (entries, fromKey, toKey, dropped, at) =>
-    withTicks(entries.filter((entry) => entry.key !== fromKey), toKey, ticksOf(entries, fromKey).filter((id) => id !== dropped), at)
+    withTicks(entries.filter((entry) => entry.key !== fromKey), toKey,
+        mergeTicks(ticksOf(entries, toKey), ticksOf(entries, fromKey).filter((id) => id !== dropped)), at)
 
 export const ticksOf = (entries, key) => entries.find((entry) => entry.key === key)?.done ?? []
 
