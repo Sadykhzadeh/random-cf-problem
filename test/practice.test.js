@@ -316,6 +316,52 @@ test("a progress file brings back the ticks and recent sets, and a merge keeps w
     })
 })
 
+test("a merged progress keeps the ticks of both sides, the later time and the newest sets, over 1000 seeded cases", () => {
+    const random = seeded(20260425)
+    const below = (n) => Math.floor(random() * n)
+    const pick = (list) => list[below(list.length)]
+    const LETTERS = "ABCDEF"
+    const keys = Array.from({ length: 30 }, () => {
+        const ids = []
+        for (let n = 1 + below(4); ids.length < n;) {
+            const id = { contestId: 1 + below(3000), index: pick([...LETTERS]) + (below(2) ? "" : "2") }
+            if (!ids.some((other) => idKey(other) === idKey(id))) ids.push(id)
+        }
+        return encodeSet(ids)
+    })
+    let at = 1600000000000
+    const someTicks = () => {
+        let entries = []
+        for (let n = below(25); n > 0; n--) {
+            const key = pick(keys)
+            entries = withTicks(entries, key, decodeSet(key).map(idKey).filter(() => random() < 0.5), (at += 1 + below(5)))
+        }
+        return entries
+    }
+    const someSets = () => [...new Set(Array.from({ length: below(25) }, () => pick(keys)))].slice(0, KEPT_SETS)
+    for (let c = 0; c < 1000; c++) {
+        const local = { ticks: someTicks(), sets: someSets() }
+        const incoming = unpackProgress(progressText(someTicks(), someSets()))
+        const merged = mergeProgress(local, incoming)
+        const sorted = (list) => [...list].sort()
+        const byKey = new Map()
+        for (const entry of [...local.ticks, ...incoming.ticks]) {
+            const own = byKey.get(entry.key)
+            byKey.set(entry.key, own
+                ? { key: entry.key, done: [...new Set([...own.done, ...entry.done])], at: Math.max(own.at, entry.at) }
+                : { key: entry.key, done: [...entry.done], at: entry.at })
+        }
+        const wantTicks = [...byKey.values()].sort((a, b) => b.at - a.at).slice(0, KEPT_SETS)
+        const wantSets = [...new Set([...local.sets, ...incoming.sets])].slice(0, KEPT_SETS)
+        const everyKey = new Set([...byKey.keys(), ...local.sets, ...incoming.sets])
+        const kept = new Set([...wantTicks.map((entry) => entry.key), ...wantSets])
+        assert.deepEqual(merged.ticks.map((entry) => ({ ...entry, done: sorted(entry.done) })),
+            wantTicks.map((entry) => ({ ...entry, done: sorted(entry.done) })), `case ${c}`)
+        assert.deepEqual(merged.sets, wantSets, `case ${c}`)
+        assert.equal(merged.left, everyKey.size - kept.size, `case ${c}`)
+    }
+})
+
 test("the progress file the README describes is one the page reads, and a saved file holds only its fields", () => {
     const example = JSON.parse(read("README.md").match(/```json\n([\s\S]*?)\n```/)[1])
     const loaded = unpackProgress(JSON.stringify(example))
