@@ -9,6 +9,21 @@ test("the day is the UTC date, so it changes at midnight UTC wherever the visito
     assert.equal(dayKey(Date.UTC(2027, 0, 1, 0, 0, 0)), "2027-01-01")
 })
 
+test("the day is still the UTC date where the clock is behind UTC, and the problem of the day moves at midnight UTC", async (t) => {
+    const zone = process.env.TZ
+    process.env.TZ = "America/Los_Angeles"
+    try {
+        assert.equal(dayKey(Date.UTC(2026, 10, 18, 3, 0, 0)), "2026-11-18")
+        t.mock.timers.enable({ apis: ["Date"], now: Date.UTC(2026, 10, 19, 0, 0, 0) })
+        const pool = [{ contestId: 1, index: "A", name: "Watermelon", rating: 800, tags: [] }]
+        const day = await todaysProblem({ prepare: async () => pool, filter: () => ({}), none: () => null, show: (problem, day) => day })
+        assert.equal(day, "2026-11-19")
+    } finally {
+        if (zone === undefined) delete process.env.TZ
+        else process.env.TZ = zone
+    }
+})
+
 test("the generator is fixed by its seed and stays in [0, 1)", () => {
     const first = generator(12345)
     const again = generator(12345)
@@ -32,6 +47,19 @@ test("an empty pool has no problem of the day, and the pool itself is not change
     const pool = [{ contestId: 1, index: "A" }, { contestId: 2, index: "A" }]
     dailyProblem(pool, "2026-11-18")
     assert.deepEqual(pool, [{ contestId: 1, index: "A" }, { contestId: 2, index: "A" }])
+})
+
+test("a day's problem from a fixed list is the same from one release to the next", () => {
+    const pool = Array.from({ length: 40 }, (_, i) => ({ contestId: 100 + i, index: "A", name: `P${i}` }))
+    const picks = ["2026-11-18", "2026-11-19", "2026-01-01", "2026-02-14", "2027-07-04"].map((day) => dailyProblem(pool, day).name)
+    assert.deepEqual(picks, ["P20", "P1", "P25", "P35", "P27"])
+    assert.equal(generator(12345)(), 0.9797282677609473)
+})
+
+test("a pool of one problem is the problem of every day", () => {
+    const only = { contestId: 1, index: "A", name: "Only" }
+    assert.equal(dailyProblem([only], "2026-11-18"), only)
+    assert.equal(dailyProblem([only], "2027-03-01"), only)
 })
 
 test("the streak counts the UTC days in a row the problem was opened", () => {
