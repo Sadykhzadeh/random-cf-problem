@@ -31,6 +31,29 @@ test("the last year of the contests is kept beside the first", () => {
     for (const until of ["19", "20210", "abcd"]) assert.equal(readParams(`?until=${until}`).until, "", until)
 })
 
+test("a contest year of three digits is refused", () => {
+    for (const year of ["999", "100"]) {
+        assert.equal(readParams(`?since=${year}`).since, "", year)
+        assert.equal(readParams(`?until=${year}`).until, "", year)
+    }
+})
+
+test("an address with only handles to skip carries settings", () => {
+    assert.deepEqual(readParams("?skip=tourist"), { ...DEFAULTS, handles: "tourist" })
+})
+
+test("a switch in the address is on only when it reads 1", () => {
+    for (const value of ["0", "true", "yes"]) {
+        assert.equal(readParams(`?nospecial=${value}&min=1200`).nospecial, false, value)
+        assert.equal(readParams(`?hide=${value}&min=1200`).hide, false, value)
+    }
+})
+
+test("handles to skip are read without the spaces around them", () => {
+    assert.equal(readParams("?skip=%20tourist,+jiangly%20").handles, "tourist, jiangly")
+    assert.equal(readParams("?skip=%20%20").handles, "")
+})
+
 test("problem letters are read from commas, spaces or a list, in capitals, once each", () => {
     assert.deepEqual(letters("b, a B  c ?"), ["A", "B", "C"])
     assert.deepEqual(letters(["d", "D"]), ["D"])
@@ -43,6 +66,11 @@ test("defaults are left out of the link", () => {
     assert.equal(writeParams(DEFAULTS), "")
     assert.equal(writeParams(DEFAULTS, "ru"), "lang=ru")
     assert.equal(writeParams({ ...DEFAULTS, mode: "any", tried: true }), "", "neither means anything alone")
+})
+
+test("a rating or year the form cannot read is left out of the link", () => {
+    assert.equal(writeParams({ ...DEFAULTS, min: "12x", since: "20x1" }), "")
+    assert.equal(writeParams(DEFAULTS, "", { form: { from: "x", to: "9x" } }), "")
 })
 
 test("an address without settings says so, and bad values are dropped", () => {
@@ -97,6 +125,17 @@ test("leaving the topics out survives a round trip", () => {
     assert.equal(writeParams(settings), "tags=interactive,geometry&none=1")
     assert.deepEqual(readParams("?tags=interactive,geometry&none=1"), settings)
     assert.equal(writeParams({ ...DEFAULTS, mode: "none" }), "", "nothing to leave out")
+})
+
+test("the problem of the day is marked in the link as daily=1", () => {
+    assert.equal(writeParams(DEFAULTS, "en", { daily: true }), "lang=en&daily=1")
+    assert.equal(writeParams(DEFAULTS, "en", { daily: false }), "lang=en")
+})
+
+test("a practice set's time limit of zero minutes is no limit", () => {
+    assert.equal(readSetForm("?minutes=0").minutes, "")
+    assert.equal(readSetForm("?minutes=00").minutes, "")
+    assert.equal(writeParams(DEFAULTS, "en", { form: { minutes: "0" } }), "lang=en")
 })
 
 test("the least number of solvers is kept only when it asks for something", () => {
