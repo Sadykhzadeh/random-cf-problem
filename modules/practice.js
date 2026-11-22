@@ -101,10 +101,10 @@ export const resolveSet = (problems, ids) => {
 
 // The set as a Markdown task list, one problem a line, with its rating and
 // ticked when the visitor has done it (`done` holds the ids ticked, in their
-// address form). Brackets and emphasis characters in a name are escaped so the
-// link stays a link.
+// address form). Brackets, angle brackets, ampersands and emphasis characters in
+// a name are escaped so the link stays a link and the name stays text.
 export const setMarkdown = (problems, done = []) => problems.map((problem) => {
-    const name = problem.name.replace(/[\\[\]*_`]/g, "\\$&")
+    const name = problem.name.replace(/[\\[\]*_`<&]/g, "\\$&")
     return `- [${done.includes(idKey(problem)) ? "x" : " "}] [${idKey(problem)}. ${name}](${problemUrl(problem)}) (${problem.rating ?? "unrated"})`
 }).join("\n")
 

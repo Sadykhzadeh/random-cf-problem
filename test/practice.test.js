@@ -173,6 +173,11 @@ test("the set copies as a Markdown task list with its links, ratings and ticks, 
     ].join("\n"), "a ticked problem is ticked in the list")
 })
 
+test("a name's angle brackets and ampersands are escaped, so markup and entities stay text", () => {
+    assert.equal(setMarkdown([problem(1, "A", 800, "Tags <b>x</b> & &amp;")]),
+        "- [ ] [1A. Tags \\<b>x\\</b> \\& \\&amp;](https://codeforces.com/problemset/problem/1/A) (800)")
+})
+
 const ids = [{ contestId: 1520, index: "F2" }, { contestId: 4, index: "A" }, { contestId: 2000, index: "H" }]
 
 test("ticks are kept per set, merged with what the handles solved, and only for ids in the set", () => {

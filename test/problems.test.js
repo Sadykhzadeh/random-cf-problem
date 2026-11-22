@@ -567,6 +567,11 @@ test("the history copies as a Markdown task list, ticked where solved", () => {
     assert.equal(historyMarkdown([]), "")
 })
 
+test("a history name's angle brackets and ampersands are escaped, so markup and entities stay text", () => {
+    assert.equal(historyMarkdown([{ contestId: 1, index: "A", name: "A <i>b</i> & &lt;", rating: 800, at: 1, done: false }]),
+        "- [ ] [1A. A \\<i>b\\</i> \\& \\&lt;](https://codeforces.com/problemset/problem/1/A) (800)")
+})
+
 test("a numbered index is written with a dash, as in the practice set's address", () => {
     assert.equal(problemLabel({ contestId: 1520, index: "F2" }), "1520F2")
     assert.equal(problemLabel({ contestId: 921, index: "14" }), "921-14", "92114 would read as contest 92114")

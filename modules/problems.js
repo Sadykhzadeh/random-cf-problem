@@ -174,7 +174,7 @@ export const removeDraw = (history, problem) =>
 // The history as a Markdown task list, one draw a line, ticked when the visitor
 // has solved it. Brackets and emphasis characters in a name are escaped.
 export const historyMarkdown = (history) => history.map((entry) => {
-    const name = entry.name.replace(/[\\[\]*_`]/g, "\\$&")
+    const name = entry.name.replace(/[\\[\]*_`<&]/g, "\\$&")
     return `- [${entry.done ? "x" : " "}] [${problemLabel(entry)}. ${name}](${problemUrl(entry)}) (${entry.rating ?? "unrated"})`
 }).join("\n")
 
