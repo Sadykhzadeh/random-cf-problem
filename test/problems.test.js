@@ -75,6 +75,12 @@ test("a packed problemset unpacks to the same problems with their solve counts",
     assert.equal(problems[2].solvedCount, undefined)
 })
 
+test("a problem whose tags are not a list reads back with none", () => {
+    const [problem] = unpackProblemset([[4, "A", "Watermelon", 800, "math", 3]])
+    assert.deepEqual(problem.tags, [])
+    assert.deepEqual(unpackProblemset([[4, "A", "Watermelon", 800, null, 3]])[0].tags, [])
+})
+
 test("anything that is not a packed problemset is refused", () => {
     assert.equal(unpackProblemset(null), null)
     assert.equal(unpackProblemset({ problems: [] }), null)
@@ -96,6 +102,12 @@ test("a saved copy is read back only when it is whole: a corrupt or empty one is
     assert.equal(unpackSaved({ savedAt: 1, problems: [] }), null, "an empty list")
     assert.equal(unpackSaved({ savedAt: 1, problems: [[1, "A", "x", 800, []]] }), null, "an item cut short")
     assert.equal(unpackSaved({ savedAt: 1, problems: [[1, "A", "x", 800, [], null, 9]] }), null, "an item with an extra field")
+})
+
+test("a problem with a null rating is unrated and never matches", () => {
+    const problems = [{ contestId: 4, index: "A", name: "Watermelon", rating: null, tags: [] }]
+    assert.deepEqual(matchingProblems(problems, {}), [])
+    assert.deepEqual(matchingProblems(problems, { min: 0 }), [])
 })
 
 test("only rated problems inside the range, with the tag, match", () => {
@@ -160,6 +172,13 @@ test("problems from contests that started before a year are left out", () => {
     assert.deepEqual(names({ starts }).length, 3, "no year, no filter")
 })
 
+test("a contest that starts in the first second of a year is kept by since", () => {
+    const problems = [{ contestId: 4, index: "A", name: "Starts on the hour", rating: 800, tags: [] }]
+    const starts = new Map([[4, yearStart(2021)]])
+    assert.equal(matchingProblems(problems, { since: yearStart(2021), starts }).length, 1)
+    assert.equal(matchingProblems(problems, { since: yearStart(2021) + 1, starts }).length, 0)
+})
+
 test("problems from contests that started in or after a year are left out with a last year", () => {
     const problems = [
         { contestId: 4, index: "A", name: "Watermelon", rating: 800, tags: [] },
@@ -174,6 +193,13 @@ test("problems from contests that started in or after a year are left out with a
     assert.deepEqual(names({ until: yearStart(2030), starts }), ["Watermelon", "Do Not Be Distracted!"], "a contest missing from the list is not known to be in range")
     assert.deepEqual(names({ since: yearStart(2010), until: yearStart(2021), starts }), ["Watermelon"])
     assert.deepEqual(names({ since: yearStart(2021), until: yearStart(2021), starts }), [], "a single year can be empty")
+})
+
+test("a contest that starts in the first second of a year is left out by until", () => {
+    const problems = [{ contestId: 4, index: "A", name: "Starts on the hour", rating: 800, tags: [] }]
+    const starts = new Map([[4, yearStart(2021)]])
+    assert.equal(matchingProblems(problems, { until: yearStart(2021), starts }).length, 0)
+    assert.equal(matchingProblems(problems, { until: yearStart(2021) + 1, starts }).length, 1)
 })
 
 test("problems are kept by the letter they are indexed with, A1 and A2 as A", () => {
@@ -665,6 +691,18 @@ test("a slow download is kept, a stalled one is cut off", { timeout: 5000 }, asy
     await stalled
 })
 
+test("a call that has finished is not cut off when its limit would have passed", async (t) => {
+    t.mock.timers.enable({ apis: ["setTimeout"] })
+    let signal
+    const fetchFn = async (url, options) => {
+        signal = options.signal
+        return new Response('{"status":"OK","result":[]}', { status: 200 })
+    }
+    await fetchJson("x", { idleMs: 40, fetchFn })
+    t.mock.timers.tick(40)
+    assert.equal(signal.aborted, false)
+})
+
 test("an error answer keeps its status and comment, and an HTML page parses as nothing", async () => {
     const limited = async () => new Response('{"status":"FAILED","comment":"Call limit exceeded"}', { status: 503 })
     const { response, json } = await fetchJson("x", { fetchFn: limited })
@@ -715,6 +753,17 @@ test("a call answered with the rate limit or a busy server is made once more, wh
     const alone = answers(limited(), ok())
     assert.equal((await fetchApi("x", { fetchFn: alone.fetchFn })).response.status, 503)
     assert.equal(alone.calls.length, 1)
+})
+
+test("a 429 is made once more even when its answer carries no comment", async () => {
+    let calls = 0
+    const fetchFn = async () => {
+        calls += 1
+        return calls === 1 ? new Response("", { status: 429 }) : new Response('{"status":"OK","result":[]}', { status: 200 })
+    }
+    const again = async () => true
+    assert.equal((await fetchApi("x", { fetchFn, again })).response.status, 200)
+    assert.equal(calls, 2)
 })
 
 const DAY = 24 * 60 * 60
