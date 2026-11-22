@@ -401,6 +401,15 @@ test("a draw only ever sees problems the filter lets through, skipped ones never
     for (let i = 0; i < 1000; i++) assert.equal(pickOne(pool, random).name, "in")
 })
 
+test("a contest whose start time is not a number is left out when packed", () => {
+    const packed = packContestStarts([
+        { id: 1, name: "Codeforces Round 1 (Div. 2)", startTimeSeconds: "1700000000" },
+        { id: 2, name: "Codeforces Round 2 (Div. 2)", startTimeSeconds: 1700000000 },
+        { id: 3, name: "Codeforces Round 3 (Div. 2)" },
+    ])
+    assert.deepEqual(packed, [[2, 1700000000, "2"]])
+})
+
 test("a contest name says which divisions it is for", () => {
     assert.deepEqual(contestDivisions("Codeforces Round 942 (Div. 1)"), ["1"])
     assert.deepEqual(contestDivisions("Codeforces Round 1131 (Div. 3)"), ["3"])
@@ -412,6 +421,10 @@ test("a contest name says which divisions it is for", () => {
     assert.deepEqual(contestDivisions("Codeforces Round 1 (Div. 2, based on Global Round 2)"), ["2"], "a division in the name wins")
     assert.deepEqual(contestDivisions("Codeforces Round 5 (Based on Some Cup)"), [], "a cup names none")
     assert.deepEqual(contestDivisions(undefined), [])
+})
+
+test("a Div. 4 round is for Div. 4", () => {
+    assert.deepEqual(contestDivisions("Codeforces Round 1816 (Div. 4)"), ["4"])
 })
 
 // The problems a contest lists, by their letters, as the problemset has them.
