@@ -84,7 +84,7 @@ export const readShape = (search) => new URLSearchParams(search).get("shape") ==
 // is built; a time limit past 600 is refused when the timer starts.
 const count = (value) => {
     const text = String(value ?? "").trim()
-    return /^\d{1,2}$/.test(text) && Number(text) > 0 ? String(Number(text)) : ""
+    return /^\d{1,3}$/.test(text) && Number(text) > 0 ? String(Number(text)) : ""
 }
 
 const minutes = (value) => {

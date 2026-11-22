@@ -132,6 +132,12 @@ test("the problem of the day is marked in the link as daily=1", () => {
     assert.equal(writeParams(DEFAULTS, "en", { daily: false }), "lang=en")
 })
 
+test("a count past the form's twenty is read, so the set is clamped to twenty when it is built", () => {
+    assert.equal(readSetForm("?count=100").count, "100")
+    assert.equal(readSetForm("?count=1000").count, "")
+    assert.equal(writeParams(DEFAULTS, "en", { form: { count: "100" } }), "lang=en&count=100")
+})
+
 test("a practice set's time limit of zero minutes is no limit", () => {
     assert.equal(readSetForm("?minutes=0").minutes, "")
     assert.equal(readSetForm("?minutes=00").minutes, "")
