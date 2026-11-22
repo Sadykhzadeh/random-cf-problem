@@ -1,7 +1,7 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 
-import { DEFAULTS, letters, readParams, readSetForm, readShape, writeParams } from "../modules/params.js"
+import { DEFAULTS, DIVISIONS, letters, readParams, readSetForm, readShape, writeParams } from "../modules/params.js"
 import { read } from "./support/walk.js"
 
 test("settings survive a round trip through the address", () => {
@@ -142,6 +142,38 @@ test("a practice set's time limit of zero minutes is no limit", () => {
     assert.equal(readSetForm("?minutes=0").minutes, "")
     assert.equal(readSetForm("?minutes=00").minutes, "")
     assert.equal(writeParams(DEFAULTS, "en", { form: { minutes: "0" } }), "lang=en")
+})
+
+test("settings, the practice form and the shape read back from any link they are written to, over 2000 seeded cases", () => {
+    let seed = 20260424
+    const random = () => (seed = (seed * 48271) % 2147483647) / 2147483647
+    const below = (n) => Math.floor(random() * n)
+    const pick = (list) => list[below(list.length)]
+    const flag = () => random() < 0.5
+    const rating = () => random() < 0.3 ? "" : String(1 + below(3800))
+    const year = () => random() < 0.3 ? "" : String(1000 + below(9000))
+    const TAGS = ["dp", "binary search", "2-sat", "*special"]
+    const LETTERS = ["A", "B", "C", "D"]
+    for (let c = 0; c < 2000; c++) {
+        const tags = TAGS.filter(() => random() < 0.3)
+        const handles = pick(["", "tourist", "tourist, jiangly", "a b&c"])
+        const settings = {
+            min: rating(), max: rating(), since: year(), until: year(),
+            minSolved: random() < 0.3 ? "" : String(1 + below(1000000)),
+            divisions: DIVISIONS.filter(() => random() < 0.3),
+            letters: LETTERS.filter(() => random() < 0.3),
+            tags,
+            mode: tags.length ? pick(["all", "any", "none"]) : "all",
+            nospecial: flag(), handles, tried: handles !== "" && flag(), hide: flag(),
+        }
+        // Five is the default count, left out of the link, so it is not drawn.
+        const form = { count: pick(["", "1", "8", "20"]), from: rating(), to: rating(), minutes: pick(["", "1", "45", "600"]), noSeen: flag() }
+        const shape = pick(["rising", "flat"])
+        const search = writeParams(settings, pick(["", "en", "ru"]), { set: pick(["", "1520F2,4A"]), shape, form })
+        assert.deepEqual(readParams(`?${search}`) ?? DEFAULTS, settings, `case ${c}: ${search}`)
+        assert.deepEqual(readSetForm(`?${search}`), form, `case ${c}: ${search}`)
+        assert.equal(readShape(`?${search}`), shape, `case ${c}: ${search}`)
+    }
 })
 
 test("the least number of solvers is kept only when it asks for something", () => {
