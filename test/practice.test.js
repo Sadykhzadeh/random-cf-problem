@@ -132,6 +132,30 @@ test("a set's ids survive the address, and anything that is not an id is dropped
     assert.equal(decodeSet(long).length, MAX_SET, "no more than the set size is read")
 })
 
+test("a set's ids read back from the address they are written as, over 1000 seeded sets", () => {
+    const random = seeded(20260423)
+    const below = (n) => Math.floor(random() * n)
+    const pick = (list) => list[below(list.length)]
+    const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    for (let c = 0; c < 1000; c++) {
+        const ids = Array.from({ length: below(30) }, () => ({
+            contestId: pick([1, 9, 921, 1520, 100001, 999999999, 1 + below(5000)]),
+            index: below(3) === 0 ? String(1 + below(120)) : pick([...LETTERS]) + (below(2) ? "" : String(1 + below(30))),
+        }))
+        const seen = new Set()
+        const expected = ids.filter((id) => {
+            const key = `${id.contestId}|${id.index}`
+            if (seen.has(key)) return false
+            seen.add(key)
+            return true
+        }).slice(0, MAX_SET).map(({ contestId, index }) => ({ contestId, index }))
+        const text = encodeSet(ids)
+        assert.deepEqual(decodeSet(text), expected, `case ${c}: ${text}`)
+        assert.deepEqual(decodeSet(text.toLowerCase()), expected, `case ${c}, small letters: ${text}`)
+        assert.deepEqual(decodeSet(text.split(",").join(" , ")), expected, `case ${c}, spaced: ${text}`)
+    }
+})
+
 test("an address id with four digits after its letter is not an id", () => {
     assert.deepEqual(decodeSet("4A1234"), [])
     assert.deepEqual(decodeSet("4A1234,4B"), [{ contestId: 4, index: "B" }])
