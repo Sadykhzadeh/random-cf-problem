@@ -55,6 +55,12 @@ test("a rating is asked for once and then kept, and an unrated handle keeps no r
     assert.equal(await readRating("y", { ...io, request: answer([{ handle: "y" }]), key: "k2" }), null, "unrated")
 })
 
+test("a fresh copy without a rating reads as unrated, without asking again", async () => {
+    const cache = memoryCache({ k: { savedAt: 1000 } })
+    const request = async () => { throw new Error("asked") }
+    assert.equal(await readRating("x", { request, cache, key: "k", failure, now: () => 1000 }), null)
+})
+
 test("an old copy is asked for again, and a failed answer is reported as a failure", async () => {
     const cache = memoryCache({ k: { savedAt: 0, rating: 900 } })
     const now = () => RATING_FRESH_FOR + 1

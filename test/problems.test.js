@@ -320,6 +320,14 @@ test("a solved problem keeps its contest's start time, unless it came from a vir
     ])
 })
 
+test("a problem numbered 100000 keeps its name, and a gym problem from 100001 does not", () => {
+    const named = summarizeSubmissions([
+        aged(1, 0, 100000, "A", "OK", { name: "Last Contest" }),
+        aged(2, 0, 100001, "A", "OK", { name: "First Gym" }),
+    ])
+    assert.deepEqual(named.names.map(([name]) => name), ["Last Contest"])
+})
+
 test("a problem tried in the parallel round counts as tried", () => {
     const sub = (verdict) => ({
         verdict,
