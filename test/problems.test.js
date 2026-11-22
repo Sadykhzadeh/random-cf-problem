@@ -727,6 +727,20 @@ test("a slow download is kept, a stalled one is cut off", { timeout: 5000 }, asy
     await stalled
 })
 
+test("a call silent for thirty seconds is cut off when no limit is given", { timeout: 5000 }, async (t) => {
+    t.mock.timers.enable({ apis: ["setTimeout"] })
+    let signal
+    const fetchFn = (url, options) => {
+        signal = options.signal
+        return new Promise((resolve, reject) => signal.addEventListener("abort", () => reject(signal.reason)))
+    }
+    const cut = assert.rejects(fetchJson("x", { fetchFn }), isTimeout)
+    t.mock.timers.tick(29999)
+    assert.equal(signal.aborted, false)
+    t.mock.timers.tick(1)
+    await cut
+})
+
 test("a call that has finished is not cut off when its limit would have passed", async (t) => {
     t.mock.timers.enable({ apis: ["setTimeout"] })
     let signal
