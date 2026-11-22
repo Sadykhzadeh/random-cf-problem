@@ -25,15 +25,22 @@ test("an unrated handle gets the range of a newcomer", () => {
 // A cache held in memory, as the Cache API would hold it. Each write is kept in `writes`.
 const memoryCache = (entries = {}) => {
     const writes = []
+    const urlOf = (key) => typeof key === "string" ? key : key.url
     return {
         async match(key) {
-            if (!(key in entries)) return undefined
-            return new Response(JSON.stringify(entries[key]), { headers: { "Content-Type": "application/json" } })
+            if (!(urlOf(key) in entries)) return undefined
+            return new Response(JSON.stringify(entries[urlOf(key)]), { headers: { "Content-Type": "application/json" } })
         },
         put(key, response) {
             const write = response.json().then((value) => { entries[key] = value })
             writes.push(write)
             return write
+        },
+        async keys() {
+            return Object.keys(entries).map((url) => ({ url }))
+        },
+        async delete(key) {
+            return delete entries[urlOf(key)]
         },
         entries,
         writes,
@@ -53,6 +60,29 @@ test("a rating is asked for once and then kept, and an unrated handle keeps no r
     assert.equal(await readRating("x", io), 1500)
     assert.equal(asked, 1, "the second read comes from the copy")
     assert.equal(await readRating("y", { ...io, request: answer([{ handle: "y" }]), key: "k2" }), null, "unrated")
+})
+
+test("a copy too old to be read again is dropped when another rating is kept", async () => {
+    const cache = memoryCache({ "https://x.test/problemset.v1.json": { savedAt: 0 } })
+    const kept = (handle, now) => readRating(handle, {
+        request: answer([{ handle, rating: 1500 }]),
+        cache,
+        key: `https://x.test/rating.ru.v1/${handle}.json`,
+        failure,
+        now: () => now,
+    })
+    await kept("a", 0)
+    await kept("b", RATING_FRESH_FOR)
+    await Promise.all(cache.writes)
+    await new Promise((resolve) => setImmediate(resolve))
+    await kept("c", RATING_FRESH_FOR + 1)
+    await Promise.all(cache.writes)
+    await new Promise((resolve) => setImmediate(resolve))
+    assert.deepEqual(Object.keys(cache.entries).sort(), [
+        "https://x.test/problemset.v1.json",
+        "https://x.test/rating.ru.v1/b.json",
+        "https://x.test/rating.ru.v1/c.json",
+    ], "a is past its freshness and goes; b is still fresh and c is new; the problemset copy is another folder")
 })
 
 test("a fresh copy without a rating reads as unrated, without asking again", async () => {

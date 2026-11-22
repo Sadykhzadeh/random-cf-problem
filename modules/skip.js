@@ -188,6 +188,21 @@ export const ratingRange = (rating) => {
 // How long a handle's rating is kept, as its other data is.
 export const RATING_FRESH_FOR = 10 * 60 * 1000
 
+// Rating copies are only read while they are fresh, so each one kept drops the
+// copies of other handles that have gone stale. They share the cache with the
+// rest of the page's copies and are told apart by their folder, which is the
+// key's without its last part.
+const dropStaleRatings = async (cache, key, now) => {
+    const folder = key.slice(0, key.lastIndexOf("/") + 1)
+    for (const request of await cache.keys()) {
+        if (!request.url.startsWith(folder)) continue
+        const entry = await (await cache.match(request))?.json().catch(() => null)
+        if (!Number.isFinite(entry?.savedAt) || isStale(entry.savedAt, now(), RATING_FRESH_FOR)) {
+            cache.delete(request).catch(() => {})
+        }
+    }
+}
+
 // The rating a handle has, or null when it has none, read from the cache when
 // the copy is fresh and otherwise from user.info. `io` gives the page's own
 // request (spaced and retried as its other calls are), its cache and the key
@@ -208,7 +223,7 @@ export const readRating = async (handle, { request, cache, key, failure, now = D
     if (cache) {
         cache.put(key, new Response(JSON.stringify({ savedAt: now(), rating }), {
             headers: { "Content-Type": "application/json" },
-        })).catch(() => {})
+        })).then(() => dropStaleRatings(cache, key, now)).catch(() => {})
     }
     return rating
 }
