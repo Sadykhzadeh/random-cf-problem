@@ -297,6 +297,12 @@ test("a problem solved in the parallel round counts, a namesake elsewhere does n
         { contestId: 1950, index: "A", name: "Far Apart", rating: 1400 }), false, "no start times, no match")
 })
 
+test("a namesake seven contests away counts as the parallel round, one eight away does not", () => {
+    const mirror = makeSkip([{ solved: ["566|X"], tried: [], names: [["Matching Names", [[566, 2300, null]]]] }])
+    assert.equal(mirror({ contestId: 559, index: "F", name: "Matching Names", rating: 2300 }), true)
+    assert.equal(mirror({ contestId: 558, index: "F", name: "Matching Names", rating: 2300 }), false)
+})
+
 test("a solved problem keeps its contest's start time, unless it came from a virtual run or the gym", () => {
     const sub = (contestId, index, name, verdict, participantType, startTimeSeconds) =>
         ({ verdict, problem: { contestId, index, name, rating: 1400 }, author: { participantType, startTimeSeconds } })
@@ -623,6 +629,15 @@ test("summaries not used for a month, and all but the newest twenty, are pruned"
     assert.deepEqual(staleSummaries([], now, { maxAge: day, maxCount: 20 }), [])
 })
 
+test("a summary older than a month is pruned once, however many of them there are", () => {
+    const day = 24 * 60 * 60 * 1000
+    const now = Date.UTC(2026, 9, 19)
+    const old = Array.from({ length: 25 }, (_, i) => ({ key: `old${i}`, savedAt: now - 31 * day - i }))
+    const pruned = staleSummaries(old, now, { maxAge: 30 * day, maxCount: 20 }).map((e) => e.key)
+    assert.equal(pruned.length, 25)
+    assert.equal(new Set(pruned).size, 25)
+})
+
 test("a copy is stale past its age, and also when it is dated well ahead of the clock", () => {
     const minute = 60 * 1000
     const now = Date.UTC(2026, 9, 19)
@@ -829,6 +844,20 @@ test("a submission still inside the settling window is read again on the next re
     assert.equal(second.digest.count, 0)
 })
 
+test("a submission at the digest's cutoff is already in it and is not counted twice", () => {
+    const digest = { ...emptyDigest(NOW), cutoff: NOW - 10 * DAY, count: 1 }
+    const atCutoff = aged(3, 10, 12, "B", "OK")
+    assert.equal(advance(digest, [atCutoff], NOW).digest.count, 1)
+})
+
+test("adding submissions keeps the day a digest was read from scratch, so it is still rebuilt in three days", () => {
+    const built = emptyDigest(NOW - 2 * DAY)
+    const { digest } = advance(built, [aged(1, 3, 12, "B", "OK")], NOW)
+    assert.equal(digest.builtAt, NOW - 2 * DAY)
+    assert.equal(isUsableDigest(digest, NOW + DAY), true)
+    assert.equal(isUsableDigest(digest, NOW + DAY + 3600), false)
+})
+
 test("the newest submissions reach a saved history when they go back past its cutoff or are all there is", () => {
     const digest = { ...emptyDigest(NOW), cutoff: NOW - 10 * DAY }
     const at = (ageDays) => ({ creationTimeSeconds: NOW - ageDays * DAY })
@@ -838,6 +867,12 @@ test("the newest submissions reach a saved history when they go back past its cu
     assert.equal(isUsableDigest(digest, NOW + 2 * DAY), true)
     assert.equal(isUsableDigest(digest, NOW + 4 * DAY), false)
     assert.equal(isUsableDigest(null, NOW), false)
+})
+
+test("a submission made exactly at the cutoff reaches the saved history", () => {
+    const digest = { ...emptyDigest(NOW), cutoff: NOW - 10 * DAY }
+    assert.equal(reachesDigest(digest, [{ creationTimeSeconds: NOW - 1 }, { creationTimeSeconds: NOW - 10 * DAY }], 2), true)
+    assert.equal(reachesDigest(digest, [{ creationTimeSeconds: NOW - 1 }, { creationTimeSeconds: NOW - 10 * DAY + 1 }], 2), false)
 })
 
 test("a draw emptied only by the handles' skips is told apart from one the settings leave empty", () => {
