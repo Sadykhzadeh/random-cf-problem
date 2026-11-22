@@ -115,6 +115,29 @@ skipping the ones you have already solved.
 | `minutes` | `minutes=45` | the practice set's time limit, from 1 to 600 minutes |
 | `noseen` | `noseen=1` | the practice set does not skip the problems from the history |
 
+## Progress file
+
+"Save progress" in the practice set downloads the ticks and the recent sets as
+a JSON file, and "Load progress" merges such a file into the browser. The file
+has two fields:
+
+```json
+{
+  "ticks": [{ "key": "1520F2,4A", "done": ["1520F2"], "at": 1700000000000 }],
+  "sets": ["1520F2,4A", "921-14"]
+}
+```
+
+- `ticks` holds up to 20 sets, the most recently ticked first. Each entry has
+  the set's address as `key`, written as the `set` parameter writes it; `done`
+  lists the ids of the set's ticked problems, each once, in the same form; and
+  `at` is the time of the last tick in milliseconds since 1970.
+- `sets` lists the addresses of up to 20 recent sets, the most recent first.
+
+A file of up to 1 MB is read only when every entry has this form and there are
+no more than 20 of either list; any other file is refused whole. Loading keeps
+the ticks of both browsers, and where a set was ticked in both, the later time.
+
 ## How it works
 
 Everything runs in the browser against the public Codeforces API. The

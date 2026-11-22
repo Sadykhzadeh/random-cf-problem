@@ -44,6 +44,7 @@ import {
     withRecentSet,
 } from "../modules/practice.js"
 import { countText, fill } from "../modules/i18n.js"
+import { read } from "./support/walk.js"
 import { practiceMessages } from "../modules/practice-strings.js"
 
 // A fixed generator, so the picks are the same on every run.
@@ -282,6 +283,15 @@ test("a progress file brings back the ticks and recent sets, and a merge keeps w
         sets: ["1520F2,4A", "2C"],
         left: 0,
     })
+})
+
+test("the progress file the README describes is one the page reads, and a saved file holds only its fields", () => {
+    const example = JSON.parse(read("README.md").match(/```json\n([\s\S]*?)\n```/)[1])
+    const loaded = unpackProgress(JSON.stringify(example))
+    assert.deepEqual(loaded, { ticks: example.ticks, sets: example.sets })
+    const saved = JSON.parse(progressText(unpackTicks(loaded.ticks), loaded.sets))
+    assert.deepEqual(Object.keys(saved), ["ticks", "sets"])
+    assert.deepEqual(saved.ticks.map((entry) => Object.keys(entry)), [["key", "done", "at"]])
 })
 
 test("a progress file is refused whole when an entry is not a set's own, or the file is past the sets kept", () => {
