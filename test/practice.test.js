@@ -371,6 +371,14 @@ test("a merge keeps the later time a set was ticked", () => {
     assert.equal(mergeProgress(incoming, local).ticks[0].at, 9)
 })
 
+test("a merge that does not fit keeps a set's ticks from both sides, even when its entry is pushed out on the way", () => {
+    const local = { ticks: Array.from({ length: KEPT_SETS }, (_, i) => ({ key: `${i + 1}A`, done: i === 0 ? ["1A"] : [], at: i + 1 })), sets: [] }
+    const incoming = unpackProgress(progressText([{ key: "900A", done: [], at: 500 }, { key: "1A", done: [], at: 1000 }], []))
+    const merged = mergeProgress(local, incoming)
+    assert.deepEqual(merged.ticks.find((entry) => entry.key === "1A"), { key: "1A", done: ["1A"], at: 1000 })
+    assert.equal(merged.left, 1)
+})
+
 test("a merge counts the recent sets it drops, not only the ticked ones", () => {
     const local = { ticks: [], sets: Array.from({ length: KEPT_SETS }, (_, i) => `${i + 1}A`) }
     const incoming = { ticks: [], sets: ["9001A", "9002A"] }

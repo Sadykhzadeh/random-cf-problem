@@ -216,8 +216,9 @@ export const unpackProgress = (text) => {
 export const mergeProgress = (local, incoming) => {
     const ticks = incoming.ticks.reduce((entries, entry) => {
         const own = entries.find((other) => other.key === entry.key)
-        return withTicks(entries, entry.key, mergeTicks(own?.done ?? [], entry.done), Math.max(entry.at, own?.at ?? 0))
-    }, local.ticks)
+        return [{ key: entry.key, done: mergeTicks(own?.done ?? [], entry.done), at: Math.max(entry.at, own?.at ?? 0) },
+            ...entries.filter((other) => other.key !== entry.key)]
+    }, local.ticks).sort((a, b) => b.at - a.at).slice(0, KEPT_SETS)
     const sets = [...new Set([...local.sets, ...incoming.sets])].slice(0, KEPT_SETS)
     const all = new Set([...local.ticks, ...incoming.ticks].map((entry) => entry.key).concat(local.sets, incoming.sets))
     const kept = new Set([...ticks.map((entry) => entry.key), ...sets])
