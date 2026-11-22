@@ -18,6 +18,20 @@ const editable = { tagName: "DIV", isContentEditable: true }
 
 const press = (key, code, target = body, extra = {}) => shortcutFor({ key, code, target, ...extra })
 
+test("a key the browser cannot name is judged by its code", () => {
+    assert.equal(press("Unidentified", "KeyR"), "draw")
+    assert.equal(press("Unidentified", "KeyP"), null)
+})
+
+test("dismissing the share sheet is not logged, any other failure is", async (t) => {
+    const logged = t.mock.method(console, "error", () => {})
+    await share({ share: async () => { throw Object.assign(new Error("closed"), { name: "AbortError" }) } }, { title: "t", url: "u" })
+    assert.equal(logged.mock.callCount(), 0)
+    const failure = new Error("no sheet")
+    await share({ share: async () => { throw failure } }, { title: "t", url: "u" })
+    assert.deepEqual(logged.mock.calls.map((call) => call.arguments[0]), [failure])
+})
+
 test("R draws again whatever the keyboard layout", () => {
     assert.equal(press("r", "KeyR"), "draw")
     assert.equal(press("R", "KeyR"), "draw", "with Shift or Caps Lock")
