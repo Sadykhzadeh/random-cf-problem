@@ -100,6 +100,19 @@ test("a swapped-out problem is replaced by the nearest rating the set lacks, fro
     assert.equal(replacementOf([], set, set[0], seeded(1)), undefined)
 })
 
+test("a replacement among equally near problems is picked by the random draw", () => {
+    const set = [problem(10, "A", 1200)]
+    const pool = [problem(11, "A", 1300), problem(12, "A", 1100)]
+    assert.equal(idKey(replacementOf(pool, set, set[0], () => 0)), "11A")
+    assert.equal(idKey(replacementOf(pool, set, set[0], () => 0.99)), "12A")
+})
+
+test("a replacement is never from a contest the rest of the set uses, even when it is nearest", () => {
+    const set = [problem(10, "A", 1200), problem(11, "A", 1400)]
+    const pool = [problem(11, "B", 1210), problem(12, "A", 1300)]
+    assert.equal(idKey(replacementOf(pool, set, set[0], seeded(1))), "12A")
+})
+
 test("a set's ids survive the address, and anything that is not an id is dropped", () => {
     const ids = [{ contestId: 1520, index: "F2" }, { contestId: 4, index: "A" }, { contestId: 2000, index: "H" }]
     assert.equal(encodeSet(ids), "1520F2,4A,2000H")
@@ -116,6 +129,16 @@ test("a set's ids survive the address, and anything that is not an id is dropped
     assert.deepEqual(decodeSet(null), [])
     const long = Array.from({ length: MAX_SET + 5 }, (_, i) => `${i + 1}A`).join(",")
     assert.equal(decodeSet(long).length, MAX_SET, "no more than the set size is read")
+})
+
+test("an address id with four digits after its letter is not an id", () => {
+    assert.deepEqual(decodeSet("4A1234"), [])
+    assert.deepEqual(decodeSet("4A1234,4B"), [{ contestId: 4, index: "B" }])
+})
+
+test("an address id with a contest number of nine digits is read, one of ten is not", () => {
+    assert.deepEqual(decodeSet("123456789A"), [{ contestId: 123456789, index: "A" }])
+    assert.deepEqual(decodeSet("1234567890A"), [])
 })
 
 test("a problem with a numbered index keeps its contest in the address, and reads back", () => {
@@ -273,6 +296,18 @@ test("a progress file is refused whole when an entry is not a set's own, or the 
     assert.deepEqual(unpackProgress(JSON.stringify({ ticks: [ok] })), { ticks: [ok], sets: [] })
 })
 
+test("a progress file with more tick entries than sets are kept is refused whole", () => {
+    const ticks = Array.from({ length: KEPT_SETS + 1 }, (_, i) => ({ key: `${i + 1}A`, done: [], at: i }))
+    assert.equal(unpackProgress(JSON.stringify({ ticks })), null)
+    assert.equal(unpackProgress(JSON.stringify({ ticks: ticks.slice(0, KEPT_SETS) })).ticks.length, KEPT_SETS)
+})
+
+test("a progress file that ticks one problem twice is refused whole, even in a set with room for it", () => {
+    const twice = { key: "4A,1B", done: ["4A", "4A"], at: 1 }
+    assert.equal(unpackProgress(JSON.stringify({ ticks: [twice] })), null)
+    assert.equal(unpackProgress(JSON.stringify({ ticks: [{ ...twice, done: ["4A"] }] })).ticks.length, 1)
+})
+
 test("a merge that does not fit keeps the most recently ticked sets and counts the ones left out", () => {
     const local = { ticks: Array.from({ length: KEPT_SETS }, (_, i) => ({ key: `${i + 1}A`, done: [], at: 1000 + i })), sets: [] }
     const incoming = { ticks: [{ key: "5B", done: ["5B"], at: 2000 }], sets: [] }
@@ -281,6 +316,13 @@ test("a merge that does not fit keeps the most recently ticked sets and counts t
     assert.equal(merged.ticks[0].key, "5B")
     assert.equal(merged.left, 1, "the oldest set does not fit")
     assert.ok(!merged.ticks.some((entry) => entry.key === "1A"))
+})
+
+test("a merge keeps the later time a set was ticked", () => {
+    const local = { ticks: [{ key: "4A", done: ["4A"], at: 9 }], sets: [] }
+    const incoming = { ticks: [{ key: "4A", done: ["4A"], at: 5 }], sets: [] }
+    assert.equal(mergeProgress(local, incoming).ticks[0].at, 9)
+    assert.equal(mergeProgress(incoming, local).ticks[0].at, 9)
 })
 
 test("a merge counts the recent sets it drops, not only the ticked ones", () => {
@@ -418,6 +460,24 @@ test("stored time spent is kept between zero and the limit", () => {
     assert.equal(unpackSession({ ...base, spent: 20000 }, 0).spent, 20000)
 })
 
+test("time spent in a session stops at its limit however long the page is away", () => {
+    const session = newSession("k", 0, 1)
+    spendTime(session, 600000)
+    assert.equal(session.spent, 60000)
+    assert.equal(timeLeft(session), 0)
+})
+
+test("a stored limit below zero reads back as no time", () => {
+    const base = { key: "k", started: 1, spent: 0, seen: 1, said: [] }
+    assert.equal(unpackSession({ ...base, limit: -5000 }, 0).limit, 0)
+})
+
+test("a stored pause counts as paused only when it is true", () => {
+    const base = { key: "k", started: 1, limit: 60000, spent: 0, seen: 1, said: [] }
+    assert.equal(unpackSession({ ...base, paused: true }, 0).paused, true)
+    for (const paused of ["false", 1, undefined]) assert.equal(unpackSession({ ...base, paused }, 0).paused, false, String(paused))
+})
+
 test("a paused session spends nothing until it is resumed, and the stored pause is read back", () => {
     const session = newSession("k", 0, 10)
     pauseTime(session, 60000)
@@ -428,6 +488,14 @@ test("a paused session spends nothing until it is resumed, and the stored pause 
     spendTime(session, 660000)
     assert.equal(timeLeft(session), 480000)
     assert.equal(unpackSession(JSON.parse(JSON.stringify(session)), 0).paused, false)
+})
+
+test("a pause ends at the moment it is resumed, so the time after it is what counts", () => {
+    const session = newSession("k", 0, 10)
+    pauseTime(session, 60000)
+    resumeTime(session, 600000)
+    spendTime(session, 660000)
+    assert.equal(timeLeft(session), 480000, "one minute before the pause and one after it")
 })
 
 test("a tab takes over the pause another tab put on its session, and the paused time is not spent", () => {
