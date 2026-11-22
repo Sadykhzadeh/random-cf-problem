@@ -387,6 +387,52 @@ test("a draw from the filtered pool is uniform over it, chi-square over 100000 d
     assert.ok(statistic < critical, `chi-square ${statistic.toFixed(2)}, limit ${critical.toFixed(2)} over ${df} degrees of freedom`)
 })
 
+test("the filter agrees with a plain reading of each setting over 2000 seeded cases", () => {
+    const random = seeded(20260422)
+    const below = (n) => Math.floor(random() * n)
+    const pick = (list) => list[below(list.length)]
+    const TAGS = ["dp", "graphs", "math", "*special", "greedy"]
+    // Each clause read on its own, the way the settings describe it.
+    const plain = (problems, f) => problems.filter((problem) => {
+        if (typeof problem.rating !== "number") return false
+        if (problem.rating < (f.min ?? 0) || problem.rating > (f.max ?? Infinity)) return false
+        if (f.minSolved && !(problem.solvedCount >= f.minSolved)) return false
+        const hits = (f.tags ?? []).filter((tag) => problem.tags.includes(tag)).length
+        if (f.tags?.length && (f.mode === "any" ? hits === 0 : f.mode === "none" ? hits > 0 : hits < new Set(f.tags).size)) return false
+        if (f.special === false && problem.tags.includes("*special")) return false
+        const start = f.starts?.get(problem.contestId)
+        if (f.since !== undefined && start !== undefined && start < f.since) return false
+        if (f.until !== undefined && (start === undefined || start >= f.until)) return false
+        if (f.divisions?.length && !f.divisions.some((division) => f.contestDivisions?.get(problem.contestId)?.includes(division))) return false
+        if (f.letters?.length && !f.letters.includes(problem.index[0])) return false
+        return !(f.skip && f.skip(problem))
+    })
+    let kept = 0
+    for (let c = 0; c < 2000; c++) {
+        const problems = Array.from({ length: below(40) }, (_, i) => ({
+            contestId: pick([1, 2, 100, 921, 1520, 1967]), index: pick(["A", "B", "C1", "E2"]), name: `P${i}`,
+            rating: random() < 0.1 ? undefined : pick([800, 1200, 1600, 2400, 3500]),
+            tags: TAGS.filter(() => random() < 0.4), solvedCount: random() < 0.2 ? undefined : below(100000),
+        }))
+        const starts = new Map([1, 2, 100, 921, 1520, 1967].filter(() => random() < 0.8)
+            .map((contest) => [contest, pick([1500000000, 1550000000, 1600000000])]))
+        const contestDivisions = new Map([...starts.keys()].map((contest) => [contest, pick([[], ["1"], ["2"], ["1", "2"], ["edu"], ["global"]])]))
+        const skipped = new Set(problems.filter(() => random() < 0.2).map(problemKey))
+        const filter = {
+            min: pick([undefined, 0, 1000, 2000]), max: pick([undefined, 1500, 3500]),
+            minSolved: pick([0, 0, 50000]), tags: TAGS.filter(() => random() < 0.3), mode: pick(["all", "any", "none"]),
+            special: random() < 0.5, since: pick([undefined, 1550000000]), until: pick([undefined, 1600000000]),
+            starts, divisions: random() < 0.5 ? [] : [pick(["1", "2", "edu", "global"])], contestDivisions,
+            letters: random() < 0.5 ? [] : [pick(["A", "E"])], skip: random() < 0.5 ? undefined : (problem) => skipped.has(problemKey(problem)),
+        }
+        const got = matchingProblems(problems, filter).map(problemKey)
+        const want = plain(problems, filter).map(problemKey)
+        kept += want.length
+        assert.deepEqual(got, want, `case ${c}`)
+    }
+    assert.ok(kept > 1000, "the cases leave problems to compare")
+})
+
 test("a draw only ever sees problems the filter lets through, skipped ones never", () => {
     const list = [
         { contestId: 1, index: "A", name: "in", rating: 1500, tags: ["dp"] },
