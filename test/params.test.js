@@ -169,3 +169,25 @@ test("each address parameter has one row in the README's table", () => {
         .flatMap((line) => line.split("|")[1].match(/`[^`]+`/g).map((name) => name.slice(1, -1)))
     assert.deepEqual(names.filter((name, i) => names.indexOf(name) !== i), [])
 })
+
+test("every parameter the page writes has a row in the README's link table", () => {
+    const rows = read("README.md").split("\n").filter((line) => line.startsWith("| `"))
+    const documented = rows.flatMap((line) => line.split("|")[1].match(/`[^`]+`/g).map((name) => name.slice(1, -1)))
+    const written = [
+        writeParams({ min: "1", max: "2", since: "2019", until: "2021", minSolved: "5", divisions: ["1"], letters: ["A"], tags: ["dp"], mode: "any", nospecial: true, handles: "tourist", tried: true, hide: true }, "ru", { set: "1520F2", shape: "flat", daily: true, form: { count: "8", from: "1", to: "2", minutes: "3", noSeen: true } }),
+        writeParams({ ...DEFAULTS, tags: ["dp"], mode: "none" }),
+    ].flatMap((search) => [...new URLSearchParams(search).keys()])
+    assert.deepEqual([...new Set(written)].filter((name) => !documented.includes(name)), [])
+})
+
+test("the examples in the README's link table read back as the table says", () => {
+    assert.deepEqual(readParams("?min=1400&max=1900"), { ...DEFAULTS, min: "1400", max: "1900" })
+    const listed = readParams("?div=2,edu&letter=A,C&tags=dp,graphs&any=1")
+    assert.deepEqual([listed.divisions, listed.letters, listed.tags, listed.mode], [["2", "edu"], ["A", "C"], ["dp", "graphs"], "any"])
+    assert.equal(readParams("?none=1&tags=dp").mode, "none")
+    assert.equal(readParams("?skip=tourist,jiangly").handles, "tourist,jiangly")
+    assert.equal(readParams("?since=2019&solved=5000&hide=1").minSolved, "5000")
+    assert.deepEqual(readSetForm("?count=8&from=1000&to=1600&minutes=45&noseen=1"), { count: "8", from: "1000", to: "1600", minutes: "45", noSeen: true })
+    assert.equal(readShape("?shape=flat"), "flat")
+    assert.equal(readParams("?tried=1&skip=tourist").tried, true)
+})
