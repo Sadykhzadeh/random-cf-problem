@@ -53,10 +53,12 @@ import { firstLoad, root } from "./support/walk.js"
 // history hides the button that had it adds about 190 raw and 45 gzip to both.
 // Handing the contest start times to the problem of the day, so its pool is the
 // contests begun before the UTC day, adds about 40 raw and 12 gzip to both.
+// The touch-screen block of the stylesheet (a 36px row for the small buttons,
+// links and labels, and bigger boxes) adds about 740 raw and 190 gzip to both.
 // Raise these only with a reason of the same kind.
 const LIMITS = {
-    en: { raw: 109070, gzip: 33680 },
-    ru: { raw: 111630, gzip: 34420 },
+    en: { raw: 109800, gzip: 33870 },
+    ru: { raw: 112360, gzip: 34610 },
 }
 
 const firstVisit = (language) => {

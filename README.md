@@ -89,7 +89,8 @@ skipping the ones you have already solved.
 - On a device with its own share sheet, a Share button beside Copy link sends
   the drawn problem or the practice set through it; elsewhere it is not shown.
 - English and Russian, problem names included where Codeforces has them
-  translated; follows the system's light or dark theme; fits a phone.
+  translated; follows the system's light or dark theme; fits a phone, where
+  the buttons, links and boxes get at least a 36px row to tap.
 
 ## Link parameters
 

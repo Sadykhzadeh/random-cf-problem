@@ -404,6 +404,42 @@ footer a {
     cursor: pointer
 }
 
+/* A finger needs more than the text's own height: the small buttons, links and
+   labels get a 36px row, and the boxes in them a bigger square. */
+@media (pointer: coarse) {
+    button:not(#start):not(#buildSet),
+    #langs a,
+    footer a {
+        display: inline-flex;
+        align-items: center;
+        min-height: 36px
+    }
+
+    #setList a,
+    #recentList a {
+        display: inline-block;
+        padding: 7px 0
+    }
+
+    .topic,
+    #topicMode label {
+        min-height: 36px
+    }
+
+    #recentList label,
+    #setList label {
+        display: inline-flex;
+        align-items: center;
+        min-height: 36px
+    }
+
+    input[type="checkbox"],
+    input[type="radio"] {
+        width: 1.1em;
+        height: 1.1em
+    }
+}
+
 @media (max-width: 480px) {
     html,
     body {
