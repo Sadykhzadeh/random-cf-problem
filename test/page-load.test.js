@@ -21,6 +21,11 @@ const problemset = {
     },
 }
 
+const contestList = {
+    status: "OK",
+    result: [4, 10, 1520, 921].map((id) => ({ id, name: `Codeforces Round ${id}`, startTimeSeconds: 1600000000 })),
+}
+
 const elements = new Map()
 
 // Set while a test has the problemset call fail to reach Codeforces.
@@ -82,7 +87,8 @@ const installStubs = (search, remembered = {}) => {
     })
     set("fetch", async (url) => {
         if (listUnreachable && String(url).includes("problemset.problems")) throw new TypeError("Failed to fetch")
-        const answer = String(url).includes("problemset.problems") ? problemset : { status: "FAILED", comment: "stub" }
+        const answer = String(url).includes("problemset.problems") ? problemset
+            : String(url).includes("contest.list") ? contestList : { status: "FAILED", comment: "stub" }
         return new Response(JSON.stringify(answer), { status: answer.status === "OK" ? 200 : 400 })
     })
 }
@@ -139,6 +145,7 @@ test("a numbered problem is named with a dash on the card, as in the practice se
 
 test("a link with daily=1 shows the problem of the day, marked with its date", async () => {
     await loadPage("?daily=1")
+    await until(() => byId("dailyMark").hidden === false)
     assert.equal(byId("dailyMark").hidden, false)
     assert.match(byId("dailyMark").textContent, /^Today's problem, \d{4}-\d{2}-\d{2} · Streak: 1 day in a row\.$/)
 })

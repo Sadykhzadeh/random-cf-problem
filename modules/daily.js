@@ -46,14 +46,30 @@ export const streakAfter = (stored, day) => {
     return { last: day, count: last === yesterday && count ? count + 1 : 1 }
 }
 
+// The UTC day's first second, in seconds, as contest.list counts start times.
+export const dayStartSeconds = (day) => Date.parse(`${day}T00:00:00Z`) / 1000
+
+// The problems the day's pick is drawn from: those of contests that started
+// before the day began, in contest and letter order. The order the list came
+// in, and any contest that appears later in the day, change nothing; a problem
+// whose contest is not in `starts` (contest start times by contest id) is left out.
+export const dailyPool = (problems, starts, day) => {
+    const from = dayStartSeconds(day)
+    return problems
+        .filter((problem) => starts.has(problem.contestId) && starts.get(problem.contestId) < from)
+        .sort((a, b) => a.contestId - b.contestId || (a.index < b.index ? -1 : a.index > b.index ? 1 : 0))
+}
+
 // Shows the problem of the day through the page's own functions: `prepare`
-// resolves the list, `filter` gives the settings, `none` says when the
-// settings leave nothing, and `show` puts the problem and its day on screen.
-export const todaysProblem = async ({ prepare, filter, none, show }) => {
+// resolves the list, `starts` the contest start times, `filter` gives the
+// settings, `none` says when nothing is left, and `show` puts the problem and
+// its day on screen.
+export const todaysProblem = async ({ prepare, starts, filter, none, show }) => {
     const all = await prepare()
+    const contests = await starts()
     const settings = filter()
-    const problems = matchingProblems(all, settings)
-    if (!problems.length) return none(settings)
     const day = dayKey(Date.now())
-    return show(dailyProblem(problems, day), day)
+    const pool = dailyPool(matchingProblems(all, settings), contests, day)
+    if (!pool.length) return none(settings)
+    return show(dailyProblem(pool, day), day)
 }

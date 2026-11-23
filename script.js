@@ -409,6 +409,7 @@ async function showDaily() {
         const { todaysProblem, streakAfter } = await import("./modules/daily.js")
         await todaysProblem({
             prepare: () => readyProblems(showMessage),
+            starts: loadContestStarts,
             filter: readFilter,
             none: (settings) => showMessage(noneText(settings)),
             show: (problem, day) => {

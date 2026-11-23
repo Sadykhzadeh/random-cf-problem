@@ -33,7 +33,9 @@ skipping the ones you have already solved.
   problem on screen when you get stuck.
 - "Today's problem" draws one problem for the UTC day from the settings'
   pool, so everyone gets the same one that day; `?daily=1` in the address
-  opens it. It does not change the draws, which keep their own rounds.
+  opens it. The pool is the problems of contests that began before the UTC
+  day did, so a contest that appears in the list during the day does not
+  change the pick. It does not change the draws, which keep their own rounds.
 - Counts the UTC days in a row the problem of the day was opened, shown beside
   its date. The count is kept in this browser only; a day missed starts it
   again at one.

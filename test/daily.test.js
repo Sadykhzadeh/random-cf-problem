@@ -1,7 +1,7 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 
-import { dailyProblem, dayKey, generator, streakAfter, todaysProblem } from "../modules/daily.js"
+import { dailyPool, dailyProblem, dayKey, dayStartSeconds, generator, streakAfter, todaysProblem } from "../modules/daily.js"
 
 test("the day is the UTC date, so it changes at midnight UTC wherever the visitor is", () => {
     assert.equal(dayKey(Date.UTC(2026, 10, 18, 23, 59, 59)), "2026-11-18")
@@ -16,7 +16,7 @@ test("the day is still the UTC date where the clock is behind UTC, and the probl
         assert.equal(dayKey(Date.UTC(2026, 10, 18, 3, 0, 0)), "2026-11-18")
         t.mock.timers.enable({ apis: ["Date"], now: Date.UTC(2026, 10, 19, 0, 0, 0) })
         const pool = [{ contestId: 1, index: "A", name: "Watermelon", rating: 800, tags: [] }]
-        const day = await todaysProblem({ prepare: async () => pool, filter: () => ({}), none: () => null, show: (problem, day) => day })
+        const day = await todaysProblem({ prepare: async () => pool, starts: async () => new Map([[1, 0]]), filter: () => ({}), none: () => null, show: (problem, day) => day })
         assert.equal(day, "2026-11-19")
     } finally {
         if (zone === undefined) delete process.env.TZ
@@ -101,6 +101,7 @@ test("today's problem is the day's pick from the settings' pool, and an empty po
         t.mock.method(Date, "now", () => now)
         return todaysProblem({
             prepare: async () => all,
+            starts: async () => new Map([[1, 0], [2, 0], [3, 0]]),
             filter: () => filter,
             none: (given) => none.push(given),
             show: (problem, day) => shown.push([problem.name, day]),
@@ -115,4 +116,33 @@ test("today's problem is the day's pick from the settings' pool, and an empty po
     await showAt(Date.UTC(2026, 10, 19, 0, 1), { ...settings, min: 3000 })
     assert.deepEqual(none, [{ ...settings, min: 3000 }], "an empty pool is said, not shown")
     assert.equal(shown.length, 3)
+})
+
+test("the day's start is midnight UTC in the seconds contest.list counts", () => {
+    assert.equal(dayStartSeconds("2026-11-18"), Date.UTC(2026, 10, 18) / 1000)
+})
+
+// Two readings of the list on the same day: the second is the first in another
+// order, with a contest that started after midnight UTC added.
+const snapshot = [
+    { contestId: 1800, index: "B", name: "Late B", rating: 1200 },
+    { contestId: 1700, index: "A", name: "Early A", rating: 1200 },
+    { contestId: 1700, index: "C", name: "Early C", rating: 1300 },
+    { contestId: 1650, index: "A", name: "Older A", rating: 1100 },
+]
+const starts = new Map([[1700, dayStartSeconds("2026-11-18") - 3600], [1650, dayStartSeconds("2026-11-01")], [1800, dayStartSeconds("2026-11-18") + 35 * 60]])
+
+test("the day's pick is the same whatever order the list comes in, and whatever contests appear during the day", () => {
+    const first = dailyProblem(dailyPool(snapshot, starts, "2026-11-18"), "2026-11-18")
+    const reordered = [...snapshot].reverse().concat({ contestId: 1900, index: "A", name: "New", rating: 1200 })
+    starts.set(1900, dayStartSeconds("2026-11-18") + 17 * 3600)
+    const second = dailyProblem(dailyPool(reordered, starts, "2026-11-18"), "2026-11-18")
+    assert.deepEqual(second, first)
+    assert.ok(!dailyPool(reordered, starts, "2026-11-18").some((p) => p.name === "Late B" || p.name === "New"), "contests from after midnight are not in the pool")
+})
+
+test("a contest with no known start time is left out of the day's pool", () => {
+    const pool = dailyPool([...snapshot, { contestId: 2000, index: "A", name: "Unknown", rating: 1200 }], starts, "2026-11-18")
+    assert.ok(!pool.some((p) => p.name === "Unknown"))
+    assert.deepEqual(pool.map((p) => p.name), ["Older A", "Early A", "Early C"], "in contest and letter order")
 })

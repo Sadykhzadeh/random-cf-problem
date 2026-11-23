@@ -51,10 +51,12 @@ import { firstLoad, root } from "./support/walk.js"
 // draw (their labels in the language files, and the labels set in showRecent)
 // adds about 270 raw and 60 gzip to both. Moving the focus to Generate when Clear
 // history hides the button that had it adds about 190 raw and 45 gzip to both.
+// Handing the contest start times to the problem of the day, so its pool is the
+// contests begun before the UTC day, adds about 40 raw and 12 gzip to both.
 // Raise these only with a reason of the same kind.
 const LIMITS = {
-    en: { raw: 109030, gzip: 33660 },
-    ru: { raw: 111590, gzip: 34400 },
+    en: { raw: 109070, gzip: 33680 },
+    ru: { raw: 111630, gzip: 34420 },
 }
 
 const firstVisit = (language) => {
